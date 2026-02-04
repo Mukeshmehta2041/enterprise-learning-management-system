@@ -52,4 +52,4 @@
 
 ## Done?
 
-When all checkboxes above are done, Day 1 is complete. Next: add a Day 2 task (e.g. User Service CRUD + DB) when ready, or continue with Phase 1 in [docs/11-phase-plan.md](../docs/11-phase-plan.md).
+When all checkboxes above are done, Day 1 is complete. Next: [Day 2](day-2.md) (User Service: database + CRUD API), or continue with Phase 1 in [docs/11-phase-plan.md](../docs/11-phase-plan.md).

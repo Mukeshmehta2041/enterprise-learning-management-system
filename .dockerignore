@@ -1,0 +1,19 @@
+# Build outputs
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Version control and IDE
+.git
+.gitignore
+.cursor
+.idea
+*.iml
+*.ipr
+*.iws
+
+# Docs and tasks (not needed for build)
+docs/
+tasks/
+
+# Docker compose (not needed inside image)
+**/docker-compose*.yml

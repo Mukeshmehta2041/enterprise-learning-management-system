@@ -4,6 +4,24 @@ server:
 spring:
   application:
     name: lms-user-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
+    username: ${SPRING_DATASOURCE_USERNAME:lms}
+    password: ${SPRING_DATASOURCE_PASSWORD:lms}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    default-schema: lms_user
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: lms_user
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: lms_user
 
 management:
   endpoints:

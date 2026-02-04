@@ -4,6 +4,28 @@ server:
 spring:
   application:
     name: lms-enrollment-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms_enrollment}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: lms_enrollment
+  flyway:
+    enabled: true
+    schemas: lms_enrollment
+    locations: classpath:db/migration
+
+lms:
+  course-service:
+    url: ${LMS_COURSE_SERVICE_URL:http://localhost:8083}
 
 management:
   endpoints:

@@ -1,0 +1,139 @@
+# LMS dev stack - pinned to stable image versions
+# PostgreSQL 16.x (match existing volume; 17+ requires new volume or pg_upgrade)
+# Redis 8.x Alpine, Apache Kafka (official image, KRaft, no Zookeeper)
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: lms-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: lms
+      POSTGRES_USER: lms
+      POSTGRES_PASSWORD: lms
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lms -d lms"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    container_name: lms-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: apache/kafka-native:latest
+    container_name: lms-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      # Official Apache Kafka (KRaft, no Zookeeper) - single node
+      # See https://hub.docker.com/r/apache/kafka-native and Docker Kafka guide
+      - KAFKA_LISTENERS=CONTROLLER://0.0.0.0:9091,HOST://0.0.0.0:9092,DOCKER://0.0.0.0:9093
+      - KAFKA_ADVERTISED_LISTENERS=HOST://localhost:9092,DOCKER://kafka:9093
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,DOCKER:PLAINTEXT,HOST:PLAINTEXT
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9091
+      - KAFKA_INTER_BROKER_LISTENER_NAME=DOCKER
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+
+  lms-gateway:
+    build:
+      context: ../../lms-gateway
+    container_name: lms-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=redis
+      - JWT_SECRET=${JWT_SECRET:-9a4f4e354565456c4a56534d4a58436c646b4c614253426b4c624d6d45674c50}
+      - AUTH_SERVICE_URL=http://lms-auth-service:8082
+      - USER_SERVICE_URL=http://lms-user-service:8081
+      - COURSE_SERVICE_URL=http://lms-course-service:8083
+      - ENROLLMENT_SERVICE_URL=http://lms-enrollment-service:8084
+      - CONTENT_SERVICE_URL=http://lms-content-service:8085
+    depends_on:
+      - redis
+
+  lms-user-service:
+    build:
+      context: ../../services/lms-user-service
+    container_name: lms-user-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
+      - SPRING_DATASOURCE_USERNAME=lms
+      - SPRING_DATASOURCE_PASSWORD=lms
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  lms-auth-service:
+    build:
+      context: ../../services/lms-auth-service
+    container_name: lms-auth-service
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - JWT_SECRET=${JWT_SECRET:-9a4f4e354565456c4a56534d4a58436c646b4c614253426b4c624d6d45674c50}
+      - USER_SERVICE_URL=http://lms-user-service:8081
+    depends_on:
+      - redis
+      - lms-user-service
+
+  lms-course-service:
+    build:
+      context: ../../services/lms-course-service
+    container_name: lms-course-service
+    environment:
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/lms
+      - DATABASE_USER=lms
+      - DATABASE_PASSWORD=lms
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  lms-enrollment-service:
+    build:
+      context: ../../services/lms-enrollment-service
+    container_name: lms-enrollment-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
+      - SPRING_DATASOURCE_USERNAME=lms
+      - SPRING_DATASOURCE_PASSWORD=lms
+      - LMS_COURSE_SERVICE_URL=http://lms-course-service:8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  lms-content-service:
+    build:
+      context: ../../services/lms-content-service
+    container_name: lms-content-service
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
+      - SPRING_DATASOURCE_USERNAME=lms
+      - SPRING_DATASOURCE_PASSWORD=lms
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+volumes:
+  postgres_data:
