@@ -1,3 +1,32 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://jaeger:4318/v1/traces}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      courseService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    instances:
+      courseService:
+        maxAttempts: 3
+        waitDuration: 2s
+
 server:
   port: 8084
 
@@ -5,9 +34,9 @@ spring:
   application:
     name: lms-enrollment-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms_enrollment}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
+    username: ${SPRING_DATASOURCE_USERNAME:lms}
+    password: ${SPRING_DATASOURCE_PASSWORD:lms}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -26,12 +55,3 @@ spring:
 lms:
   course-service:
     url: ${LMS_COURSE_SERVICE_URL:http://localhost:8083}
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: when-authorized

@@ -38,20 +38,22 @@ public class EnrollmentController {
   @GetMapping("/me")
   public ResponseEntity<EnrollmentListResponse> getMyEnrollments(
       @RequestHeader(HEADER_USER_ID) String userIdHeader,
+      @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit) {
 
     UUID userId = UUID.fromString(userIdHeader);
-    EnrollmentListResponse response = enrollmentService.getMyEnrollments(userId, limit);
+    EnrollmentListResponse response = enrollmentService.getMyEnrollments(userId, cursor, limit);
     return ResponseEntity.ok(response);
   }
 
   @GetMapping
   public ResponseEntity<EnrollmentListResponse> listMyEnrollments(
       @RequestHeader(HEADER_USER_ID) String userIdHeader,
+      @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit) {
 
     UUID userId = UUID.fromString(userIdHeader);
-    EnrollmentListResponse response = enrollmentService.getMyEnrollments(userId, limit);
+    EnrollmentListResponse response = enrollmentService.getMyEnrollments(userId, cursor, limit);
     return ResponseEntity.ok(response);
   }
 

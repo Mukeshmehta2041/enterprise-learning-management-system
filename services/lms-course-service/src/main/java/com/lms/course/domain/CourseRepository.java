@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +19,11 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
 
   @Query("SELECT c FROM Course c WHERE c.status = :status ORDER BY c.createdAt DESC")
   Page<Course> findByStatusOrderByCreatedAtDesc(@Param("status") CourseStatus status, Pageable pageable);
+
+  List<Course> findByStatusAndCreatedAtLessThanOrderByCreatedAtDesc(CourseStatus status, Instant createdAt,
+      Pageable pageable);
+
+  List<Course> findByCreatedAtLessThanOrderByCreatedAtDesc(Instant createdAt, Pageable pageable);
 
   boolean existsBySlug(String slug);
 

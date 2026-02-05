@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: lms-payment-service
+  profiles:
+    active: dev
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
+    username: ${SPRING_DATASOURCE_USERNAME:lms}
+    password: ${SPRING_DATASOURCE_PASSWORD:lms}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+      hibernate.format_sql: true
+      hibernate.default_schema: lms_payment
+  flyway:
+    enabled: true
+    default-schema: lms_payment
+    create-schemas: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://jaeger:4318/v1/traces}
+
+server:
+  port: 8089

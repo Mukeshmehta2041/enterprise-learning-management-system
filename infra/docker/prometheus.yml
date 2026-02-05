@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: 'lms-services'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - 'lms-gateway:8080'
+          - 'lms-user-service:8081'
+          - 'lms-auth-service:8082'
+          - 'lms-course-service:8083'
+          - 'lms-enrollment-service:8084'
+          - 'lms-content-service:8085'
+          - 'lms-search-service:8086'
+          - 'lms-assignment-service:8087'
+          - 'lms-notification-service:8088'
+          - 'lms-payment-service:8089'
+          - 'lms-analytics-service:8090'

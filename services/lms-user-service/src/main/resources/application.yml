@@ -1,9 +1,27 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://jaeger:4318/v1/traces}
+
 server:
   port: 8081
 
 spring:
   application:
     name: lms-user-service
+
+springdoc:
+  api-docs:
+    path: /api/v1/users/v3/api-docs
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
     username: ${SPRING_DATASOURCE_USERNAME:lms}
@@ -22,12 +40,3 @@ spring:
     enabled: true
     locations: classpath:db/migration
     schemas: lms_user
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: when-authorized

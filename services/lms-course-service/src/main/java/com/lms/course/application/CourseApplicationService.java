@@ -2,6 +2,7 @@ package com.lms.course.application;
 
 import com.lms.course.api.*;
 import com.lms.course.domain.*;
+import com.lms.course.infrastructure.CourseEventPublisher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -28,48 +30,59 @@ public class CourseApplicationService {
   private final CourseRepository courseRepository;
   private final CourseModuleRepository moduleRepository;
   private final LessonRepository lessonRepository;
+  private final CourseCacheService courseCacheService;
+  private final CourseEventPublisher courseEventPublisher;
 
   public CourseApplicationService(CourseRepository courseRepository,
       CourseModuleRepository moduleRepository,
-      LessonRepository lessonRepository) {
+      LessonRepository lessonRepository,
+      CourseCacheService courseCacheService,
+      CourseEventPublisher courseEventPublisher) {
     this.courseRepository = courseRepository;
     this.moduleRepository = moduleRepository;
     this.lessonRepository = lessonRepository;
+    this.courseCacheService = courseCacheService;
+    this.courseEventPublisher = courseEventPublisher;
   }
 
   @Transactional(readOnly = true)
-  public CourseListResponse listCourses(CourseStatus status, Integer limit) {
+  public CourseListResponse listCourses(CourseStatus status, String cursor, Integer limit) {
     int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
-    Pageable pageable = PageRequest.of(0, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-    Page<Course> page;
+    Instant cursorTime = (cursor != null && !cursor.isBlank())
+        ? Instant.parse(cursor)
+        : Instant.now().plusSeconds(60);
+
+    List<Course> courses;
     if (status != null) {
-      page = courseRepository.findByStatus(status, pageable);
+      courses = courseRepository.findByStatusAndCreatedAtLessThanOrderByCreatedAtDesc(status, cursorTime,
+          PageRequest.of(0, pageSize + 1));
     } else {
-      page = courseRepository.findAll(pageable);
+      courses = courseRepository.findByCreatedAtLessThanOrderByCreatedAtDesc(cursorTime,
+          PageRequest.of(0, pageSize + 1));
     }
 
-    List<CourseResponse> items = page.getContent().stream()
+    boolean hasNext = courses.size() > pageSize;
+    List<Course> resultList = hasNext ? courses.subList(0, pageSize) : courses;
+
+    List<CourseResponse> items = resultList.stream()
         .map(this::mapToCourseResponse)
         .collect(Collectors.toList());
 
-    String nextCursor = page.hasNext() ? String.valueOf(page.getNumber() + 1) : null;
+    String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getCreatedAt().toString() : null;
 
     return new CourseListResponse(items, nextCursor);
   }
 
   @Transactional(readOnly = true)
   public CourseDetailResponse getCourseById(UUID courseId, UUID currentUserId, Set<String> roles) {
-    Course course = courseRepository.findById(courseId)
-        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+    CourseDetailResponse course = courseCacheService.getCourseDetail(courseId);
 
-    // Authorization: students can only see published; instructors/admin can see
-    // their own courses
     if (!canViewCourse(course, currentUserId, roles)) {
       throw new ForbiddenException("No access to this course");
     }
 
-    return mapToCourseDetailResponse(course);
+    return course;
   }
 
   public CourseDetailResponse createCourse(CreateCourseRequest request, UUID currentUserId, Set<String> roles) {
@@ -98,9 +111,10 @@ public class CourseApplicationService {
     course.addInstructor(instructor);
 
     Course saved = courseRepository.save(course);
+    courseEventPublisher.publishCourseCreated(saved);
     log.info("Course created: {} by user: {}", courseId, currentUserId);
 
-    return mapToCourseDetailResponse(saved);
+    return courseCacheService.mapToCourseDetailResponse(saved);
   }
 
   public CourseDetailResponse updateCourse(UUID courseId, UpdateCourseRequest request,
@@ -124,9 +138,11 @@ public class CourseApplicationService {
     }
 
     Course updated = courseRepository.save(course);
+    courseEventPublisher.publishCourseUpdated(updated);
+    courseCacheService.evictCourse(courseId);
     log.info("Course updated: {} by user: {}", courseId, currentUserId);
 
-    return mapToCourseDetailResponse(updated);
+    return courseCacheService.mapToCourseDetailResponse(updated);
   }
 
   public void deleteCourse(UUID courseId, UUID currentUserId, Set<String> roles) {
@@ -138,6 +154,8 @@ public class CourseApplicationService {
     }
 
     courseRepository.delete(course);
+    courseEventPublisher.publishCourseDeleted(courseId.toString());
+    courseCacheService.evictCourse(courseId);
     log.info("Course deleted: {} by user: {}", courseId, currentUserId);
   }
 
@@ -239,16 +257,24 @@ public class CourseApplicationService {
 
   @Transactional(readOnly = true)
   public List<ModuleResponse> getModulesByCourse(UUID courseId, UUID currentUserId, Set<String> roles) {
-    Course course = courseRepository.findById(courseId)
-        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+    CourseDetailResponse course = courseCacheService.getCourseDetail(courseId);
 
     if (!canViewCourse(course, currentUserId, roles)) {
       throw new ForbiddenException("No access to this course");
     }
 
-    return course.getModules().stream()
-        .map(this::mapToModuleResponse)
-        .collect(Collectors.toList());
+    return course.modules();
+  }
+
+  private boolean canViewCourse(CourseDetailResponse course, UUID currentUserId, Set<String> roles) {
+    if (roles.contains("ADMIN")) {
+      return true;
+    }
+    if ("PUBLISHED".equals(course.status())) {
+      return true;
+    }
+    // Check if user is instructor
+    return course.instructorIds().contains(currentUserId);
   }
 
   private boolean canViewCourse(Course course, UUID currentUserId, Set<String> roles) {

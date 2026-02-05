@@ -2,6 +2,8 @@ package com.lms.course.api;
 
 import com.lms.course.application.CourseApplicationService;
 import com.lms.course.domain.CourseStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/v1/courses")
+@Tag(name = "Courses", description = "Course management endpoints")
 public class CourseController {
 
   private static final Logger log = LoggerFactory.getLogger(CourseController.class);
@@ -30,8 +33,10 @@ public class CourseController {
   }
 
   @GetMapping
+  @Operation(summary = "List courses", description = "Retrieves a paginated list of courses")
   public ResponseEntity<CourseListResponse> listCourses(
       @RequestParam(required = false) String status,
+      @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit) {
 
     CourseStatus courseStatus = null;
@@ -43,7 +48,7 @@ public class CourseController {
       }
     }
 
-    CourseListResponse response = courseService.listCourses(courseStatus, limit);
+    CourseListResponse response = courseService.listCourses(courseStatus, cursor, limit);
     return ResponseEntity.ok(response);
   }
 

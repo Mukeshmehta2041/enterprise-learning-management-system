@@ -9,9 +9,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -28,50 +30,70 @@ public class EnrollmentApplicationService {
   private final EnrollmentRepository enrollmentRepository;
   private final LessonProgressRepository lessonProgressRepository;
   private final CourseServiceClient courseServiceClient;
+  private final StringRedisTemplate redisTemplate;
 
   public EnrollmentApplicationService(
       EnrollmentRepository enrollmentRepository,
       LessonProgressRepository lessonProgressRepository,
-      CourseServiceClient courseServiceClient) {
+      CourseServiceClient courseServiceClient,
+      StringRedisTemplate redisTemplate) {
     this.enrollmentRepository = enrollmentRepository;
     this.lessonProgressRepository = lessonProgressRepository;
     this.courseServiceClient = courseServiceClient;
+    this.redisTemplate = redisTemplate;
   }
 
   public EnrollmentResponse enroll(UUID userId, EnrollRequest request) {
     UUID courseId = request.courseId();
+    String lockKey = String.format("lock:enrollment:%s:%s", courseId, userId);
 
-    // Check if already enrolled
-    if (enrollmentRepository.existsByUserIdAndCourseId(userId, courseId)) {
-      throw new ConflictException("User already enrolled in this course");
+    Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, "locked", Duration.ofSeconds(10));
+    if (acquired == null || !acquired) {
+      throw new ConflictException("Enrollment in progress. Please wait.");
     }
 
-    // Validate course exists and is published
-    if (!courseServiceClient.isCoursePublished(courseId)) {
-      throw new BadRequestException("Course not found or not published");
+    try {
+      // Check if already enrolled
+      if (enrollmentRepository.existsByUserIdAndCourseId(userId, courseId)) {
+        throw new ConflictException("User already enrolled in this course");
+      }
+
+      // Validate course exists and is published
+      if (!courseServiceClient.isCoursePublished(courseId)) {
+        throw new BadRequestException("Course not found or not published");
+      }
+
+      UUID enrollmentId = UUID.randomUUID();
+      Enrollment enrollment = new Enrollment(enrollmentId, userId, courseId);
+
+      Enrollment saved = enrollmentRepository.save(enrollment);
+      log.info("User {} enrolled in course {}", userId, courseId);
+
+      return mapToEnrollmentResponse(saved);
+    } finally {
+      redisTemplate.delete(lockKey);
     }
-
-    UUID enrollmentId = UUID.randomUUID();
-    Enrollment enrollment = new Enrollment(enrollmentId, userId, courseId);
-
-    Enrollment saved = enrollmentRepository.save(enrollment);
-    log.info("User {} enrolled in course {}", userId, courseId);
-
-    return mapToEnrollmentResponse(saved);
   }
 
   @Transactional(readOnly = true)
-  public EnrollmentListResponse getMyEnrollments(UUID userId, Integer limit) {
+  public EnrollmentListResponse getMyEnrollments(UUID userId, String cursor, Integer limit) {
     int pageSize = limit != null ? limit : DEFAULT_PAGE_SIZE;
-    Pageable pageable = PageRequest.of(0, pageSize, Sort.by("enrolledAt").descending());
 
-    Page<Enrollment> page = enrollmentRepository.findByUserId(userId, pageable);
+    Instant cursorTime = (cursor != null && !cursor.isBlank())
+        ? Instant.parse(cursor)
+        : Instant.now().plusSeconds(60);
 
-    List<EnrollmentResponse> items = page.getContent().stream()
+    List<Enrollment> enrollments = enrollmentRepository.findByUserIdAndEnrolledAtLessThanOrderByEnrolledAtDesc(userId,
+        cursorTime, PageRequest.of(0, pageSize + 1));
+
+    boolean hasNext = enrollments.size() > pageSize;
+    List<Enrollment> resultList = hasNext ? enrollments.subList(0, pageSize) : enrollments;
+
+    List<EnrollmentResponse> items = resultList.stream()
         .map(this::mapToEnrollmentResponse)
         .collect(Collectors.toList());
 
-    String nextCursor = page.hasNext() ? String.valueOf(page.getNumber() + 1) : null;
+    String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getEnrolledAt().toString() : null;
     return new EnrollmentListResponse(items, nextCursor);
   }
 

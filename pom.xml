@@ -19,6 +19,11 @@
         <module>services/lms-course-service</module>
         <module>services/lms-enrollment-service</module>
         <module>services/lms-content-service</module>
+        <module>services/lms-assignment-service</module>
+        <module>services/lms-search-service</module>
+        <module>services/lms-notification-service</module>
+        <module>services/lms-payment-service</module>
+        <module>services/lms-analytics-service</module>
     </modules>
 
     <parent>
@@ -37,14 +42,59 @@
 
         <spring-cloud.version>2024.0.0</spring-cloud.version>
         <lms.common.version>1.0.0-SNAPSHOT</lms.common.version>
+        <micrometer-tracing.version>1.4.3</micrometer-tracing.version>
+        <opentelemetry.version>1.46.0</opentelemetry.version>
+        <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
+        <springdoc-openapi.version>2.8.5</springdoc-openapi.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+                <version>${springdoc-openapi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-contract-verifier</artifactId>
+                <version>4.2.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-starter-contract-stub-runner</artifactId>
+                <version>4.2.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>${logstash-logback-encoder.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-tracing-bom</artifactId>
+                <version>${micrometer-tracing.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

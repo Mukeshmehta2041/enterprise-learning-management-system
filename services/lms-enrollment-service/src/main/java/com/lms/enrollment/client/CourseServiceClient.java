@@ -1,5 +1,7 @@
 package com.lms.enrollment.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +23,8 @@ public class CourseServiceClient {
         .build();
   }
 
+  @CircuitBreaker(name = "courseService", fallbackMethod = "isCoursePublishedFallback")
+  @Retry(name = "courseService")
   public boolean isCoursePublished(UUID courseId) {
     try {
       CourseResponse course = restClient.get()
@@ -33,10 +37,17 @@ public class CourseServiceClient {
       return course != null && "PUBLISHED".equalsIgnoreCase(course.status());
     } catch (Exception e) {
       log.error("Error checking course status for: {}", courseId, e);
-      return false;
+      throw e; // Rethrow for resilience4j to catch
     }
   }
 
+  public boolean isCoursePublishedFallback(UUID courseId, Throwable t) {
+    log.error("Fallback for course status check: {}", courseId, t);
+    return false;
+  }
+
+  @CircuitBreaker(name = "courseService", fallbackMethod = "getTotalLessonsFallback")
+  @Retry(name = "courseService")
   public int getTotalLessons(UUID courseId) {
     try {
       CourseDetailResponse course = restClient.get()
@@ -55,8 +66,13 @@ public class CourseServiceClient {
           .sum();
     } catch (Exception e) {
       log.error("Error getting lesson count for course: {}", courseId, e);
-      return 0;
+      throw e;
     }
+  }
+
+  public int getTotalLessonsFallback(UUID courseId, Throwable t) {
+    log.error("Fallback for total lessons: {}", courseId, t);
+    return 0;
   }
 
   public record CourseResponse(UUID id, String status) {
