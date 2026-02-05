@@ -50,6 +50,10 @@ services:
       - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9091
       - KAFKA_INTER_BROKER_LISTENER_NAME=DOCKER
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
       interval: 10s
@@ -119,6 +123,9 @@ services:
       - CONTENT_SERVICE_URL=http://lms-content-service:8085
       - ASSIGNMENT_SERVICE_URL=http://lms-assignment-service:8087
       - SEARCH_SERVICE_URL=http://lms-search-service:8086
+      - PAYMENT_SERVICE_URL=http://lms-payment-service:8089
+      - NOTIFICATION_SERVICE_URL=http://lms-notification-service:8088
+      - ANALYTICS_SERVICE_URL=http://lms-analytics-service:8090
     depends_on:
       redis:
         condition: service_healthy

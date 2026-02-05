@@ -1,0 +1,17 @@
+# Development profile configuration
+
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secret: dev-secret-key-for-testing-only-not-for-production-use
+
+user-service:
+  base-url: http://localhost:8081
+
+logging:
+  level:
+    com.lms.auth: DEBUG

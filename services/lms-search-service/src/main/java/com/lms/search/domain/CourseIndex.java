@@ -15,18 +15,27 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class CourseIndex {
-    @Id
-    private String id;
+  @Id
+  private String id;
 
-    @Field(type = FieldType.Text, analyzer = "standard")
-    private String title;
+  @Field(type = FieldType.Text, analyzer = "standard")
+  private String title;
 
-    @Field(type = FieldType.Text, analyzer = "standard")
-    private String description;
+  @Field(type = FieldType.Text, analyzer = "standard")
+  private String description;
 
-    @Field(type = FieldType.Keyword)
-    private String status;
+  @Field(type = FieldType.Keyword)
+  private String status;
 
-    @Field(type = FieldType.Keyword)
-    private String slug;
+  @Field(type = FieldType.Keyword)
+  private String slug;
+
+  @Field(type = FieldType.Text, analyzer = "standard")
+  private String instructorName;
+
+  @Field(type = FieldType.Keyword)
+  private String category;
+
+  @Field(type = FieldType.Double)
+  private Double price;
 }

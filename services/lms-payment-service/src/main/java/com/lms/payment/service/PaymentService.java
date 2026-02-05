@@ -91,8 +91,9 @@ public class PaymentService {
   }
 
   private void publishPaymentEvent(Payment payment) {
-    String event = String.format("{\"eventType\":\"PaymentCompleted\",\"aggregateId\":\"%d\",\"aggregateType\":\"Payment\",\"payload\":{\"userId\":%d,\"amount\":%.2f}}",
-        payment.getId(), payment.getUserId(), payment.getAmount());
+    String event = String.format(
+        "{\"eventType\":\"PaymentCompleted\",\"aggregateId\":\"%d\",\"aggregateType\":\"Payment\",\"payload\":{\"userId\":\"%s\",\"amount\":%.2f}}",
+        payment.getId(), payment.getUserId().toString(), payment.getAmount());
     kafkaTemplate.send("payment.events", event);
   }
 

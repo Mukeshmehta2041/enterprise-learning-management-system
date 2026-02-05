@@ -39,23 +39,33 @@ public class AuthController {
       @RequestParam(value = "grant_type", required = false) String grantTypeParam,
       @RequestParam(value = "username", required = false) String usernameParam,
       @RequestParam(value = "password", required = false) String passwordParam,
-      @RequestParam(value = "refresh_token", required = false) String refreshTokenParam) {
+      @RequestParam(value = "refresh_token", required = false) String refreshTokenParam,
+      @RequestBody(required = false) TokenRequest body) {
 
-    String grantType = grantTypeParam;
-    String username = usernameParam;
-    String password = passwordParam;
-    String refreshToken = refreshTokenParam;
+    String grantType = grantTypeParam != null ? grantTypeParam : (body != null ? body.grant_type() : null);
+    String username = usernameParam != null ? usernameParam : (body != null ? body.username() : null);
+    String password = passwordParam != null ? passwordParam : (body != null ? body.password() : null);
+    String refreshToken = refreshTokenParam != null ? refreshTokenParam : (body != null ? body.refresh_token() : null);
+
+    // Default to password grant if grant_type is missing but credentials are
+    // provided
+    if (grantType == null && username != null && password != null) {
+      grantType = "password";
+      log.info("Defaulting to password grant type for /token request");
+    }
 
     if (grantType == null) {
+      log.warn("Token request missing grant_type");
       return ResponseEntity.badRequest().build();
     }
 
     // Handle password grant (login)
     if ("password".equals(grantType)) {
       if (username == null || password == null) {
+        log.warn("Password grant missing username or password");
         return ResponseEntity.badRequest().build();
       }
-      log.info("Login request for username: {}", username);
+      log.info("Login request via /token for username: {}", username);
 
       AuthenticationService.AuthenticationResult result = authenticationService.authenticate(username, password);
 
@@ -70,6 +80,7 @@ public class AuthController {
     // Handle refresh_token grant
     if ("refresh_token".equals(grantType)) {
       if (refreshToken == null) {
+        log.warn("Refresh token grant missing refresh_token");
         return ResponseEntity.badRequest().build();
       }
       log.info("Token refresh request");
@@ -84,6 +95,7 @@ public class AuthController {
       return ResponseEntity.ok(response);
     }
 
+    log.warn("Unsupported grant type: {}", grantType);
     return ResponseEntity.badRequest().build();
   }
 
