@@ -78,7 +78,7 @@ export function RegisterPage() {
           />
 
           {errors.root && (
-            <p className="text-sm font-medium text-red-500">{errors.root.message}</p>
+            <p className="text-sm font-medium text-red-500" role="alert">{errors.root.message}</p>
           )}
 
           <Button type="submit" className="w-full" isLoading={registerMutation.isPending}>

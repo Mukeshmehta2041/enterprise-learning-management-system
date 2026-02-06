@@ -10,6 +10,8 @@ export function useEnrollments() {
       const { data } = await apiClient.get<Enrollment[]>('/enrollments')
       return data
     },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   })
 }
 
@@ -26,6 +28,8 @@ export function useEnrollment(courseId: string) {
       }
     },
     enabled: !!courseId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   })
 }
 

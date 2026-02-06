@@ -9,6 +9,9 @@ export const useNotifications = () => {
       const response = await apiClient.get('/notifications');
       return response.data;
     },
+    staleTime: 30 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 };
 

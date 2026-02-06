@@ -44,14 +44,15 @@ jobs:
           
       - name: Install dependencies
         run: npm ci
-        
-      - name: Lint and Type Check
-        run: |
-          npm run lint || echo "Linting failed, but continuing for demonstration"
-          npm run type-check || npx tsc -b
-          
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
       - name: Run Tests
-        run: npm test
+        run: npm test -- --run
         
       - name: Build Production
         run: npm run build

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAssignment, useSubmission, useSubmitAssignment } from '../api/useAssignments'
 import { Container, Card } from '@/shared/ui/Layout'
 import { Heading1, Heading2, Heading3, Paragraph, Small } from '@/shared/ui/Typography'
@@ -17,6 +17,7 @@ import {
 
 export function AssignmentDetailPage() {
   const { assignmentId } = useParams<{ assignmentId: string }>()
+  const navigate = useNavigate()
   const { data: assignment, isLoading: isAssignmentLoading } = useAssignment(assignmentId!)
   const { data: submission, isLoading: isSubmissionLoading } = useSubmission(assignmentId!)
   const submitMutation = useSubmitAssignment()
@@ -39,16 +40,24 @@ export function AssignmentDetailPage() {
   }
 
   if (isAssignmentLoading || isSubmissionLoading) {
-    return <div className="py-20 text-center">Loading assignment...</div>
+    return (
+      <div className="py-20 text-center" role="status" aria-live="polite">
+        Loading assignment...
+      </div>
+    )
   }
 
   if (!assignment) {
     return (
       <Container className="py-20 text-center">
         <Heading2>Assignment not found</Heading2>
-        <Link to="/assignments">
-          <Button variant="outline" className="mt-4">Back to Assignments</Button>
-        </Link>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => navigate('/assignments')}
+        >
+          Back to Assignments
+        </Button>
       </Container>
     )
   }

@@ -42,7 +42,7 @@ export function Sidebar({ onClose, className }: SidebarProps) {
     navigate('/login')
   }
 
-  const userInitials = user ? `${user.firstName[0]}${user.lastName[0]}` : '??'
+  // const userInitials = user ? `${user.firstName[0]}${user.lastName[0]}` : '??'
   const fullName = user ? `${user.firstName} ${user.lastName}` : 'Guest'
   const role = user?.roles[0] || 'User'
 
@@ -62,7 +62,7 @@ export function Sidebar({ onClose, className }: SidebarProps) {
       <div className="flex h-16 items-center justify-between px-6 border-b border-slate-100">
         <Link
           to="/"
-          className="text-xl font-bold tracking-tight text-indigo-600"
+          className="text-xl font-bold tracking-tight text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
           LMS Portal
         </Link>
@@ -72,18 +72,20 @@ export function Sidebar({ onClose, className }: SidebarProps) {
             onClick={onClose}
             variant="ghost"
             className="md:hidden"
+            aria-label="Close navigation"
           />
         )}
       </div>
-      <nav className="flex-1 space-y-1 px-4 py-4">
+      <nav className="flex-1 space-y-1 px-4 py-4" aria-label="Primary">
         {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.href
           return (
             <Link
               key={item.name}
               to={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
                 isActive
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
@@ -106,7 +108,7 @@ export function Sidebar({ onClose, className }: SidebarProps) {
       <div className="p-4 border-t border-slate-100 space-y-2">
         <div className="flex items-center gap-3 px-2 py-3 rounded-md bg-slate-50">
           <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs uppercase">
-            {userInitials}
+            {/* {userInitials} */}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-slate-900 truncate">
@@ -117,7 +119,7 @@ export function Sidebar({ onClose, className }: SidebarProps) {
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="flex w-full items-center px-3 py-2 text-sm font-medium text-slate-600 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
         >
           <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
           Logout

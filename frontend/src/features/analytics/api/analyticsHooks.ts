@@ -9,6 +9,9 @@ export const useGlobalStats = () => {
       const response = await apiClient.get('/analytics/global');
       return response.data;
     },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -19,6 +22,9 @@ export const useCourseAnalytics = (filters?: AnalyticsFilter) => {
       const response = await apiClient.get('/analytics/courses', { params: filters });
       return response.data;
     },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -29,5 +35,8 @@ export const useEnrollmentTrends = (filters?: AnalyticsFilter) => {
       const response = await apiClient.get('/analytics/trends', { params: filters });
       return response.data;
     },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 };

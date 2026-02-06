@@ -14,6 +14,8 @@ export function useCourses(filters: CourseFilters) {
     queryKey: ['courses', filters],
     queryFn: () => fetchCourses(filters),
     placeholderData: (previousData) => previousData,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   })
 }
 
@@ -27,5 +29,7 @@ export function useCourse(id: string) {
     queryKey: ['courses', id],
     queryFn: () => fetchCourseById(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
   })
 }

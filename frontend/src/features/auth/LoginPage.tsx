@@ -30,7 +30,7 @@ export function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (values: LoginFormValues) => {
-      const response = await apiClient.post<AuthResponse>('/api/v1/auth/token', values)
+      const response = await apiClient.post<AuthResponse>('/auth/token', values)
       return response.data
     },
     onSuccess: async (data) => {
@@ -67,7 +67,7 @@ export function LoginPage() {
           />
 
           {errors.root && (
-            <p className="text-sm font-medium text-red-500">{errors.root.message}</p>
+            <p className="text-sm font-medium text-red-500" role="alert">{errors.root.message}</p>
           )}
 
           <Button type="submit" className="w-full" isLoading={loginMutation.isPending}>

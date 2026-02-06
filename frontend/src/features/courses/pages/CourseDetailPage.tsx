@@ -37,7 +37,7 @@ export function CourseDetailPage() {
 
   if (isLoading) {
     return (
-      <Container className="py-8">
+      <Container className="py-8" aria-live="polite">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="h-12 w-3/4 bg-slate-200 animate-pulse rounded" />
@@ -56,9 +56,9 @@ export function CourseDetailPage() {
       <Container className="py-12 text-center">
         <Heading2>Course not found</Heading2>
         <Paragraph>The course you are looking for does not exist or has been removed.</Paragraph>
-        <Link to="/courses">
-          <Button className="mt-4">Back to Courses</Button>
-        </Link>
+        <Button className="mt-4" onClick={() => navigate('/courses')}>
+          Back to Courses
+        </Button>
       </Container>
     )
   }
@@ -132,7 +132,13 @@ export function CourseDetailPage() {
         <div className="lg:col-span-1">
           <Card className="sticky top-24 overflow-hidden">
             {course.thumbnailUrl ? (
-              <img src={course.thumbnailUrl} alt={course.title} className="w-full h-48 object-cover" />
+              <img
+                src={course.thumbnailUrl}
+                alt={course.title}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-48 object-cover"
+              />
             ) : (
               <div className="w-full h-48 bg-slate-100 flex items-center justify-center text-slate-400">
                 <BookOpen size={64} />

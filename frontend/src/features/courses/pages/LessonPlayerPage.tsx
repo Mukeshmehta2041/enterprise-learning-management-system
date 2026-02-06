@@ -36,16 +36,24 @@ export function LessonPlayerPage() {
   const prevLesson = allLessons[currentLessonIndex - 1]
 
   if (isLoading) {
-    return <div className="h-screen flex items-center justify-center">Loading player...</div>
+    return (
+      <div className="h-screen flex items-center justify-center" role="status" aria-live="polite">
+        Loading player...
+      </div>
+    )
   }
 
   if (isError || !course || !currentLesson) {
     return (
       <div className="h-screen flex flex-col items-center justify-center">
         <Heading3>Lesson not found</Heading3>
-        <Link to={`/courses/${courseId}`}>
-          <Button variant="outline" className="mt-4">Back to Course</Button>
-        </Link>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => navigate(`/courses/${courseId}`)}
+        >
+          Back to Course
+        </Button>
       </div>
     )
   }
@@ -55,7 +63,11 @@ export function LessonPlayerPage() {
       {/* Top Bar */}
       <header className="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-900 z-20">
         <div className="flex items-center gap-4">
-          <Link to={`/courses/${courseId}`} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+          <Link
+            to={`/courses/${courseId}`}
+            aria-label="Back to course"
+            className="p-2 hover:bg-slate-800 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          >
             <ArrowLeft size={20} />
           </Link>
           <div className="hidden md:block">
@@ -69,6 +81,7 @@ export function LessonPlayerPage() {
             variant="ghost"
             className="text-white hover:bg-slate-800"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            aria-label={isSidebarOpen ? 'Close course content' : 'Open course content'}
           >
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </Button>
@@ -164,8 +177,9 @@ export function LessonPlayerPage() {
                     <Link
                       key={lesson.id}
                       to={`/courses/${courseId}/lesson/${lesson.id}`}
+                      aria-current={lesson.id === lessonId ? 'page' : undefined}
                       className={cn(
-                        "flex items-start gap-3 p-4 hover:bg-slate-800 transition-colors group",
+                        "flex items-start gap-3 p-4 hover:bg-slate-800 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
                         lesson.id === lessonId ? "bg-slate-800 border-l-2 border-blue-500" : ""
                       )}
                     >

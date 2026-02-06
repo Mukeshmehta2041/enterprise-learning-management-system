@@ -9,6 +9,8 @@ export function useAssignments() {
       const { data } = await apiClient.get<Assignment[]>('/assignments')
       return data
     },
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 }
 
@@ -20,6 +22,8 @@ export function useAssignment(id: string) {
       return data
     },
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
   })
 }
 
@@ -36,6 +40,8 @@ export function useSubmission(assignmentId: string) {
       }
     },
     enabled: !!assignmentId,
+    staleTime: 30 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 }
 

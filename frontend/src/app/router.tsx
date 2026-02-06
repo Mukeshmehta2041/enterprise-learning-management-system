@@ -36,8 +36,9 @@ function PlaceholderPage({ title }: { title: string }) {
 
 function LoadingSpinner() {
   return (
-    <div className="flex h-screen items-center justify-center bg-slate-50">
+    <div className="flex h-screen items-center justify-center bg-slate-50" role="status" aria-live="polite">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <span className="sr-only">Loading</span>
     </div>
   )
 }

@@ -3,7 +3,6 @@ import type { Enrollment } from '@/shared/types/enrollment'
 import { Card } from '@/shared/ui/Layout'
 import { Heading3, Small } from '@/shared/ui/Typography'
 import { PlayCircle, Clock } from 'lucide-react'
-import { Button } from '@/shared/ui/Button'
 
 interface EnrollmentCardProps {
   enrollment: Enrollment
@@ -17,6 +16,8 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
           <img
             src={enrollment.courseThumbnailUrl}
             alt={enrollment.courseTitle}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
           />
         ) : (
@@ -55,10 +56,11 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
             <Small>Last accessed: {new Date(enrollment.lastAccessedAt).toLocaleDateString()}</Small>
           </div>
 
-          <Link to={`/courses/${enrollment.courseId}`}>
-            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-0">
-              {enrollment.status === 'COMPLETED' ? 'Review' : 'Continue'}
-            </Button>
+          <Link
+            to={`/courses/${enrollment.courseId}`}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
+          >
+            {enrollment.status === 'COMPLETED' ? 'Review' : 'Continue'}
           </Link>
         </div>
       </div>

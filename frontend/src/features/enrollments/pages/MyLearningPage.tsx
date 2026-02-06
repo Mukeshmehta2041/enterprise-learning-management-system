@@ -3,11 +3,12 @@ import { EnrollmentCard } from '../components/EnrollmentCard'
 import { Container } from '@/shared/ui/Layout'
 import { Heading1, TextMuted, Heading4 } from '@/shared/ui/Typography'
 import { Button } from '@/shared/ui/Button'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { GraduationCap, AlertCircle } from 'lucide-react'
 
 export function MyLearningPage() {
   const { data: enrollments, isLoading, isError, error, refetch } = useEnrollments()
+  const navigate = useNavigate()
 
   return (
     <Container className="py-8">
@@ -42,9 +43,9 @@ export function MyLearningPage() {
               <TextMuted className="mb-8 max-w-sm">
                 You haven't enrolled in any courses yet. Start your learning journey today!
               </TextMuted>
-              <Link to="/courses">
-                <Button size="lg">Browse Catalog</Button>
-              </Link>
+              <Button size="lg" onClick={() => navigate('/courses')}>
+                Browse Catalog
+              </Button>
             </div>
           ) : (
             enrollments?.map((enrollment) => (

@@ -42,7 +42,11 @@ export function AssignmentListPage() {
             </div>
           ) : (
             assignments?.map((assignment) => (
-              <Link key={assignment.id} to={`/assignments/${assignment.id}`}>
+              <Link
+                key={assignment.id}
+                to={`/assignments/${assignment.id}`}
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded-lg"
+              >
                 <Card className="p-4 hover:border-blue-300 transition-colors flex items-center justify-between group">
                   <div className="flex items-center gap-4">
                     <div className={`p-3 rounded-lg ${isOverdue(assignment.dueDate) ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'

@@ -48,11 +48,12 @@ export function CourseListPage() {
         <form onSubmit={handleSearch} className="flex gap-2 min-w-[300px]">
           <Input
             placeholder="Search courses..."
+            aria-label="Search courses"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="flex-grow"
           />
-          <Button type="submit">
+          <Button type="submit" aria-label="Search">
             <Search size={20} />
           </Button>
           <Button
@@ -60,6 +61,7 @@ export function CourseListPage() {
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
             className={showFilters ? 'bg-slate-100' : ''}
+            aria-label={showFilters ? 'Hide filters' : 'Show filters'}
           >
             <SlidersHorizontal size={20} />
           </Button>

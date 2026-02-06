@@ -31,6 +31,13 @@
 
 Run unit and integration tests in CI; contract tests when gateway or service API changes; load tests on release or periodically.
 
+### Running Tests
+
+- **Unit tests:** `./mvnw test`
+- **Integration tests:** `./mvnw verify` (requires Docker for Testcontainers)
+- **Service-specific:** `./mvnw test -pl services/lms-user-service`
+- **CI/CD:** Use a modern CI (GitHub Actions, GitLab CI, etc.) that supports Docker; Testcontainers will spin up sidecars on host or via Docker network.
+
 ## API documentation
 
 - **OpenAPI 3:** Describe each service’s API with OpenAPI (Swagger) annotations or separate YAML; aggregate at gateway for a single doc.

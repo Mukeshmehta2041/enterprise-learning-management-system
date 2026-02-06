@@ -9,6 +9,8 @@ export const usePlans = () => {
       const response = await apiClient.get('/payments/plans');
       return response.data;
     },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 };
 
@@ -19,6 +21,9 @@ export const usePaymentHistory = () => {
       const response = await apiClient.get('/payments/history');
       return response.data;
     },
+    staleTime: 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 };
 

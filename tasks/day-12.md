@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Testcontainers setup and integration tests for User, Auth, Course, and Enrollment services completed. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 12 is done_
+**Started:** February 6, 2026
+**Completed:** February 6, 2026
 
 ---
 
@@ -23,24 +23,24 @@
 
 ### 1. Testcontainers setup
 
-- [ ] Add Testcontainers (PostgreSQL, Redis, Kafka) to root or each service `pom.xml`; use JUnit 5 and `@Testcontainers` / `@Container`.
-- [ ] Create shared test base or profile (e.g. `application-test.yml`) that points to container URLs; reuse containers where possible for speed.
+- [x] Add Testcontainers (PostgreSQL, Redis, Kafka) to root or each service `pom.xml`; use JUnit 5 and `@Testcontainers` / `@Container`.
+- [x] Create shared test base or profile (e.g. `application-test.yml`) that points to container URLs; reuse containers where possible for speed.
 
 ### 2. Service integration tests
 
-- [ ] User Service: integration test with PostgreSQL container; Flyway runs; test create user, get by email, assign role.
-- [ ] Auth Service: with Redis and User Service (or mock); test login, refresh, logout and blacklist.
-- [ ] Course and Enrollment services: with DB and optional Kafka; test CRUD and enroll flow.
-- [ ] Ensure tests are idempotent and do not depend on execution order.
+- [x] User Service: integration test with PostgreSQL container; Flyway runs; test create user, get by email, assign role.
+- [x] Auth Service: with Redis and User Service (or mock); test login, refresh, logout and blacklist.
+- [x] Course and Enrollment services: with DB and optional Kafka; test CRUD and enroll flow.
+- [x] Ensure tests are idempotent and do not depend on execution order.
 
 ### 3. Cross-service flows
 
-- [ ] Add at least one end-to-end test (e.g. register → login → list courses → enroll) via gateway or direct service calls with containers for DB, Redis, Kafka.
-- [ ] Document how to run integration tests locally and in CI (Docker available).
+- [x] Add at least one end-to-end test (e.g. register → login → list courses → enroll) via gateway or direct service calls with containers for DB, Redis, Kafka.
+- [x] Document how to run integration tests locally and in CI (Docker available).
 
 ### 4. Verify
 
-- [ ] All integration tests pass; CI runs them on PR. Update Progress when done.
+- [x] All integration tests pass; CI runs them on PR. Update Progress when done.
 
 ---
 

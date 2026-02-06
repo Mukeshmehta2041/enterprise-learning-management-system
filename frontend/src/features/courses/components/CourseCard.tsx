@@ -10,12 +10,17 @@ interface CourseCardProps {
 
 export function CourseCard({ course }: CourseCardProps) {
   return (
-    <Link to={`/courses/${course.id}`} className="block transition-transform hover:scale-[1.02]">
+    <Link
+      to={`/courses/${course.id}`}
+      className="block transition-transform hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+    >
       <Card className="h-full overflow-hidden flex flex-col">
         {course.thumbnailUrl ? (
           <img
             src={course.thumbnailUrl}
             alt={course.title}
+            loading="lazy"
+            decoding="async"
             className="h-48 w-full object-cover"
           />
         ) : (
