@@ -11,10 +11,10 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | |
+| 🔄 In progress | Implementing Data Export and Account Deletion mechanisms. |
 | ✅ Done | |
 
-**Started:** _fill when you begin_  
+**Started:** 2026-02-06  
 **Completed:** _fill when Day 21 is done_
 
 ---

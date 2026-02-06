@@ -24,6 +24,7 @@ This folder contains the design and specification documentation for the Learning
 | [09-devops.md](09-devops.md) | Docker, Compose, env, CI/CD, K8s, secrets |
 | [10-best-practices.md](10-best-practices.md) | Code structure, validation, testing, OpenAPI |
 | [11-phase-plan.md](11-phase-plan.md) | Phase 1–5 checklist and implementation order |
+| [runbooks/](runbooks/) | Operational runbooks for DR, Go-Live, and Incident Response |
 
 ## API Specs (Phase 1 Services)
 

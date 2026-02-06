@@ -3,8 +3,12 @@ package com.lms.enrollment.application;
 import com.lms.enrollment.api.*;
 import com.lms.enrollment.client.CourseServiceClient;
 import com.lms.enrollment.domain.*;
+import com.lms.common.exception.ForbiddenException;
+import com.lms.common.exception.ResourceNotFoundException;
+import com.lms.common.audit.AuditLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,16 +36,22 @@ public class EnrollmentApplicationService {
   private final LessonProgressRepository lessonProgressRepository;
   private final CourseServiceClient courseServiceClient;
   private final StringRedisTemplate redisTemplate;
+  private final AuditLogger auditLogger;
+
+  @Value("${lms.enrollment.max-per-user:10}")
+  private int maxEnrollmentsPerUser;
 
   public EnrollmentApplicationService(
       EnrollmentRepository enrollmentRepository,
       LessonProgressRepository lessonProgressRepository,
       CourseServiceClient courseServiceClient,
-      StringRedisTemplate redisTemplate) {
+      StringRedisTemplate redisTemplate,
+      AuditLogger auditLogger) {
     this.enrollmentRepository = enrollmentRepository;
     this.lessonProgressRepository = lessonProgressRepository;
     this.courseServiceClient = courseServiceClient;
     this.redisTemplate = redisTemplate;
+    this.auditLogger = auditLogger;
   }
 
   public EnrollmentResponse enroll(UUID userId, EnrollRequest request) {
@@ -53,6 +64,13 @@ public class EnrollmentApplicationService {
     }
 
     try {
+      // Check enrollment quota
+      long currentCount = enrollmentRepository.countByUserId(userId);
+      if (currentCount >= maxEnrollmentsPerUser) {
+        log.warn("User {} exceeded enrollment quota ({} / {})", userId, currentCount, maxEnrollmentsPerUser);
+        throw new ForbiddenException("Enrollment quota exceeded. Max allowed: " + maxEnrollmentsPerUser);
+      }
+
       // Check if already enrolled
       if (enrollmentRepository.existsByUserIdAndCourseId(userId, courseId)) {
         throw new ConflictException("User already enrolled in this course");
@@ -68,6 +86,7 @@ public class EnrollmentApplicationService {
 
       Enrollment saved = enrollmentRepository.save(enrollment);
       log.info("User {} enrolled in course {}", userId, courseId);
+      auditLogger.logSuccess("COURSE_ENROLL", "ENROLLMENT", saved.getId().toString(), Map.of("courseId", courseId));
 
       return mapToEnrollmentResponse(saved);
     } finally {
@@ -97,24 +116,82 @@ public class EnrollmentApplicationService {
     return new EnrollmentListResponse(items, nextCursor);
   }
 
+  public void cleanupUserData(UUID userId) {
+    log.info("Cleaning up data for user: {}", userId);
+    List<Enrollment> enrollments = enrollmentRepository.findAllByUserId(userId);
+    for (Enrollment enrollment : enrollments) {
+      lessonProgressRepository.deleteByEnrollmentId(enrollment.getId());
+    }
+    enrollmentRepository.deleteByUserId(userId);
+
+    // Cleanup Redis
+    String cacheKey = "user:enrollments:" + userId;
+    redisTemplate.delete(cacheKey);
+    auditLogger.logSuccess("USER_DATA_CLEANUP", "USER", userId.toString());
+  }
+
+  @Transactional(readOnly = true)
+  public EnrollmentListResponse listEnrollmentsByCourse(UUID courseId, UUID userId, Set<String> roles, String cursor,
+      Integer limit) {
+    // Only instructor of the course or admin can list all enrollments
+    if (!roles.contains("ADMIN")
+        && !(roles.contains("INSTRUCTOR") && courseServiceClient.isUserInstructor(courseId, userId))) {
+      throw new ForbiddenException("Not authorized to list enrollments for this course");
+    }
+
+    int pageSize = limit != null ? limit : DEFAULT_PAGE_SIZE;
+    Instant cursorTime = (cursor != null && !cursor.isBlank())
+        ? Instant.parse(cursor)
+        : Instant.now().plusSeconds(60);
+
+    List<Enrollment> enrollments = enrollmentRepository.findByCourseIdAndEnrolledAtLessThanOrderByEnrolledAtDesc(
+        courseId,
+        cursorTime, PageRequest.of(0, pageSize + 1));
+
+    boolean hasNext = enrollments.size() > pageSize;
+    List<Enrollment> resultList = hasNext ? enrollments.subList(0, pageSize) : enrollments;
+
+    List<EnrollmentResponse> items = resultList.stream()
+        .map(this::mapToEnrollmentResponse)
+        .collect(Collectors.toList());
+
+    String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getEnrolledAt().toString() : null;
+    return new EnrollmentListResponse(items, nextCursor);
+  }
+
   @Transactional(readOnly = true)
   public EnrollmentResponse getEnrollment(UUID enrollmentId, UUID userId, Set<String> roles) {
     Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
         .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found"));
 
-    // Check ownership or admin
-    if (!enrollment.getUserId().equals(userId) && !roles.contains("ADMIN")) {
-      throw new ForbiddenException("Not authorized to view this enrollment");
+    // Check ownership
+    if (enrollment.getUserId().equals(userId)) {
+      return mapToEnrollmentResponse(enrollment);
     }
 
-    return mapToEnrollmentResponse(enrollment);
+    // Check admin
+    if (roles.contains("ADMIN")) {
+      return mapToEnrollmentResponse(enrollment);
+    }
+
+    // Check instructor
+    if (roles.contains("INSTRUCTOR") && courseServiceClient.isUserInstructor(enrollment.getCourseId(), userId)) {
+      return mapToEnrollmentResponse(enrollment);
+    }
+
+    throw new ForbiddenException("Not authorized to view this enrollment");
   }
 
-  public void updateProgress(UUID enrollmentId, UpdateProgressRequest request, UUID userId) {
+  public void updateProgress(UUID enrollmentId, UpdateProgressRequest request, UUID userId, Set<String> roles) {
     Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
         .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found"));
 
-    if (!enrollment.getUserId().equals(userId)) {
+    boolean isOwner = enrollment.getUserId().equals(userId);
+    boolean isInstructor = roles.contains("INSTRUCTOR")
+        && courseServiceClient.isUserInstructor(enrollment.getCourseId(), userId);
+    boolean isAdmin = roles.contains("ADMIN");
+
+    if (!isOwner && !isInstructor && !isAdmin) {
       throw new ForbiddenException("Not authorized to update this enrollment");
     }
 
@@ -136,6 +213,8 @@ public class EnrollmentApplicationService {
     enrollmentRepository.save(enrollment);
 
     log.info("Progress updated for enrollment {}: {}/{} lessons", enrollmentId, completedLessons, totalLessons);
+    auditLogger.logSuccess("COURSE_PROGRESS_UPDATE", "ENROLLMENT", enrollmentId.toString(),
+        Map.of("lessonsCompleted", completedLessons, "totalLessons", totalLessons));
   }
 
   private EnrollmentResponse mapToEnrollmentResponse(Enrollment enrollment) {
@@ -147,18 +226,6 @@ public class EnrollmentApplicationService {
         enrollment.getProgressPct(),
         enrollment.getEnrolledAt(),
         enrollment.getCompletedAt());
-  }
-
-  public static class ResourceNotFoundException extends RuntimeException {
-    public ResourceNotFoundException(String message) {
-      super(message);
-    }
-  }
-
-  public static class ForbiddenException extends RuntimeException {
-    public ForbiddenException(String message) {
-      super(message);
-    }
   }
 
   public static class ConflictException extends RuntimeException {

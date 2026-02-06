@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
-import type { Assignment, Submission, SubmitRequest } from '@/shared/types/assignment'
+import { AssignmentSchema, SubmissionSchema, type Assignment, type Submission, type SubmitRequest } from '@/shared/types/assignment'
+import { z } from 'zod'
+import { type AppError } from '@/shared/types/error'
 
 export function useAssignments() {
   return useQuery({
     queryKey: ['assignments'],
     queryFn: async () => {
       const { data } = await apiClient.get<Assignment[]>('/assignments')
-      return data
+      return z.array(AssignmentSchema).parse(data)
     },
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -19,7 +21,7 @@ export function useAssignment(id: string) {
     queryKey: ['assignment', id],
     queryFn: async () => {
       const { data } = await apiClient.get<Assignment>(`/assignments/${id}`)
-      return data
+      return AssignmentSchema.parse(data)
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
@@ -33,9 +35,9 @@ export function useSubmission(assignmentId: string) {
     queryFn: async () => {
       try {
         const { data } = await apiClient.get<Submission>(`/submissions/assignment/${assignmentId}`)
-        return data
+        return SubmissionSchema.parse(data)
       } catch (err: any) {
-        if (err.response?.status === 404) return null
+        if (err.status === 404) return null
         throw err
       }
     },
@@ -47,10 +49,10 @@ export function useSubmission(assignmentId: string) {
 
 export function useSubmitAssignment() {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Submission, AppError, SubmitRequest>({
     mutationFn: async (request: SubmitRequest) => {
       const { data } = await apiClient.post<Submission>('/submissions', request)
-      return data
+      return SubmissionSchema.parse(data)
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['submission', data.assignmentId] })

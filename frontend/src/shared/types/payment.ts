@@ -1,33 +1,45 @@
-export type PaymentStatus = 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
+import { z } from 'zod'
 
-export interface Plan {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  interval: 'MONTHLY' | 'YEARLY' | 'ONE_TIME';
-  features: string[];
-}
+export const PaymentStatusSchema = z.enum(['PENDING', 'SUCCESS', 'FAILED', 'CANCELLED']);
 
-export interface PaymentIntent {
-  id: string;
-  clientSecret: string;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
-}
+export type PaymentStatus = z.infer<typeof PaymentStatusSchema>;
 
-export interface CreatePaymentRequest {
-  planId: string;
-  paymentMethodId?: string;
-}
+export const PlanSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  price: z.number(),
+  currency: z.string(),
+  interval: z.enum(['MONTHLY', 'YEARLY', 'ONE_TIME']),
+  features: z.array(z.string()),
+})
 
-export interface PaymentHistory {
-  id: string;
-  planId: string;
-  amount: number;
-  currency: string;
-  status: PaymentStatus;
-  createdAt: string;
-}
+export type Plan = z.infer<typeof PlanSchema>;
+
+export const PaymentIntentSchema = z.object({
+  id: z.string(),
+  clientSecret: z.string(),
+  amount: z.number(),
+  currency: z.string(),
+  status: PaymentStatusSchema,
+})
+
+export type PaymentIntent = z.infer<typeof PaymentIntentSchema>;
+
+export const CreatePaymentRequestSchema = z.object({
+  planId: z.string(),
+  paymentMethodId: z.string().optional(),
+})
+
+export type CreatePaymentRequest = z.infer<typeof CreatePaymentRequestSchema>;
+
+export const PaymentHistorySchema = z.object({
+  id: z.string(),
+  planId: z.string(),
+  amount: z.number(),
+  currency: z.string(),
+  status: PaymentStatusSchema,
+  createdAt: z.string(),
+})
+
+export type PaymentHistory = z.infer<typeof PaymentHistorySchema>;

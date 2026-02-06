@@ -3,9 +3,14 @@ package com.lms.course.application;
 import com.lms.course.api.*;
 import com.lms.course.domain.*;
 import com.lms.course.infrastructure.CourseEventPublisher;
+import com.lms.common.exception.ForbiddenException;
+import com.lms.common.exception.ResourceNotFoundException;
+import com.lms.common.audit.AuditLogger;
+import com.lms.common.features.FeatureFlagService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -30,23 +36,43 @@ public class CourseApplicationService {
   private final CourseRepository courseRepository;
   private final CourseModuleRepository moduleRepository;
   private final LessonRepository lessonRepository;
+  private final CourseInstructorRepository instructorRepository;
   private final CourseCacheService courseCacheService;
   private final CourseEventPublisher courseEventPublisher;
+  private final AuditLogger auditLogger;
+  private final FeatureFlagService featureFlagService;
+
+  @Value("${lms.course.max-total:100}")
+  private int maxTotalCourses;
 
   public CourseApplicationService(CourseRepository courseRepository,
       CourseModuleRepository moduleRepository,
       LessonRepository lessonRepository,
+      CourseInstructorRepository instructorRepository,
       CourseCacheService courseCacheService,
-      CourseEventPublisher courseEventPublisher) {
+      CourseEventPublisher courseEventPublisher,
+      AuditLogger auditLogger,
+      FeatureFlagService featureFlagService) {
     this.courseRepository = courseRepository;
     this.moduleRepository = moduleRepository;
     this.lessonRepository = lessonRepository;
+    this.instructorRepository = instructorRepository;
     this.courseCacheService = courseCacheService;
     this.courseEventPublisher = courseEventPublisher;
+    this.auditLogger = auditLogger;
+    this.featureFlagService = featureFlagService;
+  }
+
+  public void cleanupUserData(UUID userId) {
+    log.info("Cleaning up course data for user: {}", userId);
+    instructorRepository.deleteByUserId(userId);
+    // If we had reviews or ratings, we'd delete them here too
+    auditLogger.logSuccess("USER_DATA_CLEANUP", "USER", userId.toString());
   }
 
   @Transactional(readOnly = true)
-  public CourseListResponse listCourses(CourseStatus status, String cursor, Integer limit) {
+  public CourseListResponse listCourses(CourseStatus status, String cursor, Integer limit, UUID currentUserId,
+      Set<String> roles) {
     int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
 
     Instant cursorTime = (cursor != null && !cursor.isBlank())
@@ -54,13 +80,49 @@ public class CourseApplicationService {
         : Instant.now().plusSeconds(60);
 
     List<Course> courses;
-    if (status != null) {
-      courses = courseRepository.findByStatusAndCreatedAtLessThanOrderByCreatedAtDesc(status, cursorTime,
-          PageRequest.of(0, pageSize + 1));
+
+    if (roles.contains("ADMIN")) {
+      if (status != null) {
+        courses = courseRepository.findByStatusAndCreatedAtLessThanOrderByCreatedAtDesc(status, cursorTime,
+            PageRequest.of(0, pageSize + 1));
+      } else {
+        courses = courseRepository.findByCreatedAtLessThanOrderByCreatedAtDesc(cursorTime,
+            PageRequest.of(0, pageSize + 1));
+      }
+    } else if (roles.contains("INSTRUCTOR")) {
+      // Instructors see published courses + those they are instructors for
+      courses = courseRepository.findPublishedOrInstructor(currentUserId, cursorTime, PageRequest.of(0, pageSize + 1));
+      if (status != null) {
+        courses = courses.stream().filter(c -> c.getStatus() == status).collect(Collectors.toList());
+      }
     } else {
-      courses = courseRepository.findByCreatedAtLessThanOrderByCreatedAtDesc(cursorTime,
+      // Students only see published courses
+      courses = courseRepository.findByStatusAndCreatedAtLessThanOrderByCreatedAtDesc(CourseStatus.PUBLISHED,
+          cursorTime,
           PageRequest.of(0, pageSize + 1));
     }
+
+    boolean hasNext = courses.size() > pageSize;
+    List<Course> resultList = hasNext ? courses.subList(0, pageSize) : courses;
+
+    List<CourseResponse> items = resultList.stream()
+        .map(this::mapToCourseResponse)
+        .collect(Collectors.toList());
+
+    String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getCreatedAt().toString() : null;
+
+    return new CourseListResponse(items, nextCursor);
+  }
+
+  @Transactional(readOnly = true)
+  public CourseListResponse listMyCourses(String cursor, Integer limit, UUID currentUserId) {
+    int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
+    Instant cursorTime = (cursor != null && !cursor.isBlank())
+        ? Instant.parse(cursor)
+        : Instant.now().plusSeconds(60);
+
+    List<Course> courses = courseRepository.findByInstructorId(currentUserId, cursorTime,
+        PageRequest.of(0, pageSize + 1));
 
     boolean hasNext = courses.size() > pageSize;
     List<Course> resultList = hasNext ? courses.subList(0, pageSize) : courses;
@@ -86,6 +148,17 @@ public class CourseApplicationService {
   }
 
   public CourseDetailResponse createCourse(CreateCourseRequest request, UUID currentUserId, Set<String> roles) {
+    if (!featureFlagService.isEnabled("course-creation-enabled")) {
+      throw new ForbiddenException("Course creation is temporarily disabled");
+    }
+
+    // Check system-wide course quota
+    long currentCount = courseRepository.count();
+    if (currentCount >= maxTotalCourses) {
+      log.warn("System course quota exceeded ({} / {})", currentCount, maxTotalCourses);
+      throw new ForbiddenException("System course quota exceeded. Contact support.");
+    }
+
     // Only instructors and admins can create courses
     if (!roles.contains("INSTRUCTOR") && !roles.contains("ADMIN")) {
       throw new ForbiddenException("Only instructors and admins can create courses");
@@ -113,6 +186,7 @@ public class CourseApplicationService {
     Course saved = courseRepository.save(course);
     courseEventPublisher.publishCourseCreated(saved);
     log.info("Course created: {} by user: {}", courseId, currentUserId);
+    auditLogger.logSuccess("COURSE_CREATE", "COURSE", courseId.toString(), Map.of("title", saved.getTitle()));
 
     return courseCacheService.mapToCourseDetailResponse(saved);
   }
@@ -141,6 +215,24 @@ public class CourseApplicationService {
     courseEventPublisher.publishCourseUpdated(updated);
     courseCacheService.evictCourse(courseId);
     log.info("Course updated: {} by user: {}", courseId, currentUserId);
+    auditLogger.logSuccess("COURSE_UPDATE", "COURSE", courseId.toString(),
+        Map.of("status", updated.getStatus().name()));
+
+    return courseCacheService.mapToCourseDetailResponse(updated);
+  }
+
+  @Transactional
+  public CourseDetailResponse updateCourseStatus(UUID courseId, CourseStatus status) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    CourseStatus oldStatus = course.getStatus();
+    course.setStatus(status);
+    Course updated = courseRepository.save(course);
+
+    courseCacheService.evictCourse(courseId);
+    auditLogger.logSuccess("COURSE_STATUS_MODERATE", "COURSE", courseId.toString(),
+        Map.of("oldStatus", oldStatus, "newStatus", status));
 
     return courseCacheService.mapToCourseDetailResponse(updated);
   }
@@ -157,6 +249,7 @@ public class CourseApplicationService {
     courseEventPublisher.publishCourseDeleted(courseId.toString());
     courseCacheService.evictCourse(courseId);
     log.info("Course deleted: {} by user: {}", courseId, currentUserId);
+    auditLogger.logSuccess("COURSE_DELETE", "COURSE", courseId.toString());
   }
 
   public ModuleResponse createModule(UUID courseId, CreateModuleRequest request,
@@ -266,6 +359,10 @@ public class CourseApplicationService {
     return course.modules();
   }
 
+  public boolean isUserInstructor(UUID courseId, UUID userId) {
+    return courseRepository.isUserInstructor(courseId, userId);
+  }
+
   private boolean canViewCourse(CourseDetailResponse course, UUID currentUserId, Set<String> roles) {
     if (roles.contains("ADMIN")) {
       return true;
@@ -371,12 +468,6 @@ public class CourseApplicationService {
     }
   }
 
-  public static class ForbiddenException extends RuntimeException {
-    public ForbiddenException(String message) {
-      super(message);
-    }
-  }
-
   public static class ConflictException extends RuntimeException {
     public ConflictException(String message) {
       super(message);
@@ -385,6 +476,12 @@ public class CourseApplicationService {
 
   public static class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {
+      super(message);
+    }
+  }
+
+  public static class ForbiddenException extends RuntimeException {
+    public ForbiddenException(String message) {
       super(message);
     }
   }

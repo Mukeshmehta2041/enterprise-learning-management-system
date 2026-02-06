@@ -44,10 +44,10 @@ export function PricingPage() {
             key={plan.id}
             className={cn(
               "relative flex flex-col h-full",
-              plan.name.toLowerCase().includes('pro') && "border-2 border-indigo-500 shadow-indigo-100 shadow-lg"
+              plan.name?.toLowerCase().includes('pro') && "border-2 border-indigo-500 shadow-indigo-100 shadow-lg"
             )}
           >
-            {plan.name.toLowerCase().includes('pro') && (
+            {plan.name?.toLowerCase().includes('pro') && (
               <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-indigo-500 text-white shadow-sm">
                   MOST POPULAR
@@ -60,12 +60,14 @@ export function PricingPage() {
               <TextMuted className="mt-2 min-h-[48px]">{plan.description}</TextMuted>
               <div className="mt-6 flex items-baseline">
                 <span className="text-4xl font-bold text-slate-900">${plan.price}</span>
-                <span className="ml-1 text-slate-500">/{plan.interval.toLowerCase().replace('_time', '')}</span>
+                <span className="ml-1 text-slate-500">
+                  {plan.interval === 'ONE_TIME' ? '/one-time' : `/${plan.interval?.toLowerCase() || 'month'}`}
+                </span>
               </div>
             </div>
 
             <ul className="space-y-4 mb-8 flex-grow">
-              {plan.features.map((feature: string, idx: number) => (
+              {plan.features?.map((feature: string, idx: number) => (
                 <li key={idx} className="flex items-start gap-3">
                   <div className="mt-1 flex-shrink-0 h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center">
                     <Check className="h-3 w-3 text-emerald-600" />
@@ -77,7 +79,7 @@ export function PricingPage() {
 
             <Button
               className="w-full"
-              variant={plan.name.toLowerCase().includes('pro') ? 'primary' : 'outline'}
+              variant={plan.name?.toLowerCase().includes('pro') ? 'primary' : 'outline'}
               size="lg"
               onClick={() => handleSubscribe(plan.id)}
               disabled={createPayment.isPending}

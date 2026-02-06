@@ -7,7 +7,11 @@ import org.springframework.web.context.annotation.RequestScope;
 @Slf4j
 public class RBACEnforcer {
 
-  public void checkResourceOwnership(String resourceOwnerId, UserContext userContext) {
+  public void checkResourceOwnership(String resourceOwnerId) {
+    UserContext userContext = UserContextHolder.getContext();
+    if (userContext == null) {
+      throw new AccessDeniedException("No user context found");
+    }
     if (userContext.isAdmin()) {
       return; // Admins can access everything
     }
@@ -17,7 +21,11 @@ public class RBACEnforcer {
     }
   }
 
-  public void checkResourceInstructor(String courseInstructorId, UserContext userContext) {
+  public void checkResourceInstructor(String courseInstructorId) {
+    UserContext userContext = UserContextHolder.getContext();
+    if (userContext == null) {
+      throw new AccessDeniedException("No user context found");
+    }
     if (userContext.isAdmin()) {
       return; // Admins can access everything
     }
@@ -27,7 +35,11 @@ public class RBACEnforcer {
     }
   }
 
-  public void checkRole(UserContext userContext, String... allowedRoles) {
+  public void checkRole(String... allowedRoles) {
+    UserContext userContext = UserContextHolder.getContext();
+    if (userContext == null) {
+      throw new AccessDeniedException("No user context found");
+    }
     if (!userContext.hasAnyRole(allowedRoles)) {
       throw new AccessDeniedException("Your role does not have permission to access this resource");
     }

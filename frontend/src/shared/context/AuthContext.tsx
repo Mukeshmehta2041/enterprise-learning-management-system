@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import type { User } from '@/shared/types/auth'
+import { UserSchema, type User } from '@/shared/types/user'
 import { apiClient } from '@/shared/api/client'
 
 interface AuthContextType {
@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchCurrentUser = async () => {
     try {
       const response = await apiClient.get<User>('/users/me')
-      setUser(response.data)
+      setUser(UserSchema.parse(response.data))
     } catch (error) {
       console.error('Failed to fetch user', error)
       localStorage.removeItem('accessToken')

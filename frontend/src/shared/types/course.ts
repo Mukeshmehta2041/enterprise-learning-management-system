@@ -1,57 +1,60 @@
-export interface Course {
-  id: string
-  title: string
-  description: string
-  instructorId: string
-  instructorName: string
-  thumbnailUrl?: string
-  category: string
-  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
-  price: number
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-  totalEnrollments: number
-  rating: number
-  duration: string // e.g. "10h 30m"
-  createdAt: string
-  updatedAt: string
-}
+import { z } from 'zod'
 
-export interface Lesson {
-  id: string
-  title: string
-  description?: string
-  contentUrl?: string
-  contentType: 'VIDEO' | 'DOCUMENT' | 'QUIZ'
-  duration?: string
-  order: number
-}
+export const LessonSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  contentUrl: z.string().optional(),
+  contentType: z.enum(['VIDEO', 'DOCUMENT', 'QUIZ']),
+  duration: z.string().optional(),
+  order: z.number(),
+})
 
-export interface Module {
-  id: string
-  title: string
-  description?: string
-  order: number
-  lessons: Lesson[]
-}
+export type Lesson = z.infer<typeof LessonSchema>
 
-export interface CourseDetail extends Course {
-  modules: Module[]
-}
+export const ModuleSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  order: z.number(),
+  lessons: z.array(LessonSchema),
+})
 
-export interface CourseFilters {
-  page?: number
-  size?: number
-  category?: string
-  level?: string
-  status?: string
-  search?: string
-}
+export type Module = z.infer<typeof ModuleSchema>
 
-export interface PaginatedResponse<T> {
-  content: T[]
-  pageNumber: number
-  pageSize: number
-  totalElements: number
-  totalPages: number
-  last: boolean
-}
+export const CourseSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  instructorId: z.string(),
+  instructorName: z.string(),
+  thumbnailUrl: z.string().optional(),
+  category: z.string(),
+  level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  price: z.number(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
+  totalEnrollments: z.number(),
+  rating: z.number(),
+  duration: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type Course = z.infer<typeof CourseSchema>
+
+export const CourseDetailSchema = CourseSchema.extend({
+  modules: z.array(ModuleSchema),
+})
+
+export type CourseDetail = z.infer<typeof CourseDetailSchema>
+
+export const CourseFiltersSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.number().optional(),
+  category: z.string().optional(),
+  level: z.string().optional(),
+  status: z.string().optional(),
+  search: z.string().optional(),
+})
+
+export type CourseFilters = z.infer<typeof CourseFiltersSchema>

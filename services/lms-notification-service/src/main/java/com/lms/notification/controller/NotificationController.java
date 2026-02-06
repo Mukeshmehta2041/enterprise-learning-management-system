@@ -24,6 +24,19 @@ public class NotificationController {
   @Autowired(required = false)
   private RBACEnforcer rbacEnforcer;
 
+  public record MarkAsReadRequest(List<String> notificationIds) {
+  }
+
+  @GetMapping
+  public ResponseEntity<List<InAppNotification>> getMyNotifications(
+      @RequestAttribute(required = false) UserContext userContext) {
+    if (userContext == null || userContext.getUserId() == null) {
+      log.warn("No user context found for notifications request");
+      return ResponseEntity.ok(List.of());
+    }
+    return getUserNotifications(userContext.getUserId(), userContext);
+  }
+
   @GetMapping("/user/{userId}")
   public ResponseEntity<List<InAppNotification>> getUserNotifications(
       @PathVariable String userId,
@@ -42,6 +55,7 @@ public class NotificationController {
     List<InAppNotification> notifications = notificationIds.stream()
         .map(id -> (InAppNotification) redisTemplate.opsForValue()
             .get("notifications:" + userId + ":" + id))
+        .filter(java.util.Objects::nonNull)
         .toList();
 
     return ResponseEntity.ok(notifications);
@@ -70,6 +84,30 @@ public class NotificationController {
       log.info("Notification marked as read: {}", notificationId);
     }
 
+    return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/mark-as-read")
+  public ResponseEntity<Void> markMultipleAsRead(
+      @RequestBody MarkAsReadRequest request,
+      @RequestAttribute(required = false) UserContext userContext) {
+
+    if (userContext == null || userContext.getUserId() == null) {
+      return ResponseEntity.badRequest().build();
+    }
+
+    String userId = userContext.getUserId();
+    for (String notificationId : request.notificationIds()) {
+      String key = "notifications:" + userId + ":" + notificationId;
+      InAppNotification notification = (InAppNotification) redisTemplate.opsForValue().get(key);
+
+      if (notification != null) {
+        notification.setRead(true);
+        notification.setReadAt(Instant.now());
+        redisTemplate.opsForValue().set(key, notification);
+      }
+    }
+    log.info("Marked {} notifications as read for user {}", request.notificationIds().size(), userId);
     return ResponseEntity.ok().build();
   }
 }

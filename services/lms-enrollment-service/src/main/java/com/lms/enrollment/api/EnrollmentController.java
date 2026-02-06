@@ -57,6 +57,21 @@ public class EnrollmentController {
     return ResponseEntity.ok(response);
   }
 
+  @GetMapping("/course/{courseId}")
+  public ResponseEntity<EnrollmentListResponse> listEnrollmentsByCourse(
+      @PathVariable UUID courseId,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) Integer limit,
+      @RequestHeader(HEADER_USER_ID) String userIdHeader,
+      @RequestHeader(value = HEADER_ROLES, required = false) String rolesHeader) {
+
+    UUID userId = UUID.fromString(userIdHeader);
+    Set<String> roles = parseRoles(rolesHeader);
+
+    EnrollmentListResponse response = enrollmentService.listEnrollmentsByCourse(courseId, userId, roles, cursor, limit);
+    return ResponseEntity.ok(response);
+  }
+
   @GetMapping("/{enrollmentId}")
   public ResponseEntity<EnrollmentResponse> getEnrollment(
       @PathVariable UUID enrollmentId,
@@ -74,10 +89,12 @@ public class EnrollmentController {
   public ResponseEntity<Void> updateProgress(
       @PathVariable UUID enrollmentId,
       @Valid @RequestBody UpdateProgressRequest request,
-      @RequestHeader(HEADER_USER_ID) String userIdHeader) {
+      @RequestHeader(HEADER_USER_ID) String userIdHeader,
+      @RequestHeader(value = HEADER_ROLES, required = false) String rolesHeader) {
 
     UUID userId = UUID.fromString(userIdHeader);
-    enrollmentService.updateProgress(enrollmentId, request, userId);
+    Set<String> roles = parseRoles(rolesHeader);
+    enrollmentService.updateProgress(enrollmentId, request, userId, roles);
     return ResponseEntity.noContent().build();
   }
 

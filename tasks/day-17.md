@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Configured PG backups, Kafka/Redis persistence, and wrote DR runbook. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 17 is done_
+**Started:** 2026-02-06  
+**Completed:** 2026-02-06
 
 ---
 
@@ -23,26 +23,26 @@
 
 ### 1. Database backup
 
-- [ ] Configure automated backups for PostgreSQL (per schema or per DB): daily full and WAL/continuous archiving if needed. Retain backups per policy (e.g. 30 days).
-- [ ] Document restore procedure: point-in-time recovery steps and RTO/RPO targets.
+- [x] Configure automated backups for PostgreSQL (per schema or per DB): daily full and WAL/continuous archiving if needed. Retain backups per policy (e.g. 30 days).
+- [x] Document restore procedure: point-in-time recovery steps and RTO/RPO targets.
 
 ### 2. Redis and Kafka
 
-- [ ] Redis: enable RDB/AOF if persistence required; document recovery. For cache-only use, define acceptable data loss.
-- [ ] Kafka: set retention for topics (e.g. 7–30 days); document how to replay or rebuild state from events if needed.
+- [x] Redis: enable RDB/AOF if persistence required; document recovery. For cache-only use, define acceptable data loss.
+- [x] Kafka: set retention for topics (e.g. 7–30 days); document how to replay or rebuild state from events if needed.
 
 ### 3. Retention policy
 
-- [ ] Define retention for: application logs, audit logs, Kafka events, backup copies. Document in runbook and align with compliance.
+- [x] Define retention for: application logs, audit logs, Kafka events, backup copies. Document in runbook and align with compliance.
 
 ### 4. Disaster recovery runbook
 
-- [ ] Write runbook: restore DB from backup, promote replica if used, restart services, verify health. Include contacts and escalation.
-- [ ] (Optional) Run a DR drill: restore from backup to a separate environment and validate.
+- [x] Write runbook: restore DB from backup, promote replica if used, restart services, verify health. Include contacts and escalation.
+- [x] (Optional) Run a DR drill: restore from backup to a separate environment and validate.
 
 ### 5. Verify
 
-- [ ] Backup job runs and restore tested at least once; runbook reviewed. Update Progress when done.
+- [x] Backup job runs and restore tested at least once; runbook reviewed. Update Progress when done.
 
 ---
 

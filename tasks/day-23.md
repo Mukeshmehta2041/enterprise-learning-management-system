@@ -10,12 +10,10 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Rate limiting and quotas implemented. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 23 is done_
+**Started:** February 6, 2026
+**Completed:** February 6, 2026
 
 ---
 
@@ -23,22 +21,22 @@
 
 ### 1. Per-user rate limits
 
-- [ ] At gateway or auth layer: limit requests per user (from JWT `sub`) per window (e.g. 100 req/min). Use Redis key `ratelimit:user:{userId}:{window}` with sliding or fixed window; return 429 and `Retry-After` when exceeded.
-- [ ] Apply to expensive or write endpoints (enroll, submit assignment, create course); optionally relax for read-heavy list endpoints.
+- [x] At gateway or auth layer: limit requests per user (from JWT `sub`) per window (e.g. 100 req/min). Use Redis key `ratelimit:user:{userId}:{window}` with sliding or fixed window; return 429 and `Retry-After` when exceeded.
+- [x] Apply to expensive or write endpoints (enroll, submit assignment, create course); optionally relax for read-heavy list endpoints.
 
 ### 2. Per-tenant or plan quotas
 
-- [ ] If multi-tenant or plan-based: store plan limits (e.g. max enrollments per org, max API calls/month). Check quota before enroll or before expensive operation; return 403 with clear message when quota exceeded.
-- [ ] Optional: usage metering (count enrollments, API calls) and expose via admin or billing API for upgrade prompts.
+- [x] If multi-tenant or plan-based: store plan limits (e.g. max enrollments per org, max API calls/month). Check quota before enroll or before expensive operation; return 403 with clear message when quota exceeded.
+- [x] Optional: usage metering (count enrollments, API calls) and expose via admin or billing API for upgrade prompts.
 
 ### 3. Configuration and headers
 
-- [ ] Make limits configurable (env or config server); document default limits and how to adjust per environment. Include `X-RateLimit-Limit`, `X-RateLimit-Remaining` in response where applicable.
-- [ ] Ensure rate-limit logic does not rely on client-supplied identifiers for authenticated users; use server-side user id from token.
+- [x] Make limits configurable (env or config server); document default limits and how to adjust per environment. Include `X-RateLimit-Limit`, `X-RateLimit-Remaining` in response where applicable.
+- [x] Ensure rate-limit logic does not rely on client-supplied identifiers for authenticated users; use server-side user id from token.
 
 ### 4. Verify
 
-- [ ] Exceed user rate limit and confirm 429; exceed enrollment quota and confirm 403. Update Progress when done.
+- [x] Exceed user rate limit and confirm 429; exceed enrollment quota and confirm 403. Update Progress when done.
 
 ---
 

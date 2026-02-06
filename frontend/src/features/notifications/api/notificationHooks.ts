@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/shared/api/client';
-import type { Notification, MarkAsReadRequest } from '@/shared/types/notification';
+import { NotificationSchema, type Notification, type MarkAsReadRequest } from '@/shared/types/notification';
+import { z } from 'zod';
 
 export const useNotifications = () => {
   return useQuery<Notification[]>({
     queryKey: ['notifications'],
     queryFn: async () => {
       const response = await apiClient.get('/notifications');
-      return response.data;
+      return z.array(NotificationSchema).parse(response.data);
     },
     staleTime: 30 * 1000,
     gcTime: 10 * 60 * 1000,

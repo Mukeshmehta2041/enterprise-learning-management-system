@@ -40,6 +40,16 @@ Run unit and integration tests in CI; contract tests when gateway or service API
 
 ## API documentation
 
-- **OpenAPI 3:** Describe each service’s API with OpenAPI (Swagger) annotations or separate YAML; aggregate at gateway for a single doc.
-- **Versioning:** Document version in path (`/api/v1/`) and in OpenAPI `info.version`. For deprecated endpoints, set `deprecated: true` and document sunset date in description or extension.
-- **Swagger UI:** Expose Swagger UI only in non-prod (e.g. dev, staging) or behind auth in prod.
+...
+
+## Feature Flags
+
+- **Mechanism:** Use `FeatureFlagService` (from `lms-common`) which checks Redis overrides first, then falls back to static application properties.
+- **Rollout Process:**
+  1. **Add Flag:** Define a new flag in `application.yml` under `lms.features.flags.<name>`.
+  2. **Implement:** Wrap new code or behavioral changes using `featureFlagService.isEnabled("<name>")`.
+  3. **Deploy:** Deploy with the flag set to `false` (default).
+  4. **Hot Toggle:** Enable for testing or gradual rollout by setting a Redis override: `POST /api/v1/internal/features/<name>/override?enabled=true`.
+  5. **Finalize:** Once stable, update the static property to `true` and eventually remove the check and flag from code.
+- **Safe Changes:** Use flags to hide incomplete features and support side-by-side versions during migrations.
+

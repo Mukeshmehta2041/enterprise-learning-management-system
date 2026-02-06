@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.List;
 
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
-    Optional<Submission> findByAssignmentIdAndStudentId(UUID assignmentId, UUID studentId);
-    List<Submission> findByAssignmentId(UUID assignmentId);
+  Optional<Submission> findByAssignmentIdAndStudentId(UUID assignmentId, UUID studentId);
+
+  List<Submission> findByAssignmentId(UUID assignmentId);
+
+  void deleteAllByStudentId(UUID studentId);
 }

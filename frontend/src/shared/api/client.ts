@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { handleApiError } from './error-handler'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -27,6 +28,6 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('accessToken')
       // Optional: window.location.href = '/login'
     }
-    return Promise.reject(error)
+    return Promise.reject(handleApiError(error))
   }
 )

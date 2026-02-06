@@ -1,5 +1,7 @@
 package com.lms.enrollment.api;
 
+import com.lms.common.exception.ForbiddenException;
+import com.lms.common.exception.ResourceNotFoundException;
 import com.lms.enrollment.application.EnrollmentApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +19,13 @@ public class GlobalExceptionHandler {
 
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  @ExceptionHandler(EnrollmentApplicationService.ResourceNotFoundException.class)
-  public ResponseEntity<ErrorResponse> handleNotFound(EnrollmentApplicationService.ResourceNotFoundException ex) {
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
     return errorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
   }
 
-  @ExceptionHandler(EnrollmentApplicationService.ForbiddenException.class)
-  public ResponseEntity<ErrorResponse> handleForbidden(EnrollmentApplicationService.ForbiddenException ex) {
+  @ExceptionHandler(ForbiddenException.class)
+  public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex) {
     return errorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
   }
 

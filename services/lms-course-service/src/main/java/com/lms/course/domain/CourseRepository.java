@@ -30,4 +30,15 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
   @Query("SELECT CASE WHEN COUNT(ci) > 0 THEN true ELSE false END " +
       "FROM CourseInstructor ci WHERE ci.course.id = :courseId AND ci.userId = :userId")
   boolean isUserInstructor(@Param("courseId") UUID courseId, @Param("userId") UUID userId);
+
+  @Query("SELECT DISTINCT c FROM Course c LEFT JOIN c.instructors ci " +
+      "WHERE (c.status = 'PUBLISHED' OR ci.userId = :userId) " +
+      "AND c.createdAt < :createdAt ORDER BY c.createdAt DESC")
+  List<Course> findPublishedOrInstructor(@Param("userId") UUID userId, @Param("createdAt") Instant createdAt,
+      Pageable pageable);
+
+  @Query("SELECT c FROM Course c JOIN c.instructors ci " +
+      "WHERE ci.userId = :userId AND c.createdAt < :createdAt ORDER BY c.createdAt DESC")
+  List<Course> findByInstructorId(@Param("userId") UUID userId, @Param("createdAt") Instant createdAt,
+      Pageable pageable);
 }

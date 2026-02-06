@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Database tuning, HikariCP config, Redis TTL, and k6 load tests implemented. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 15 is done_
+**Started:** 2026-02-06  
+**Completed:** 2026-02-06
 
 ---
 
@@ -23,26 +23,26 @@
 
 ### 1. Load testing
 
-- [ ] Add load tests (e.g. Gatling, k6, or JMeter): login flow, list courses, enroll, get progress. Define target RPS and p95/p99 latency; run against staging.
-- [ ] Document baseline metrics and run periodically in CI or before releases.
+- [x] Add load tests (e.g. Gatling, k6, or JMeter): login flow, list courses, enroll, get progress. Define target RPS and p95/p99 latency; run against staging.
+- [x] Document baseline metrics and run periodically in CI or before releases.
 
 ### 2. Database tuning
 
-- [ ] Review slow queries (logs or APM); add or adjust indexes per [04-database.md](../docs/04-database.md). Ensure cursor-based pagination queries use indexes.
-- [ ] Configure connection pool (HikariCP) per service: max pool size, idle timeout; align with DB max_connections.
+- [x] Review slow queries (logs or APM); add or adjust indexes per [04-database.md](../docs/04-database.md). Ensure cursor-based pagination queries use indexes.
+- [x] Configure connection pool (HikariCP) per service: max pool size, idle timeout; align with DB max_connections.
 
 ### 3. Cache and Redis
 
-- [ ] Verify Redis cache hit ratio for course by ID; tune TTL and invalidation. Use Redis for rate-limiting counters; avoid large values.
-- [ ] Consider caching read-heavy, non-personalized data (e.g. course list for anonymous or first page).
+- [x] Verify Redis cache hit ratio for course by ID; tune TTL and invalidation. Use Redis for rate-limiting counters; avoid large values.
+- [x] Consider caching read-heavy, non-personalized data (e.g. course list for anonymous or first page).
 
 ### 4. Resilience under load
 
-- [ ] Run stress test beyond capacity; confirm graceful degradation (e.g. 503, circuit open) and no cascade failure. Tune timeouts and circuit breaker thresholds.
+- [x] Run stress test beyond capacity; confirm graceful degradation (e.g. 503, circuit open) and no cascade failure. Tune timeouts and circuit breaker thresholds.
 
 ### 5. Verify
 
-- [ ] Record baseline and document how to run load tests; address critical bottlenecks. Update Progress when done.
+- [x] Record baseline and document how to run load tests; address critical bottlenecks. Update Progress when done.
 
 ---
 

@@ -5,10 +5,10 @@ import * as z from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
 import { Button, Input, Card, Container } from '@/shared/ui'
+import type { AppError } from '@/shared/types/error'
 
 const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  displayName: z.string().min(2, 'Display name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 })
@@ -27,16 +27,15 @@ export function RegisterPage() {
     resolver: zodResolver(registerSchema),
   })
 
-  const registerMutation = useMutation({
+  const registerMutation = useMutation<void, AppError, RegisterFormValues>({
     mutationFn: async (values: RegisterFormValues) => {
-      await apiClient.post('/api/v1/users', values)
+      await apiClient.post('/users', values)
     },
     onSuccess: () => {
       navigate('/login', { state: { message: 'Registration successful! Please sign in.' } })
     },
-    onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || 'Registration failed. Try again.'
-      setError('root', { message: errorMessage })
+    onError: (error: AppError) => {
+      setError('root', { message: error.message || 'Registration failed. Try again.' })
     },
   })
 
@@ -48,20 +47,12 @@ export function RegisterPage() {
     <Container size="sm" className="flex min-h-screen items-center justify-center py-12">
       <Card className="w-full" title="Create an account" description="Join our learning platform today">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="First Name"
-              placeholder="John"
-              error={errors.firstName?.message}
-              {...register('firstName')}
-            />
-            <Input
-              label="Last Name"
-              placeholder="Doe"
-              error={errors.lastName?.message}
-              {...register('lastName')}
-            />
-          </div>
+          <Input
+            label="Full Name"
+            placeholder="John Doe"
+            error={errors.displayName?.message}
+            {...register('displayName')}
+          />
           <Input
             label="Email"
             type="email"

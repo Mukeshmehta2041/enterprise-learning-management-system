@@ -43,120 +43,126 @@ function LoadingSpinner() {
   )
 }
 
-export function AppRouter() {
+export function AppRoutes() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-          {/* Authenticated Routes wrapped in AppLayout and ProtectedRoute */}
-          <Route element={<ProtectedRoute />}>
-            <Route
-              path="/"
-              element={
-                <AppLayout>
-                  <HomePage />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <AppLayout>
-                  <MyLearningPage />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/courses"
-              element={
-                <AppLayout>
-                  <CourseListPage />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/courses/:courseId"
-              element={
-                <AppLayout>
-                  <CourseDetailPage />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/courses/:courseId/lesson/:lessonId"
-              element={<LessonPlayerPage />}
-            />
-            <Route
-              path="/assignments"
-              element={
-                <AppLayout>
-                  <AssignmentListPage />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/assignments/:assignmentId"
-              element={
-                <AppLayout>
-                  <AssignmentDetailPage />
-                </AppLayout>
-              }
-            />
+        {/* Authenticated Routes wrapped in AppLayout and ProtectedRoute */}
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/"
+            element={
+              <AppLayout>
+                <HomePage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <AppLayout>
+                <MyLearningPage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/courses"
+            element={
+              <AppLayout>
+                <CourseListPage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/courses/:courseId"
+            element={
+              <AppLayout>
+                <CourseDetailPage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/courses/:courseId/lesson/:lessonId"
+            element={<LessonPlayerPage />}
+          />
+          <Route
+            path="/assignments"
+            element={
+              <AppLayout>
+                <AssignmentListPage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/assignments/:assignmentId"
+            element={
+              <AppLayout>
+                <AssignmentDetailPage />
+              </AppLayout>
+            }
+          />
 
-            {/* Instructor & Admin Only Routes */}
-            <Route element={<ProtectedRoute requiredRoles={['INSTRUCTOR', 'ADMIN']} />}>
-              <Route
-                path="/analytics"
-                element={
-                  <AppLayout>
-                    <AnalyticsDashboardPage />
-                  </AppLayout>
-                }
-              />
-            </Route>
-
+          {/* Instructor & Admin Only Routes */}
+          <Route element={<ProtectedRoute requiredRoles={['INSTRUCTOR', 'ADMIN']} />}>
             <Route
-              path="/settings"
+              path="/analytics"
               element={
                 <AppLayout>
-                  <PlaceholderPage title="Settings" />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <AppLayout>
-                  <NotificationPage />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/pricing"
-              element={
-                <AppLayout>
-                  <PricingPage />
-                </AppLayout>
-              }
-            />
-            <Route
-              path="/payments/checkout/:intentId"
-              element={
-                <AppLayout>
-                  <CheckoutPage />
+                  <AnalyticsDashboardPage />
                 </AppLayout>
               }
             />
           </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Suspense>
+          <Route
+            path="/settings"
+            element={
+              <AppLayout>
+                <PlaceholderPage title="Settings" />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <AppLayout>
+                <NotificationPage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/pricing"
+            element={
+              <AppLayout>
+                <PricingPage />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/payments/checkout/:intentId"
+            element={
+              <AppLayout>
+                <CheckoutPage />
+              </AppLayout>
+            }
+          />
+        </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Suspense>
+  )
+}
+
+export function AppRouter() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
     </BrowserRouter>
   )
 }

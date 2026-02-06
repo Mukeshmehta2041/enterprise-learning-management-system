@@ -6,5 +6,7 @@ import java.util.UUID;
 import java.util.Optional;
 
 public interface GradeRepository extends JpaRepository<Grade, UUID> {
-    Optional<Grade> findBySubmissionId(UUID submissionId);
+  Optional<Grade> findBySubmissionId(UUID submissionId);
+
+  void deleteBySubmissionStudentId(UUID studentId);
 }

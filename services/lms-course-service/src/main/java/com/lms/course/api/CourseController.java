@@ -37,7 +37,12 @@ public class CourseController {
   public ResponseEntity<CourseListResponse> listCourses(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String cursor,
-      @RequestParam(required = false) Integer limit) {
+      @RequestParam(required = false) Integer limit,
+      @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
+
+    UUID userId = currentUserId != null ? UUID.fromString(currentUserId) : null;
+    Set<String> roles = parseRoles(currentRolesHeader);
 
     CourseStatus courseStatus = null;
     if (status != null && !status.isBlank()) {
@@ -48,8 +53,28 @@ public class CourseController {
       }
     }
 
-    CourseListResponse response = courseService.listCourses(courseStatus, cursor, limit);
+    CourseListResponse response = courseService.listCourses(courseStatus, cursor, limit, userId, roles);
     return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/me")
+  @Operation(summary = "List my courses", description = "Retrieves courses where the user is an instructor")
+  public ResponseEntity<CourseListResponse> listMyCourses(
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) Integer limit,
+      @RequestHeader(value = HEADER_USER_ID) String currentUserId) {
+
+    UUID userId = UUID.fromString(currentUserId);
+    CourseListResponse response = courseService.listMyCourses(cursor, limit, userId);
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/{courseId}/validate-instructor/{userId}")
+  public ResponseEntity<Boolean> validateInstructor(
+      @PathVariable UUID courseId,
+      @PathVariable UUID userId) {
+    boolean isInstructor = courseService.isUserInstructor(courseId, userId);
+    return ResponseEntity.ok(isInstructor);
   }
 
   @GetMapping("/{courseId}")

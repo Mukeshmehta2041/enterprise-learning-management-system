@@ -16,10 +16,19 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
 
   Page<Enrollment> findByUserId(UUID userId, Pageable pageable);
 
+  long countByUserId(UUID userId);
+
   List<Enrollment> findByUserIdAndEnrolledAtLessThanOrderByEnrolledAtDesc(UUID userId, Instant enrolledAt,
+      Pageable pageable);
+
+  List<Enrollment> findByCourseIdAndEnrolledAtLessThanOrderByEnrolledAtDesc(UUID courseId, Instant enrolledAt,
       Pageable pageable);
 
   Page<Enrollment> findByCourseId(UUID courseId, Pageable pageable);
 
   boolean existsByUserIdAndCourseId(UUID userId, UUID courseId);
+
+  List<Enrollment> findAllByUserId(UUID userId);
+
+  void deleteByUserId(UUID userId);
 }

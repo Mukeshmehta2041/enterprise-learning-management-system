@@ -12,7 +12,13 @@ export function AppLayout({ children }: PropsWithChildren) {
   const { data: notifications } = useNotifications()
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0
-  // const userInitials = user ? `${user?.firstName[0]}${user?.lastName[0]}` : '??'
+
+  const displayName = user?.displayName || user?.firstName || user?.email?.split('@')[0] || 'Guest'
+  const userInitials = user
+    ? (user.displayName ? user.displayName.split(' ').map(n => n[0]).join('') :
+      user.firstName && user.lastName ? `${user.firstName[0]}${user.lastName[0]}` :
+        user.email[0]).toUpperCase().substring(0, 2)
+    : '??'
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -77,10 +83,10 @@ export function AppLayout({ children }: PropsWithChildren) {
             <div className="h-4 w-[1px] bg-slate-200 mx-2" />
             <div className="flex items-center gap-2 px-2 py-1 rounded-full">
               <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs uppercase">
-                {/* {userInitials} */}
+                {userInitials}
               </div>
               <span className="text-sm font-medium text-slate-700 hidden lg:block">
-                {user?.firstName}
+                {displayName}
               </span>
             </div>
           </div>

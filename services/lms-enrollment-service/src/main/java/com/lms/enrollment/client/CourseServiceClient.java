@@ -46,6 +46,18 @@ public class CourseServiceClient {
     return false;
   }
 
+  public boolean isUserInstructor(UUID courseId, UUID userId) {
+    try {
+      return Boolean.TRUE.equals(restClient.get()
+          .uri("/api/v1/courses/{courseId}/validate-instructor/{userId}", courseId, userId)
+          .retrieve()
+          .body(Boolean.class));
+    } catch (Exception e) {
+      log.error("Error validating instructor for course {}: {}", courseId, e.getMessage());
+      return false;
+    }
+  }
+
   @CircuitBreaker(name = "courseService", fallbackMethod = "getTotalLessonsFallback")
   @Retry(name = "courseService")
   public int getTotalLessons(UUID courseId) {

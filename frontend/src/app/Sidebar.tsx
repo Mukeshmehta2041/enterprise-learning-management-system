@@ -42,8 +42,16 @@ export function Sidebar({ onClose, className }: SidebarProps) {
     navigate('/login')
   }
 
-  // const userInitials = user ? `${user.firstName[0]}${user.lastName[0]}` : '??'
-  const fullName = user ? `${user.firstName} ${user.lastName}` : 'Guest'
+  const fullName = user
+    ? user.displayName || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email)
+    : 'Guest'
+
+  const userInitials = user
+    ? (user.displayName ? user.displayName.split(' ').map(n => n[0]).join('') :
+      user.firstName && user.lastName ? `${user.firstName[0]}${user.lastName[0]}` :
+        user.email[0]).toUpperCase().substring(0, 2)
+    : '??'
+
   const role = user?.roles[0] || 'User'
 
   const filteredNavItems = navItems.filter(item => {
@@ -108,7 +116,7 @@ export function Sidebar({ onClose, className }: SidebarProps) {
       <div className="p-4 border-t border-slate-100 space-y-2">
         <div className="flex items-center gap-3 px-2 py-3 rounded-md bg-slate-50">
           <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs uppercase">
-            {/* {userInitials} */}
+            {userInitials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-slate-900 truncate">

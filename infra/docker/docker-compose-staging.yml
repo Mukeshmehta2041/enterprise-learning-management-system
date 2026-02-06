@@ -1,0 +1,39 @@
+# Staging Environment Docker Compose
+# Simulates a production-like topology
+
+services:
+  postgres-staging:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: lms_staging
+      POSTGRES_USER: lms_admin
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD:-staging_pass}
+    ports:
+      - "5433:5432"
+
+  redis-staging:
+    image: redis:8-alpine
+    ports:
+      - "6380:6379"
+
+  kafka-staging:
+    image: apache/kafka-native:latest
+    environment:
+      - KAFKA_LISTENERS=CONTROLLER://0.0.0.0:9091,HOST://0.0.0.0:9092
+      - KAFKA_ADVERTISED_LISTENERS=HOST://localhost:9094
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka-staging:9091
+    ports:
+      - "9094:9092"
+
+  lms-gateway-staging:
+    build:
+      context: ../../
+      dockerfile: lms-gateway/Dockerfile
+    environment:
+      - SPRING_PROFILES_ACTIVE=staging
+      - AUTH_SERVICE_URL=http://lms-auth-service-staging:8080
+      - COURSE_SERVICE_URL=http://lms-course-service-staging:8080
+    ports:
+      - "8081:8080"

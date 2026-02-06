@@ -1,28 +1,36 @@
-export interface Assignment {
-  id: string
-  courseId: string
-  courseTitle: string
-  title: string
-  description: string
-  dueDate: string
-  maxPoints: number
-  status: 'PUBLISHED' | 'DRAFT' | 'ARCHIVED'
-  createdAt: string
-  updatedAt: string
-}
+import { z } from 'zod'
 
-export interface Submission {
-  id: string
-  assignmentId: string
-  userId: string
-  content: string // Text response or file URL
-  submissionDate: string
-  grade?: number
-  feedback?: string
-  status: 'SUBMITTED' | 'GRADED' | 'LATE'
-}
+export const AssignmentSchema = z.object({
+  id: z.string(),
+  courseId: z.string(),
+  courseTitle: z.string(),
+  title: z.string(),
+  description: z.string(),
+  dueDate: z.string(),
+  maxPoints: z.number(),
+  status: z.enum(['PUBLISHED', 'DRAFT', 'ARCHIVED']),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
 
-export interface SubmitRequest {
-  assignmentId: string
-  content: string
-}
+export type Assignment = z.infer<typeof AssignmentSchema>;
+
+export const SubmissionSchema = z.object({
+  id: z.string(),
+  assignmentId: z.string(),
+  userId: z.string(),
+  content: z.string(),
+  submissionDate: z.string(),
+  grade: z.number().optional(),
+  feedback: z.string().optional(),
+  status: z.enum(['SUBMITTED', 'GRADED', 'LATE']),
+})
+
+export type Submission = z.infer<typeof SubmissionSchema>;
+
+export const SubmitRequestSchema = z.object({
+  assignmentId: z.string(),
+  content: z.string(),
+})
+
+export type SubmitRequest = z.infer<typeof SubmitRequestSchema>;

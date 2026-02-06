@@ -99,11 +99,14 @@ public class PaymentService {
 
   private PaymentPlanDTO toPlanDTO(PaymentPlan plan) {
     return PaymentPlanDTO.builder()
-        .id(plan.getId())
+        .id(plan.getId().toString())
         .code(plan.getCode())
         .name(plan.getName())
         .description(plan.getDescription())
         .price(plan.getPrice())
+        .currency(plan.getCurrency())
+        .interval(plan.getPlanInterval())
+        .features(plan.getFeatures())
         .durationDays(plan.getDurationDays())
         .active(plan.getActive())
         .build();

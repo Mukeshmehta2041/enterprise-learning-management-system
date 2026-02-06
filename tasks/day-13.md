@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Implemented resource-level authorization in Course, Enrollment, Assignment, and Content services. Consolidated common security context and exceptions in lms-common. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 13 is done_
+**Started:** 2026-02-06  
+**Completed:** 2026-02-06  
 
 ---
 
@@ -23,26 +23,26 @@
 
 ### 1. Permission model
 
-- [ ] Document and implement resource-level rules: who can read/update/delete course (instructor, admin); who can grade assignment (instructor of course); who can see enrollment list (instructor, admin, or own).
-- [ ] Use `X-User-Id` and `X-Roles` from gateway; add service-level checks so backend never trusts client-only claims for sensitive actions.
+- [x] Document and implement resource-level rules: who can read/update/delete course (instructor, admin); who can grade assignment (instructor of course); who can see enrollment list (instructor, admin, or own).
+- [x] Use `X-User-Id` and `X-Roles` from gateway; add service-level checks so backend never trusts client-only claims for sensitive actions.
 
 ### 2. Course and module ownership
 
-- [ ] Course Service: restrict create/update/delete course to ADMIN or assigned instructor; list “my courses” for instructors; students see only published courses.
-- [ ] Store and check `course_instructors` (or equivalent); reject write if user is not instructor or admin.
+- [x] Course Service: restrict create/update/delete course to ADMIN or assigned instructor; list “my courses” for instructors; students see only published courses.
+- [x] Store and check `course_instructors` (or equivalent); reject write if user is not instructor or admin.
 
 ### 3. Enrollment and progress
 
-- [ ] Enrollment Service: students can only create enrollment for themselves; instructors/admins can list enrollments for a course; only enrolled user (or instructor) can update progress.
+- [x] Enrollment Service: students can only create enrollment for themselves; instructors/admins can list enrollments for a course; only enrolled user (or instructor) can update progress.
 
 ### 4. Assignment and content
 
-- [ ] Assignment Service: only instructor of course can create/update assignment and grade submissions; students can submit for themselves.
-- [ ] Content Service: only course owner/instructor can create/update/delete content; students have read-only access per enrollment.
+- [x] Assignment Service: only instructor of course can create/update assignment and grade submissions; students can submit for themselves.
+- [x] Content Service: only course owner/instructor can create/update/delete content; students have read-only access per enrollment.
 
 ### 5. Verify
 
-- [ ] Test each role (student, instructor, admin) against protected endpoints; expect 403 where appropriate. Update Progress when done.
+- [x] Test each role (student, instructor, admin) against protected endpoints; expect 403 where appropriate. Update Progress when done.
 
 ---
 

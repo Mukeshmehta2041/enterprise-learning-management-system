@@ -33,9 +33,14 @@ public class UserContextFilter extends OncePerRequestFilter {
       }
 
       UserContext userContext = builder.build();
+      UserContextHolder.setContext(userContext);
       request.setAttribute("userContext", userContext);
     }
 
-    filterChain.doFilter(request, response);
+    try {
+      filterChain.doFilter(request, response);
+    } finally {
+      UserContextHolder.clearContext();
+    }
   }
 }

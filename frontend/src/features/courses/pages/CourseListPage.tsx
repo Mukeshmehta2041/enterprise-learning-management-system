@@ -12,8 +12,8 @@ import type { CourseFilters } from '@/shared/types/course'
 
 export function CourseListPage() {
   const [filters, setFilters] = useState<CourseFilters>({
-    page: 0,
-    size: 9,
+    cursor: '',
+    limit: 9,
     search: '',
     category: '',
     level: '',
@@ -26,15 +26,11 @@ export function CourseListPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setFilters(prev => ({ ...prev, search: searchInput, page: 0 }))
-  }
-
-  const handlePageChange = (newPage: number) => {
-    setFilters(prev => ({ ...prev, page: newPage }))
+    setFilters(prev => ({ ...prev, search: searchInput, cursor: '' }))
   }
 
   const handleFilterChange = (key: keyof CourseFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 0 }))
+    setFilters(prev => ({ ...prev, [key]: value, cursor: '' }))
   }
 
   return (
@@ -98,7 +94,7 @@ export function CourseListPage() {
               variant="secondary"
               className="w-full"
               onClick={() => {
-                setFilters({ page: 0, size: 9, search: '', category: '', level: '' })
+                setFilters({ cursor: '', limit: 9, search: '', category: '', level: '' })
                 setSearchInput('')
               }}
             >
@@ -137,24 +133,13 @@ export function CourseListPage() {
             )}
           </div>
 
-          {data && data.totalPages > 1 && (
-            <div className="mt-12 flex justify-center gap-2">
+          {data?.nextCursor && (
+            <div className="mt-12 flex justify-center">
               <Button
                 variant="outline"
-                disabled={data.pageNumber === 0}
-                onClick={() => handlePageChange(data.pageNumber - 1)}
+                onClick={() => setFilters(prev => ({ ...prev, cursor: data.nextCursor || '' }))}
               >
-                Previous
-              </Button>
-              <div className="flex items-center px-4 font-medium">
-                Page {data.pageNumber + 1} of {data.totalPages}
-              </div>
-              <Button
-                variant="outline"
-                disabled={data.last}
-                onClick={() => handlePageChange(data.pageNumber + 1)}
-              >
-                Next
+                Load More
               </Button>
             </div>
           )}

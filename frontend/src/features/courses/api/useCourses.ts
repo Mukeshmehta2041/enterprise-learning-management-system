@@ -1,11 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
-import type { Course, CourseFilters, PaginatedResponse, CourseDetail } from '@/shared/types/course'
+import { CourseSchema, CourseDetailSchema, type Course, type CourseFilters, type CourseDetail } from '@/shared/types/course'
+import { type PaginatedResponse } from '@/shared/types/error'
 
 async function fetchCourses(filters: CourseFilters): Promise<PaginatedResponse<Course>> {
   const { data } = await apiClient.get<PaginatedResponse<Course>>('/courses', {
-    params: filters,
+    params: {
+      ...filters,
+      limit: filters.limit || 9,
+    },
   })
+
+  // Runtime validation for critical items in list
+  if (data.content && data.content.length > 0) {
+    CourseSchema.parse(data.content[0])
+  }
+
   return data
 }
 
@@ -21,7 +31,7 @@ export function useCourses(filters: CourseFilters) {
 
 async function fetchCourseById(id: string): Promise<CourseDetail> {
   const { data } = await apiClient.get<CourseDetail>(`/courses/${id}`)
-  return data
+  return CourseDetailSchema.parse(data)
 }
 
 export function useCourse(id: string) {

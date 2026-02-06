@@ -48,7 +48,7 @@ public class NotificationService {
   private void handleUserCreated(DomainEvent event) {
     String email = (String) event.getPayload().get("email");
     String name = (String) event.getPayload().get("name");
-    Long userId = Long.valueOf(event.getAggregateId());
+    String userId = event.getAggregateId();
 
     String message = String.format("Welcome %s! Your account has been created.", name);
     sendEmail(email, "Welcome to LMS", message);
@@ -56,7 +56,7 @@ public class NotificationService {
   }
 
   private void handleEnrollmentCreated(DomainEvent event) {
-    Long userId = (Long) event.getPayload().get("userId");
+    String userId = String.valueOf(event.getPayload().get("userId"));
     String courseName = (String) event.getPayload().get("courseName");
 
     String message = String.format("You have been enrolled in %s", courseName);
@@ -64,7 +64,7 @@ public class NotificationService {
   }
 
   private void handleAssignmentSubmitted(DomainEvent event) {
-    Long instructorId = (Long) event.getPayload().get("instructorId");
+    String instructorId = String.valueOf(event.getPayload().get("instructorId"));
     String assignmentName = (String) event.getPayload().get("assignmentName");
     String studentName = (String) event.getPayload().get("studentName");
 
@@ -73,7 +73,7 @@ public class NotificationService {
   }
 
   private void handlePaymentCompleted(DomainEvent event) {
-    Long userId = (Long) event.getPayload().get("userId");
+    String userId = String.valueOf(event.getPayload().get("userId"));
     Double amount = (Double) event.getPayload().get("amount");
 
     String message = String.format("Payment of $%.2f completed successfully", amount);
@@ -99,7 +99,7 @@ public class NotificationService {
     }
   }
 
-  private void storeInAppNotification(Long userId, String type, String title, String message) {
+  private void storeInAppNotification(String userId, String type, String title, String message) {
     InAppNotification notification = InAppNotification.builder()
         .id(UUID.randomUUID().toString())
         .userId(userId)
@@ -117,5 +117,16 @@ public class NotificationService {
     redisTemplate.opsForSet().add(userKey, notification.getId());
 
     log.info("Notification stored for user: {}", userId);
+  }
+
+  public void markAsRead(String userId, String notificationId) {
+    String key = "notifications:" + userId + ":" + notificationId;
+    InAppNotification notification = (InAppNotification) redisTemplate.opsForValue().get(key);
+    if (notification != null) {
+      notification.setRead(true);
+      notification.setReadAt(Instant.now());
+      redisTemplate.opsForValue().set(key, notification);
+      log.debug("Notification {} marked as read for user {}", notificationId, userId);
+    }
   }
 }

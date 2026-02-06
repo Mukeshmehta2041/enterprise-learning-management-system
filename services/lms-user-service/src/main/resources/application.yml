@@ -5,7 +5,12 @@ management:
         include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: when_authorized
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: db,redis,kafka
   tracing:
     sampling:
       probability: 1.0
@@ -23,6 +28,13 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:lms}
     password: ${SPRING_DATASOURCE_PASSWORD:lms}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      pool-name: UserServiceHikariPool
   jpa:
     hibernate:
       ddl-auto: validate
@@ -37,6 +49,11 @@ spring:
     locations: classpath:db/migration
     schemas: lms_user
     baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 springdoc:
   api-docs:

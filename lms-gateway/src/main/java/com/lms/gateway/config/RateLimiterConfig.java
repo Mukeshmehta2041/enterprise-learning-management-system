@@ -13,6 +13,19 @@ public class RateLimiterConfig {
 
   @Bean
   @Primary
+  public KeyResolver userKeyResolver() {
+    return exchange -> {
+      String userId = exchange.getRequest().getHeaders().getFirst("X-User-Id");
+      if (userId != null && !userId.isBlank()) {
+        return Mono.just(userId);
+      }
+      // Fallback to IP for unauthenticated or registration requests
+      return Mono.just(
+          Objects.requireNonNull(exchange.getRequest().getRemoteAddress()).getAddress().getHostAddress());
+    };
+  }
+
+  @Bean
   public KeyResolver ipKeyResolver() {
     return exchange -> Mono.just(
         Objects.requireNonNull(exchange.getRequest().getRemoteAddress()).getAddress().getHostAddress());

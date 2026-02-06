@@ -38,6 +38,13 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:lms}
     password: ${SPRING_DATASOURCE_PASSWORD:lms}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      pool-name: EnrollmentServiceHikariPool
   jpa:
     hibernate:
       ddl-auto: validate
@@ -52,11 +59,22 @@ spring:
     schemas: lms_enrollment
     locations: classpath:db/migration
     baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: enrollment-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.lms.common.event"
 
 springdoc:
   api-docs:
     path: /api/v1/enrollments/v3/api-docs
 
 lms:
+  enrollment:
+    max-per-user: ${LMS_ENROLLMENT_MAX_PER_USER:10}
   course-service:
     url: ${LMS_COURSE_SERVICE_URL:http://localhost:8083}

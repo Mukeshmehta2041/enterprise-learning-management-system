@@ -13,7 +13,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public class InAppNotification {
   private String id;
-  private Long userId;
+  private String userId;
   private String type;
   private String title;
   private String message;

@@ -2,6 +2,7 @@ package com.lms.auth.application;
 
 import com.lms.auth.domain.RefreshTokenData;
 import com.lms.auth.domain.UserCredentials;
+import com.lms.common.audit.AuditLogger;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -23,17 +25,20 @@ public class AuthenticationService {
   private final JwtService jwtService;
   private final RefreshTokenService refreshTokenService;
   private final TokenBlacklistService tokenBlacklistService;
+  private final AuditLogger auditLogger;
 
   public AuthenticationService(UserServiceClient userServiceClient,
       PasswordEncoder passwordEncoder,
       JwtService jwtService,
       RefreshTokenService refreshTokenService,
-      TokenBlacklistService tokenBlacklistService) {
+      TokenBlacklistService tokenBlacklistService,
+      AuditLogger auditLogger) {
     this.userServiceClient = userServiceClient;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.refreshTokenService = refreshTokenService;
     this.tokenBlacklistService = tokenBlacklistService;
+    this.auditLogger = auditLogger;
   }
 
   public AuthenticationResult authenticate(String email, String password) {
@@ -75,6 +80,7 @@ public class AuthenticationService {
         credentials.getEmail());
 
     log.info("User authenticated successfully: {}", email);
+    auditLogger.logSuccess("USER_LOGIN", "USER", credentials.getUserId().toString(), Map.of("email", email));
 
     return new AuthenticationResult(
         accessToken,
@@ -151,6 +157,7 @@ public class AuthenticationService {
     }
 
     log.info("User logged out successfully");
+    auditLogger.logSuccess("USER_LOGOUT", "USER", null);
   }
 
   public IntrospectionResult introspectToken(String accessToken) {

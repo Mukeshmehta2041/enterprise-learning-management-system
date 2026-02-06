@@ -26,6 +26,7 @@ services:
     image: redis:8-alpine
     container_name: lms-redis
     restart: unless-stopped
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
     healthcheck:
@@ -33,6 +34,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - redis_data:/data
 
   kafka:
     image: apache/kafka-native:latest
@@ -54,11 +57,15 @@ services:
       - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
       - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
       - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+      - KAFKA_LOG_RETENTION_HOURS=168 # 7 days
+      - KAFKA_LOG_RETENTION_BYTES=1073741824 # 1GB
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 5
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
@@ -270,3 +277,6 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
+  kafka_data:
+  elasticsearch_data:

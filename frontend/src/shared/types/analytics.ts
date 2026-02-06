@@ -1,27 +1,37 @@
-export interface GlobalStats {
-  totalStudents: number;
-  totalCourses: number;
-  totalEnrollments: number;
-  totalRevenue: number;
-  activeLearnersLast30Days: number;
-}
+import { z } from 'zod'
 
-export interface CourseAnalytics {
-  courseId: string;
-  courseTitle: string;
-  totalEnrollments: number;
-  completionRate: number; // 0 to 100
-  averageRating: number;
-  revenue: number;
-}
+export const GlobalStatsSchema = z.object({
+  totalStudents: z.number(),
+  totalCourses: z.number(),
+  totalEnrollments: z.number(),
+  totalRevenue: z.number(),
+  activeLearnersLast30Days: z.number(),
+})
 
-export interface EnrollmentTrend {
-  date: string;
-  count: number;
-}
+export type GlobalStats = z.infer<typeof GlobalStatsSchema>
 
-export interface AnalyticsFilter {
-  courseId?: string;
-  startDate?: string;
-  endDate?: string;
-}
+export const CourseAnalyticsSchema = z.object({
+  courseId: z.string(),
+  courseTitle: z.string(),
+  totalEnrollments: z.number(),
+  completionRate: z.number(),
+  averageRating: z.number(),
+  revenue: z.number(),
+})
+
+export type CourseAnalytics = z.infer<typeof CourseAnalyticsSchema>
+
+export const EnrollmentTrendSchema = z.object({
+  date: z.string(),
+  count: z.number(),
+})
+
+export type EnrollmentTrend = z.infer<typeof EnrollmentTrendSchema>
+
+export const AnalyticsFilterSchema = z.object({
+  courseId: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+})
+
+export type AnalyticsFilter = z.infer<typeof AnalyticsFilterSchema>

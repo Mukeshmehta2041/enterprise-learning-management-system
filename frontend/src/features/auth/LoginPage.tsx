@@ -6,7 +6,8 @@ import { useMutation } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
 import { useAuth } from '@/shared/context/AuthContext'
 import { Button, Input, Card, Container } from '@/shared/ui'
-import type { AuthResponse } from '@/shared/types/auth'
+import { AuthResponseSchema, type AuthResponse } from '@/shared/types/auth'
+import type { AppError } from '@/shared/types/error'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -28,18 +29,21 @@ export function LoginPage() {
     resolver: zodResolver(loginSchema),
   })
 
-  const loginMutation = useMutation({
+  const loginMutation = useMutation<AuthResponse, AppError, LoginFormValues>({
     mutationFn: async (values: LoginFormValues) => {
-      const response = await apiClient.post<AuthResponse>('/auth/token', values)
-      return response.data
+      const response = await apiClient.post<AuthResponse>('/auth/token', {
+        ...values,
+        username: values.email, // backend expects username
+        grant_type: 'password'
+      })
+      return AuthResponseSchema.parse(response.data)
     },
     onSuccess: async (data) => {
       await login(data.access_token)
       navigate('/dashboard')
     },
-    onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || 'Invalid email or password'
-      setError('root', { message: errorMessage })
+    onError: (error: AppError) => {
+      setError('root', { message: error.message || 'Invalid email or password' })
     },
   })
 

@@ -30,12 +30,11 @@ public class AnalyticsController {
   @GetMapping("/enrollments")
   public ResponseEntity<EnrollmentAggregate> getEnrollmentStats(
       @RequestParam Long courseId,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-      @RequestAttribute(required = false) UserContext userContext) {
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
     // RBAC: Only admins and instructors can access analytics
-    if (userContext != null && rbacEnforcer != null) {
-      rbacEnforcer.checkRole(userContext, "ADMIN", "INSTRUCTOR");
+    if (rbacEnforcer != null) {
+      rbacEnforcer.checkRole("ADMIN", "INSTRUCTOR");
     }
 
     if (date == null) {
