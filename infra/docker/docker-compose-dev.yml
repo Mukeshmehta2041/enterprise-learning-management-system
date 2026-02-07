@@ -137,6 +137,26 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      lms-auth-service:
+        condition: service_healthy
+      lms-user-service:
+        condition: service_healthy
+      lms-course-service:
+        condition: service_healthy
+      lms-enrollment-service:
+        condition: service_healthy
+      lms-content-service:
+        condition: service_healthy
+      lms-assignment-service:
+        condition: service_healthy
+      lms-search-service:
+        condition: service_healthy
+      lms-notification-service:
+        condition: service_healthy
+      lms-payment-service:
+        condition: service_healthy
+      lms-analytics-service:
+        condition: service_healthy
 
   lms-user-service:
     build:
@@ -147,10 +167,19 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_DATA_REDIS_HOST=redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   lms-auth-service:
@@ -159,13 +188,20 @@ services:
     container_name: lms-auth-service
     environment:
       - SPRING_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET:-9a4f4e354565456c4a56534d4a58436c646b4c614253426b4c624d6d45674c50}
       - USER_SERVICE_URL=http://lms-user-service:8081
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     depends_on:
       redis:
         condition: service_healthy
       lms-user-service:
-        condition: service_started
+        condition: service_healthy
 
   lms-course-service:
     build:
@@ -176,7 +212,14 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_HOST=redis
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
@@ -194,11 +237,22 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_DATA_REDIS_HOST=redis
       - LMS_COURSE_SERVICE_URL=http://lms-course-service:8083
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      lms-course-service:
         condition: service_healthy
 
   lms-content-service:
@@ -211,10 +265,19 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_DATA_REDIS_HOST=redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   lms-assignment-service:
@@ -226,10 +289,19 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_DATA_REDIS_HOST=redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   lms-search-service:
@@ -239,10 +311,19 @@ services:
     environment:
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_DATA_REDIS_HOST=redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       elasticsearch:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   lms-notification-service:
@@ -254,7 +335,15 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_HOST=redis
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - MANAGEMENT_HEALTH_MAIL_ENABLED=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
@@ -272,10 +361,19 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_DATA_REDIS_HOST=redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   lms-analytics-service:
@@ -287,10 +385,19 @@ services:
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_DATA_REDIS_HOST=redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

@@ -25,7 +25,11 @@ public class CourseControllerIntegrationTest extends BaseIntegrationTest {
         "Test Course",
         "test-course",
         "Description",
-        CourseStatus.DRAFT);
+        "Technology",
+        "BEGINNER",
+        java.math.BigDecimal.valueOf(49.99),
+        CourseStatus.DRAFT,
+        java.util.Collections.emptyList());
 
     restTemplate.getRestTemplate().setInterceptors(java.util.List.of((httpRequest, body, execution) -> {
       httpRequest.getHeaders().add("X-User-Id", instructorId);

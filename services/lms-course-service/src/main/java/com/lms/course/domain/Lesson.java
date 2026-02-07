@@ -61,6 +61,10 @@ public class Lesson {
     return module;
   }
 
+  public void setModule(CourseModule module) {
+    this.module = module;
+  }
+
   public String getTitle() {
     return title;
   }

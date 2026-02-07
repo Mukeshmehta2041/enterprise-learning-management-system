@@ -28,6 +28,15 @@ public class Course {
   @Column(name = "description", columnDefinition = "TEXT")
   private String description;
 
+  @Column(name = "category", length = 100)
+  private String category;
+
+  @Column(name = "level", length = 50)
+  private String level;
+
+  @Column(name = "price")
+  private java.math.BigDecimal price = java.math.BigDecimal.ZERO;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 50)
   private CourseStatus status = CourseStatus.DRAFT;
@@ -86,6 +95,30 @@ public class Course {
     this.description = description;
   }
 
+  public String getCategory() {
+    return category;
+  }
+
+  public void setCategory(String category) {
+    this.category = category;
+  }
+
+  public String getLevel() {
+    return level;
+  }
+
+  public void setLevel(String level) {
+    this.level = level;
+  }
+
+  public java.math.BigDecimal getPrice() {
+    return price;
+  }
+
+  public void setPrice(java.math.BigDecimal price) {
+    this.price = price;
+  }
+
   public CourseStatus getStatus() {
     return status;
   }
@@ -112,5 +145,10 @@ public class Course {
 
   public void addInstructor(CourseInstructor instructor) {
     instructors.add(instructor);
+  }
+
+  public void addModule(CourseModule module) {
+    modules.add(module);
+    module.setCourse(this);
   }
 }

@@ -26,6 +26,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
 
   Page<Enrollment> findByCourseId(UUID courseId, Pageable pageable);
 
+  long countByCourseId(UUID courseId);
+
   boolean existsByUserIdAndCourseId(UUID userId, UUID courseId);
 
   List<Enrollment> findAllByUserId(UUID userId);

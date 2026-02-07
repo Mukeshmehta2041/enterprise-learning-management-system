@@ -5,22 +5,23 @@ interface CourseReviewProps {
   data: any
   onBack: () => void
   onSubmit: () => void
+  isSubmitting?: boolean
 }
 
-export function CourseReview({ data, onBack, onSubmit }: CourseReviewProps) {
+export function CourseReview({ data, onBack, onSubmit, isSubmitting }: CourseReviewProps) {
   return (
     <div className="space-y-8">
       <Card className="p-8">
-        <div className="flex items-start justify-between mb-8">
-          <div>
+        <div className="flex items-start justify-between gap-8 mb-8">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-indigo-600 font-medium text-sm mb-2">
               <Tag size={16} />
               <span>{data.category} • {data.level}</span>
             </div>
-            <Heading2>{data.title}</Heading2>
-            <Muted className="text-xl mt-2">{data.description}</Muted>
+            <Heading2 className="break-words">{data.title}</Heading2>
+            <Muted className="text-xl mt-2 break-words whitespace-pre-wrap">{data.description}</Muted>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-3xl font-bold">${Number(data.price).toFixed(2)}</div>
             <TextMuted>Target Price</TextMuted>
           </div>
@@ -31,12 +32,12 @@ export function CourseReview({ data, onBack, onSubmit }: CourseReviewProps) {
           <div className="space-y-4">
             {data.modules.map((module: any, idx: number) => (
               <div key={idx} className="bg-slate-50 rounded-lg p-4">
-                <Heading4 className="mb-2">Module {idx + 1}: {module.title}</Heading4>
+                <Heading4 className="mb-2 break-words">Module {idx + 1}: {module.title}</Heading4>
                 <ul className="ml-4 space-y-1">
                   {module.lessons.map((lesson: any, lIdx: number) => (
                     <li key={lIdx} className="text-slate-600 flex items-center gap-2 text-sm italic">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      {lesson.title}
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                      <span className="break-words">{lesson.title}</span>
                     </li>
                   ))}
                 </ul>
@@ -57,11 +58,16 @@ export function CourseReview({ data, onBack, onSubmit }: CourseReviewProps) {
       </div>
 
       <div className="flex justify-between gap-3 pt-4">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} disabled={isSubmitting}>
           Back to Curriculum
         </Button>
-        <Button onClick={onSubmit} size="lg" className="px-12 bg-indigo-600 hover:bg-indigo-700">
-          Publish Course
+        <Button
+          onClick={onSubmit}
+          size="lg"
+          disabled={isSubmitting}
+          className="px-12 bg-indigo-600 hover:bg-indigo-700"
+        >
+          {isSubmitting ? 'Publishing...' : 'Publish Course'}
         </Button>
       </div>
     </div>

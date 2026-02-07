@@ -17,6 +17,8 @@ public interface CourseRepository extends JpaRepository<Course, UUID> {
 
   Page<Course> findByStatus(CourseStatus status, Pageable pageable);
 
+  long countByStatus(CourseStatus status);
+
   @Query("SELECT c FROM Course c WHERE c.status = :status ORDER BY c.createdAt DESC")
   Page<Course> findByStatusOrderByCreatedAtDesc(@Param("status") CourseStatus status, Pageable pageable);
 

@@ -3,12 +3,13 @@ import { z } from 'zod'
 export const AssignmentSchema = z.object({
   id: z.string(),
   courseId: z.string(),
-  courseTitle: z.string(),
+  courseTitle: z.string().optional().default('Untitled Course'),
   title: z.string(),
   description: z.string(),
-  dueDate: z.string(),
-  maxPoints: z.number(),
-  status: z.enum(['PUBLISHED', 'DRAFT', 'ARCHIVED']),
+  dueDate: z.string().optional().nullable(),
+  maxPoints: z.number().optional().default(100),
+  maxScore: z.number().optional(), // Match backend if present
+  status: z.enum(['PUBLISHED', 'DRAFT', 'ARCHIVED']).or(z.string()).optional().default('PUBLISHED'),
   createdAt: z.string(),
   updatedAt: z.string(),
 })

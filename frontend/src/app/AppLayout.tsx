@@ -100,7 +100,7 @@ export function AppLayout() {
         </header>
 
         <main id="main-content" className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
-          <div className="mx-auto max-w-7xl">
+          <div className="mx-auto w-full">
             {!isDashboard && <Breadcrumbs />}
             <Outlet />
           </div>

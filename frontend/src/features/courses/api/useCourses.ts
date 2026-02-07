@@ -11,12 +11,13 @@ async function fetchCourses(filters: CourseFilters): Promise<PaginatedResponse<C
     },
   })
 
-  // Runtime validation for critical items in list
-  if (data.content && data.content.length > 0) {
-    CourseSchema.parse(data.content[0])
-  }
+  // Parse with schema to apply defaults and transform data
+  const validatedContent = (data.content || []).map(item => CourseSchema.parse(item))
 
-  return data
+  return {
+    ...data,
+    content: validatedContent,
+  }
 }
 
 export function useCourses(filters: CourseFilters) {

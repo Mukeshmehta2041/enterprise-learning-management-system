@@ -8,7 +8,7 @@ const basicInfoSchema = z.object({
   description: z.string().min(50, 'Description should be at least 50 characters'),
   category: z.string().min(1, 'Please select a category'),
   level: z.string().min(1, 'Please select a level'),
-  price: z.number().min(0, 'Price cannot be negative'),
+  price: z.coerce.number().min(0, 'Price cannot be negative'),
 })
 
 type BasicInfoValues = z.infer<typeof basicInfoSchema>
@@ -51,7 +51,7 @@ export function BasicInfoForm({
   }
 
   return (
-    <Card className="p-8">
+    <Card className="shadow-sm border-slate-200">
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         <Input
           label="Course Title"
@@ -60,7 +60,7 @@ export function BasicInfoForm({
           {...register('title')}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Select
             label="Category"
             error={errors.category?.message}
@@ -85,15 +85,15 @@ export function BasicInfoForm({
               { label: 'Advanced', value: 'ADVANCED' },
             ]}
           />
-        </div>
 
-        <Input
-          label="Price ($)"
-          type="number"
-          step="0.01"
-          error={errors.price?.message}
-          {...register('price')}
-        />
+          <Input
+            label="Price ($)"
+            type="number"
+            step="0.01"
+            error={errors.price?.message}
+            {...register('price', { valueAsNumber: true })}
+          />
+        </div>
 
         <Textarea
           label="Course Description"

@@ -53,8 +53,8 @@ export function Container({ children, className, size = 'lg' }: ContainerProps) 
   const sizes = {
     sm: 'max-w-3xl',
     md: 'max-w-5xl',
-    lg: 'max-w-7xl',
-    xl: 'max-w-[1400px]',
+    lg: 'max-w-[1600px]',
+    xl: 'max-w-[1800px]',
     full: 'max-w-full',
   }
 

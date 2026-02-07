@@ -19,4 +19,5 @@ export interface PaginatedResponse<T> {
   totalPages: number
   size: number
   number: number
+  nextCursor?: string | null
 }

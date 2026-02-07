@@ -59,6 +59,10 @@ public class CourseModule {
     return course;
   }
 
+  public void setCourse(Course course) {
+    this.course = course;
+  }
+
   public String getTitle() {
     return title;
   }
@@ -85,5 +89,10 @@ public class CourseModule {
 
   public List<Lesson> getLessons() {
     return lessons;
+  }
+
+  public void addLesson(Lesson lesson) {
+    lessons.add(lesson);
+    lesson.setModule(this);
   }
 }

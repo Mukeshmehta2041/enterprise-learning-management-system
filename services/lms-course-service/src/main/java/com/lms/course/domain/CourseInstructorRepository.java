@@ -8,4 +8,6 @@ import java.util.UUID;
 @Repository
 public interface CourseInstructorRepository extends JpaRepository<CourseInstructor, CourseInstructorId> {
   void deleteByUserId(UUID userId);
+
+  long countByUserId(UUID userId);
 }

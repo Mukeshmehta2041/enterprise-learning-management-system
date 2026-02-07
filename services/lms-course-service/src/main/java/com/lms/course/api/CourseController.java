@@ -38,6 +38,7 @@ public class CourseController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit,
+      @RequestParam(required = false, defaultValue = "1") Integer page,
       @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
       @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
 
@@ -53,7 +54,7 @@ public class CourseController {
       }
     }
 
-    CourseListResponse response = courseService.listCourses(courseStatus, cursor, limit, userId, roles);
+    CourseListResponse response = courseService.listCourses(courseStatus, cursor, limit, page, userId, roles);
     return ResponseEntity.ok(response);
   }
 
@@ -62,10 +63,11 @@ public class CourseController {
   public ResponseEntity<CourseListResponse> listMyCourses(
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit,
+      @RequestParam(required = false, defaultValue = "1") Integer page,
       @RequestHeader(value = HEADER_USER_ID) String currentUserId) {
 
     UUID userId = UUID.fromString(currentUserId);
-    CourseListResponse response = courseService.listMyCourses(cursor, limit, userId);
+    CourseListResponse response = courseService.listMyCourses(cursor, limit, page, userId);
     return ResponseEntity.ok(response);
   }
 

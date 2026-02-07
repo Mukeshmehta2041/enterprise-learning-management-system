@@ -33,7 +33,7 @@ export function SettingsPage() {
   }
 
   return (
-    <Container className="py-8 max-w-4xl">
+    <Container className="py-8" size="md">
       <div className="mb-8">
         <Heading1>Settings</Heading1>
         <TextMuted>Manage your account, privacy, and communication preferences</TextMuted>

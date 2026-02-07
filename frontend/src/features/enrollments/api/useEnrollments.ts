@@ -10,8 +10,8 @@ export function useEnrollments() {
   return useQuery({
     queryKey: ['enrollments'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ items: Enrollment[], nextCursor: string | null }>('/enrollments')
-      return z.array(EnrollmentSchema).parse(data.items)
+      const { data } = await apiClient.get<{ content: Enrollment[], nextCursor: string | null }>('/enrollments')
+      return z.array(EnrollmentSchema).parse(data.content || [])
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 15 * 60 * 1000,

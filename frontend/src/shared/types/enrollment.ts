@@ -4,12 +4,13 @@ export const EnrollmentSchema = z.object({
   id: z.string(),
   userId: z.string(),
   courseId: z.string(),
-  courseTitle: z.string(),
-  courseThumbnailUrl: z.string().optional(),
-  status: z.enum(['ENROLLED', 'COMPLETED', 'CANCELLED']),
-  progress: z.number().min(0).max(100),
-  completedLessonIds: z.array(z.string()).default([]),
-  lastAccessedAt: z.string(),
+  courseTitle: z.string().optional().default('Untitled Course'),
+  courseThumbnailUrl: z.string().optional().nullable(),
+  status: z.enum(['ENROLLED', 'COMPLETED', 'CANCELLED', 'ACTIVE']).or(z.string()),
+  progress: z.number().optional().default(0),
+  progressPct: z.number().optional(), // Match backend if present
+  completedLessonIds: z.array(z.string()).optional().default([]),
+  lastAccessedAt: z.string().optional().nullable(),
   enrolledAt: z.string(),
 })
 

@@ -114,12 +114,15 @@ public class EnrollmentApplicationService {
     boolean hasNext = enrollments.size() > pageSize;
     List<Enrollment> resultList = hasNext ? enrollments.subList(0, pageSize) : enrollments;
 
-    List<EnrollmentResponse> items = resultList.stream()
+    List<EnrollmentResponse> content = resultList.stream()
         .map(this::mapToEnrollmentResponse)
         .collect(Collectors.toList());
 
     String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getEnrolledAt().toString() : null;
-    return new EnrollmentListResponse(items, nextCursor);
+    long totalElements = enrollmentRepository.countByUserId(userId);
+    int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+    return new EnrollmentListResponse(content, nextCursor, totalElements, totalPages);
   }
 
   public void cleanupUserData(UUID userId) {
@@ -157,12 +160,15 @@ public class EnrollmentApplicationService {
     boolean hasNext = enrollments.size() > pageSize;
     List<Enrollment> resultList = hasNext ? enrollments.subList(0, pageSize) : enrollments;
 
-    List<EnrollmentResponse> items = resultList.stream()
+    List<EnrollmentResponse> content = resultList.stream()
         .map(this::mapToEnrollmentResponse)
         .collect(Collectors.toList());
 
     String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getEnrolledAt().toString() : null;
-    return new EnrollmentListResponse(items, nextCursor);
+    long totalElements = enrollmentRepository.countByCourseId(courseId);
+    int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+    return new EnrollmentListResponse(content, nextCursor, totalElements, totalPages);
   }
 
   @Transactional(readOnly = true)

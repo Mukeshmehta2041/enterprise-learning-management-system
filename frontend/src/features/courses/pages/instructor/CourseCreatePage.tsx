@@ -4,7 +4,8 @@ import { BasicInfoForm } from '../../components/instructor/BasicInfoForm'
 import { CurriculumForm } from '../../components/instructor/CurriculumForm'
 import { CourseReview } from '../../components/instructor/CourseReview'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Loader2 } from 'lucide-react'
+import { useCreateCourse } from '../../api/useCreateCourse'
 
 const steps = [
   { title: 'Information', description: 'Basic course details' },
@@ -23,6 +24,7 @@ export function CourseCreatePage() {
     modules: []
   })
   const navigate = useNavigate()
+  const createCourse = useCreateCourse()
 
   const handleNext = (data: any) => {
     setCourseData((prev: any) => ({ ...prev, ...data }))
@@ -40,7 +42,7 @@ export function CourseCreatePage() {
   }
 
   return (
-    <Container className="py-8 max-w-4xl">
+    <Container className="py-8" size="lg">
       <div className="mb-8">
         <Heading1>Create New Course</Heading1>
         <TextMuted>Follow the steps to set up your professional course</TextMuted>
@@ -68,15 +70,24 @@ export function CourseCreatePage() {
         )}
 
         {currentStep === 3 && (
-          <CourseReview
-            data={courseData}
-            onBack={handleBack}
-            onSubmit={() => {
-              // Final submission logic
-              alert('Course submitted successfully!')
-              navigate('/courses')
-            }}
-          />
+          <div className="relative">
+            {createCourse.isPending && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[1px] rounded-xl">
+                <div className="flex flex-col items-center gap-3 bg-white p-6 rounded-lg shadow-xl border">
+                  <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                  <p className="font-medium text-slate-900">Creating your course...</p>
+                </div>
+              </div>
+            )}
+            <CourseReview
+              data={courseData}
+              onBack={handleBack}
+              isSubmitting={createCourse.isPending}
+              onSubmit={() => {
+                createCourse.mutate(courseData)
+              }}
+            />
+          </div>
         )}
       </div>
 

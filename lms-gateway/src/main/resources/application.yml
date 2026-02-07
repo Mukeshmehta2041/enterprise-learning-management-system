@@ -94,6 +94,27 @@ spring:
         - name: ApiVersion
           args:
             defaultVersion: "1.0.0"
+        - name: Retry
+          args:
+            retries: 3
+            methods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+            statuses:
+              - INTERNAL_SERVER_ERROR
+              - BAD_GATEWAY
+              - SERVICE_UNAVAILABLE
+              - GATEWAY_TIMEOUT
+            backoff:
+              firstBackoff: 500ms
+              maxBackoff: 5s
+              factor: 2
+            exceptions:
+              - java.net.ConnectException
+              - io.netty.channel.ConnectTimeoutException
+              - io.netty.channel.AbstractChannel$AnnotatedConnectException
       routes:
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://lms-auth-service:8082}
@@ -129,6 +150,10 @@ spring:
           predicates:
             - Path=/api/v1/courses/**
             - Method=GET
+          filters:
+            - name: JwtAuthentication
+              args:
+                required: false
         - id: course-service
           uri: ${COURSE_SERVICE_URL:http://lms-course-service:8083}
           predicates:
@@ -173,6 +198,15 @@ spring:
               args:
                 redis-rate-limiter.replenishRate: 10
                 redis-rate-limiter.burstCapacity: 20
+        - id: search-service-public
+          uri: ${SEARCH_SERVICE_URL:http://lms-search-service:8086}
+          predicates:
+            - Path=/api/v1/search/**
+            - Method=GET
+          filters:
+            - name: JwtAuthentication
+              args:
+                required: false
         - id: search-service
           uri: ${SEARCH_SERVICE_URL:http://lms-search-service:8086}
           predicates:

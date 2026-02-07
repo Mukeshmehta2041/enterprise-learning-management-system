@@ -58,6 +58,9 @@ public class JwtAuthenticationGatewayFilterFactory
       }
 
       if (token == null) {
+        if (!config.isRequired()) {
+          return chain.filter(exchange);
+        }
         return onError(exchange, "Missing Authentication Token", HttpStatus.UNAUTHORIZED);
       }
 
@@ -68,6 +71,9 @@ public class JwtAuthenticationGatewayFilterFactory
             return redisTemplate.hasKey("jwt:revoked:" + jti)
                 .flatMap(isRevoked -> {
                   if (isRevoked) {
+                    if (!config.isRequired()) {
+                      return chain.filter(exchange);
+                    }
                     return onError(exchange, "Token is revoked", HttpStatus.UNAUTHORIZED);
                   }
 
@@ -88,6 +94,9 @@ public class JwtAuthenticationGatewayFilterFactory
           })
           .onErrorResume(e -> {
             log.error("JWT Validation failed: {}", e.getMessage());
+            if (!config.isRequired()) {
+              return chain.filter(exchange);
+            }
             return onError(exchange, "Token validation failed", HttpStatus.UNAUTHORIZED);
           });
     };
@@ -113,5 +122,14 @@ public class JwtAuthenticationGatewayFilterFactory
   }
 
   public static class Config {
+    private boolean required = true;
+
+    public boolean isRequired() {
+      return required;
+    }
+
+    public void setRequired(boolean required) {
+      this.required = required;
+    }
   }
 }

@@ -71,9 +71,11 @@ public class CourseApplicationService {
   }
 
   @Transactional(readOnly = true)
-  public CourseListResponse listCourses(CourseStatus status, String cursor, Integer limit, UUID currentUserId,
+  public CourseListResponse listCourses(CourseStatus status, String cursor, Integer limit, Integer page,
+      UUID currentUserId,
       Set<String> roles) {
     int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
+    int pageNumber = (page != null) ? page : 1;
 
     Instant cursorTime = (cursor != null && !cursor.isBlank())
         ? Instant.parse(cursor)
@@ -105,18 +107,22 @@ public class CourseApplicationService {
     boolean hasNext = courses.size() > pageSize;
     List<Course> resultList = hasNext ? courses.subList(0, pageSize) : courses;
 
-    List<CourseResponse> items = resultList.stream()
+    List<CourseResponse> content = resultList.stream()
         .map(this::mapToCourseResponse)
         .collect(Collectors.toList());
 
     String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getCreatedAt().toString() : null;
 
-    return new CourseListResponse(items, nextCursor);
+    long totalElements = status != null ? courseRepository.countByStatus(status) : courseRepository.count();
+    int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+    return new CourseListResponse(content, nextCursor, totalElements, totalPages, pageSize, pageNumber);
   }
 
   @Transactional(readOnly = true)
-  public CourseListResponse listMyCourses(String cursor, Integer limit, UUID currentUserId) {
+  public CourseListResponse listMyCourses(String cursor, Integer limit, Integer page, UUID currentUserId) {
     int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
+    int pageNumber = (page != null) ? page : 1;
     Instant cursorTime = (cursor != null && !cursor.isBlank())
         ? Instant.parse(cursor)
         : Instant.now().plusSeconds(60);
@@ -127,13 +133,16 @@ public class CourseApplicationService {
     boolean hasNext = courses.size() > pageSize;
     List<Course> resultList = hasNext ? courses.subList(0, pageSize) : courses;
 
-    List<CourseResponse> items = resultList.stream()
+    List<CourseResponse> content = resultList.stream()
         .map(this::mapToCourseResponse)
         .collect(Collectors.toList());
 
     String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getCreatedAt().toString() : null;
 
-    return new CourseListResponse(items, nextCursor);
+    long totalElements = instructorRepository.countByUserId(currentUserId);
+    int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+    return new CourseListResponse(content, nextCursor, totalElements, totalPages, pageSize, pageNumber);
   }
 
   @Transactional(readOnly = true)
@@ -178,6 +187,36 @@ public class CourseApplicationService {
     CourseStatus status = request.status() != null ? request.status() : CourseStatus.DRAFT;
 
     Course course = new Course(courseId, request.title(), slug, request.description(), status);
+    course.setCategory(request.category());
+    course.setLevel(request.level());
+    course.setPrice(request.price() != null ? request.price() : java.math.BigDecimal.ZERO);
+
+    // Add modules and lessons if provided
+    if (request.modules() != null) {
+      for (int i = 0; i < request.modules().size(); i++) {
+        CreateModuleRequest modReq = request.modules().get(i);
+        CourseModule module = new CourseModule(
+            UUID.randomUUID(),
+            course,
+            modReq.title(),
+            modReq.sortOrder() != null ? modReq.sortOrder() : i);
+
+        if (modReq.lessons() != null) {
+          for (int j = 0; j < modReq.lessons().size(); j++) {
+            CreateLessonRequest lesReq = modReq.lessons().get(j);
+            Lesson lesson = new Lesson(
+                UUID.randomUUID(),
+                module,
+                lesReq.title(),
+                lesReq.type(),
+                lesReq.durationMinutes(),
+                lesReq.sortOrder() != null ? lesReq.sortOrder() : j);
+            module.addLesson(lesson);
+          }
+        }
+        course.addModule(module);
+      }
+    }
 
     // Add creator as instructor
     CourseInstructor instructor = new CourseInstructor(course, currentUserId, "INSTRUCTOR");
@@ -410,6 +449,9 @@ public class CourseApplicationService {
         course.getTitle(),
         course.getSlug(),
         course.getDescription(),
+        course.getCategory(),
+        course.getLevel(),
+        course.getPrice(),
         course.getStatus().name(),
         instructorIds,
         course.getCreatedAt(),
@@ -430,6 +472,9 @@ public class CourseApplicationService {
         course.getTitle(),
         course.getSlug(),
         course.getDescription(),
+        course.getCategory(),
+        course.getLevel(),
+        course.getPrice(),
         course.getStatus().name(),
         modules,
         instructorIds,

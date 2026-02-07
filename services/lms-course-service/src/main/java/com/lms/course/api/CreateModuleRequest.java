@@ -5,6 +5,6 @@ import jakarta.validation.constraints.Size;
 
 public record CreateModuleRequest(
     @NotBlank(message = "Title is required") @Size(max = 255, message = "Title must not exceed 255 characters") String title,
-
-    Integer sortOrder) {
+    Integer sortOrder,
+    java.util.List<CreateLessonRequest> lessons) {
 }
