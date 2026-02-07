@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import type { ReactElement, ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '@/shared/context/AuthContext'
+import { ToastProvider } from '@/shared/context/ToastContext'
 
 export function createTestQueryClient() {
   return new QueryClient({
@@ -25,13 +26,15 @@ export function renderWithProviders(ui: ReactElement, options: RenderOptions = {
 
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      {withAuth ? (
-        <AuthProvider>
+      <ToastProvider>
+        {withAuth ? (
+          <AuthProvider>
+            <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+          </AuthProvider>
+        ) : (
           <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-        </AuthProvider>
-      ) : (
-        <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-      )}
+        )}
+      </ToastProvider>
     </QueryClientProvider>
   )
 

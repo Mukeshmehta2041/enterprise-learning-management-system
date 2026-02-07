@@ -1,5 +1,6 @@
 package com.lms.assignment.infrastructure;
 
+import com.lms.common.events.EventEnvelope;
 import com.lms.common.events.UserDeletedEvent;
 import com.lms.assignment.application.AssignmentService;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +15,9 @@ public class UserDeletedConsumer {
 
   private final AssignmentService assignmentService;
 
-  @KafkaListener(topics = "user-deleted", groupId = "assignment-service-group")
-  public void handleUserDeleted(UserDeletedEvent event) {
+  @KafkaListener(topics = "user.events", groupId = "assignment-service-group")
+  public void handleUserDeleted(EventEnvelope<UserDeletedEvent> envelope) {
+    UserDeletedEvent event = envelope.payload();
     log.info("Received UserDeletedEvent for user: {}", event.getUserId());
     try {
       assignmentService.cleanupUserData(event.getUserId());

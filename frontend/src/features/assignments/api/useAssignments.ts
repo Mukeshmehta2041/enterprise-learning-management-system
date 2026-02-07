@@ -3,6 +3,7 @@ import { apiClient } from '@/shared/api/client'
 import { AssignmentSchema, SubmissionSchema, type Assignment, type Submission, type SubmitRequest } from '@/shared/types/assignment'
 import { z } from 'zod'
 import { type AppError } from '@/shared/types/error'
+import { useToast } from '@/shared/context/ToastContext'
 
 export function useAssignments() {
   return useQuery({
@@ -49,6 +50,8 @@ export function useSubmission(assignmentId: string) {
 
 export function useSubmitAssignment() {
   const queryClient = useQueryClient()
+  const { success, error } = useToast()
+
   return useMutation<Submission, AppError, SubmitRequest>({
     mutationFn: async (request: SubmitRequest) => {
       const { data } = await apiClient.post<Submission>('/submissions', request)
@@ -57,6 +60,10 @@ export function useSubmitAssignment() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['submission', data.assignmentId] })
       queryClient.invalidateQueries({ queryKey: ['assignments'] })
+      success('Assignment submitted successfully!')
     },
+    onError: (err) => {
+      error(err.message || 'Failed to submit assignment')
+    }
   })
 }

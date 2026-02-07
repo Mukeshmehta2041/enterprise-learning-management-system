@@ -1,8 +1,7 @@
+import { useState, useMemo } from 'react';
 import { useNotifications, useMarkAsRead } from '../api/notificationHooks';
-import { Card, PageHeader, Container } from '@/shared/ui/Layout';
-import { Button } from '@/shared/ui';
+import { Card, PageHeader, Container, Button, Heading4, EmptyState, SearchInput, FilterGroup } from '@/shared/ui';
 import { Bell, Check, Info, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import { Heading4, TextMuted, TextSmall } from '@/shared/ui/Typography';
 import { cn } from '@/shared/utils/cn';
 import type { NotificationType } from '@/shared/types/notification';
 
@@ -26,6 +25,26 @@ const getIcon = (type: NotificationType) => {
 export function NotificationPage() {
   const { data: notifications, isLoading } = useNotifications();
   const markAsRead = useMarkAsRead();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'system' | 'course'>('all');
+
+  const filteredNotifications = useMemo(() => {
+    if (!notifications) return [];
+
+    return notifications.filter(n => {
+      const matchSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        n.message.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchFilter =
+        filter === 'all' ? true :
+          filter === 'unread' ? !n.read :
+            filter === 'system' ? ['INFO', 'SUCCESS', 'WARNING', 'ERROR'].includes(n.type) :
+              filter === 'course' ? ['ENROLLMENT', 'ASSIGNMENT_GRADED'].includes(n.type) :
+                true;
+
+      return matchSearch && matchFilter;
+    });
+  }, [notifications, searchQuery, filter]);
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0;
 
@@ -37,16 +56,32 @@ export function NotificationPage() {
     }
   };
 
-  const handleMarkOneAsRead = (id: string) => {
+  const handleMarkOneAsRead = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     markAsRead.mutate({ notificationIds: [id] });
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center">Loading notifications...</div>;
+    return (
+      <Container>
+        <div className="animate-pulse space-y-4">
+          <div className="h-20 bg-slate-100 rounded-xl" />
+          <div className="h-64 bg-slate-100 rounded-xl" />
+        </div>
+      </Container>
+    );
   }
 
+  const filterOptions = [
+    { label: 'All', value: 'all' },
+    { label: `Unread (${unreadCount})`, value: 'unread' },
+    { label: 'System', value: 'system' },
+    { label: 'Courses', value: 'course' },
+  ];
+
   return (
-    <Container>
+    <Container className="pb-12">
       <PageHeader
         title="Notifications"
         description="Stay updated with your learning journey."
@@ -65,56 +100,105 @@ export function NotificationPage() {
         }
       />
 
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div className="w-full sm:w-72">
+            <SearchInput
+              placeholder="Search notifications..."
+              value={searchQuery}
+              onChange={(val) => setSearchQuery(val)}
+            />
+          </div>
+          <FilterGroup
+            options={filterOptions}
+            selected={filter}
+            onSelect={(val: any) => setFilter(val)}
+          />
+        </div>
+      </div>
+
       <div className="space-y-4">
-        {!notifications || notifications.length === 0 ? (
-          <Card className="text-center py-12">
-            <div className="flex flex-col items-center">
-              <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <Bell className="h-6 w-6 text-slate-400" />
-              </div>
-              <Heading4>No notifications yet</Heading4>
-              <TextMuted>We'll notify you when something important happens.</TextMuted>
-            </div>
-          </Card>
+        {filteredNotifications.length === 0 ? (
+          <EmptyState
+            title={searchQuery || filter !== 'all' ? "No results found" : "No notifications yet"}
+            description={searchQuery || filter !== 'all'
+              ? "Try adjusting your filters or search terms."
+              : "We'll notify you when something important happens, like new course content or assignment grades."}
+            icon={Bell}
+            action={searchQuery || filter !== 'all' ? (
+              <Button variant="ghost" onClick={() => { setSearchQuery(''); setFilter('all'); }}>
+                Clear filters
+              </Button>
+            ) : undefined}
+          />
         ) : (
-          notifications.map((notification) => (
-            <Card
-              key={notification.id}
-              className={cn(
-                "transition-colors",
-                !notification.read && "border-l-4 border-l-indigo-500 bg-indigo-50/30"
-              )}
-            >
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 mt-1">
-                  {getIcon(notification.type)}
-                </div>
-                <div className="flex-grow">
-                  <div className="flex items-center justify-between gap-2">
-                    <Heading4 className="text-base m-0">{notification.title}</Heading4>
-                    <div className="flex items-center text-slate-400 gap-1">
-                      <Clock className="h-3 w-3" />
-                      <TextSmall>{new Date(notification.createdAt).toLocaleDateString()}</TextSmall>
+          <div className="grid gap-3">
+            {filteredNotifications.map((notification) => (
+              <Card
+                key={notification.id}
+                className={cn(
+                  "p-0 overflow-hidden transition-all hover:shadow-md border-slate-200",
+                  !notification.read && "border-l-4 border-l-indigo-500 bg-indigo-50/30"
+                )}
+              >
+                <div className="flex items-start p-4 gap-4">
+                  <div className="mt-1 flex-shrink-0">
+                    {getIcon(notification.type)}
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <Heading4 className={cn(
+                        "text-base m-0",
+                        !notification.read ? "font-bold text-slate-900" : "font-semibold text-slate-700"
+                      )}>
+                        {notification.title}
+                      </Heading4>
+                      <div className="flex items-center text-slate-400 gap-1.5 whitespace-nowrap">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="text-xs">
+                          {new Date(notification.createdAt).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    <p className={cn(
+                      "mt-1 text-sm leading-relaxed",
+                      !notification.read ? "text-slate-800" : "text-slate-500"
+                    )}>
+                      {notification.message}
+                    </p>
+
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex gap-2">
+                        {notification.type === 'ASSIGNMENT_GRADED' && (
+                          <Button variant="ghost" size="xs" color="primary">View Grade</Button>
+                        )}
+                        {notification.type === 'ENROLLMENT' && (
+                          <Button variant="ghost" size="xs" color="primary">Go to Course</Button>
+                        )}
+                      </div>
+
+                      {!notification.read && (
+                        <button
+                          onClick={(e) => handleMarkOneAsRead(notification.id, e)}
+                          className="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline-offset-4 hover:underline"
+                        >
+                          Mark as read
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <TextMuted className="mt-1 text-sm">{notification.message}</TextMuted>
-                  {!notification.read && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 h-8 px-2 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                      onClick={() => handleMarkOneAsRead(notification.id)}
-                      disabled={markAsRead.isPending}
-                    >
-                      Mark as read
-                    </Button>
-                  )}
                 </div>
-              </div>
-            </Card>
-          ))
+              </Card>
+            ))}
+          </div>
         )}
       </div>
     </Container>
   );
 }
+

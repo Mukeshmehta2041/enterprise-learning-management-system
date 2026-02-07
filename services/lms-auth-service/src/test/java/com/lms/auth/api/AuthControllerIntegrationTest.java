@@ -5,7 +5,7 @@ import com.lms.auth.application.UserServiceClient;
 import com.lms.auth.domain.UserCredentials;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +23,7 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
   @Autowired
   private TestRestTemplate restTemplate;
 
-  @MockBean
+  @MockitoBean
   private UserServiceClient userServiceClient;
 
   @Autowired

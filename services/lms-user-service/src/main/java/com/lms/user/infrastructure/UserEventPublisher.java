@@ -15,7 +15,7 @@ import java.util.UUID;
 public class UserEventPublisher {
 
   private final KafkaTemplate<String, Object> kafkaTemplate;
-  private static final String USER_TOPIC = "user-events";
+  private static final String USER_TOPIC = "user.events";
 
   public void publishUserDeleted(UUID userId) {
     UserDeletedEvent event = UserDeletedEvent.builder()

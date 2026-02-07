@@ -10,12 +10,10 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Advanced analytics UI and exports being implemented. |
 | ✅ Done | Instructors/admins have powerful, usable analytics tools in the UI. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Frontend Day 28 is done_
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07
 
 ---
 
@@ -23,27 +21,27 @@
 
 ### 1. Richer visualizations
 
-- [ ] Upgrade analytics views with clearer charts (line, bar, pie) for key LMS metrics (enrollments over time, completion rates, engagement).
-- [ ] Ensure charts handle empty/low-data scenarios gracefully.
+- [x] Upgrade analytics views with clearer charts (line, bar, pie) for key LMS metrics (enrollments over time, completion rates, engagement).
+- [x] Ensure charts handle empty/low-data scenarios gracefully.
 
 ### 2. Filtering and comparison
 
-- [ ] Add filters (course, cohort, date range) to analytics dashboards.
-- [ ] Support simple comparisons (e.g. this month vs last month) where backend supports it.
+- [x] Add filters (course, cohort, date range) to analytics dashboards.
+- [x] Support simple comparisons (e.g. this month vs last month) where backend supports it.
 
 ### 3. Export and sharing
 
-- [ ] Implement CSV export for at least one analytics view (e.g. enrollments or grades).
-- [ ] Optionally support printable or PDF-friendly versions of key reports.
+- [x] Implement CSV export for at least one analytics view (e.g. enrollments or grades).
+- [x] Optionally support printable or PDF-friendly versions of key reports.
 
 ### 4. Tests and performance
 
-- [ ] Add tests for analytics data fetching and export triggers.
-- [ ] Verify dashboards remain responsive for larger datasets (consider pagination or aggregation).
+- [x] Add tests for analytics data fetching and export triggers.
+- [x] Verify dashboards remain responsive for larger datasets (consider pagination or aggregation).
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Frontend Day 28 is complete.
+- [x] Update the **Progress** table at the top of this file when Frontend Day 28 is complete.
 
 ---
 

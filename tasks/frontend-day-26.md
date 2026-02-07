@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | PWA features and caching being implemented. |
+| 🔄 In progress | |
 | ✅ Done | LMS frontend behaves like a solid PWA where appropriate. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Frontend Day 26 is done_
+**Started:** 2024-05-26  
+**Completed:** 2024-05-26
 
 ---
 

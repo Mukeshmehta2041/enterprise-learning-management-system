@@ -101,10 +101,67 @@ export const handlers = [
       id: 'enroll-1',
       userId: 'user-1',
       courseId: 'course-1',
+      courseTitle: 'Introduction to Web Development',
       status: 'ENROLLED',
       progress: 0,
       lastAccessedAt: new Date().toISOString(),
       enrolledAt: new Date().toISOString(),
     }, { status: 201 })
+  }),
+
+  // Analytics
+  http.get(`${API_URL}/analytics/global`, () => {
+    return HttpResponse.json({
+      totalStudents: 1250,
+      totalCourses: 24,
+      totalEnrollments: 4800,
+      totalRevenue: 125000,
+      activeLearnersLast30Days: 850
+    })
+  }),
+
+  http.get(`${API_URL}/analytics/courses`, () => {
+    return HttpResponse.json([
+      {
+        courseId: 'course-1',
+        courseTitle: 'Introduction to Web Development',
+        totalEnrollments: 450,
+        completionRate: 65,
+        averageRating: 4.8,
+        revenue: 45000
+      },
+      {
+        courseId: 'course-2',
+        courseTitle: 'Advanced React Patterns',
+        totalEnrollments: 285,
+        completionRate: 42,
+        averageRating: 4.6,
+        revenue: 32000
+      },
+      {
+        courseId: 'course-3',
+        courseTitle: 'System Design for Beginners',
+        totalEnrollments: 120,
+        completionRate: 30,
+        averageRating: 4.2,
+        revenue: 12000
+      }
+    ])
+  }),
+
+  http.get(`${API_URL}/analytics/trends`, () => {
+    return HttpResponse.json([
+      { date: '2026-01-20', count: 12 },
+      { date: '2026-01-21', count: 18 },
+      { date: '2026-01-22', count: 15 },
+      { date: '2026-01-23', count: 25 },
+      { date: '2026-01-24', count: 32 },
+      { date: '2026-01-25', count: 28 },
+      { date: '2026-01-26', count: 45 },
+      { date: '2026-01-27', count: 38 },
+      { date: '2026-01-28', count: 52 },
+      { date: '2026-01-29', count: 48 },
+      { date: '2026-01-30', count: 65 }
+    ])
   }),
 ]

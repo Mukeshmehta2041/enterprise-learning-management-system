@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Advanced routing and URL state being implemented. |
+| 🔄 In progress | |
 | ✅ Done | Nested layouts and URL-based state patterns in place. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 14 is done_
+**Started:** 2026-02-06  
+**Completed:** 2026-02-06
 
 ---
 
@@ -23,24 +23,24 @@
 
 ### 1. Nested layouts and sections
 
-- [ ] Review existing route structure for learner, instructor, and admin areas.
-- [ ] Introduce nested layouts (e.g. `/app/learner/*`, `/app/instructor/*`) to share navigation, sidebars, and headers.
-- [ ] Ensure layout components are clean, reusable, and follow the design system.
+- [x] Review existing route structure for learner, instructor, and admin areas.
+- [x] Introduce nested layouts (e.g. `/app/learner/*`, `/app/instructor/*`) to share navigation, sidebars, and headers.
+- [x] Ensure layout components are clean, reusable, and follow the design system.
 
 ### 2. URL state and query parameters
 
-- [ ] Move key UI state (filters, search, sort, pagination) into the URL using query params.
-- [ ] Ensure that sharing a URL reproduces the same view (deep linking).
-- [ ] Add helpers/hooks for reading/writing URL params in a type-safe way.
+- [x] Move key UI state (filters, search, sort, pagination) into the URL using query params.
+- [x] Ensure that sharing a URL reproduces the same view (deep linking).
+- [x] Add helpers/hooks for reading/writing URL params in a type-safe way.
 
 ### 3. Route guards and redirects
 
-- [ ] Centralize route guarding logic (auth + role checks) where possible instead of duplicating it in each page.
-- [ ] Ensure users are redirected to appropriate dashboards on login based on role.
+- [x] Centralize route guarding logic (auth + role checks) where possible instead of duplicating it in each page.
+- [x] Ensure users are redirected to appropriate dashboards on login based on role.
 
 ### 4. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Day 14 is complete.
+- [x] Update the **Progress** table at the top of this file when Day 14 is complete.
 
 ---
 

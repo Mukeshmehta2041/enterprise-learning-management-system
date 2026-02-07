@@ -1,5 +1,6 @@
 package com.lms.enrollment.infrastructure;
 
+import com.lms.common.events.EventEnvelope;
 import com.lms.common.events.UserDeletedEvent;
 import com.lms.enrollment.application.EnrollmentApplicationService;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +17,9 @@ public class UserDeletedConsumer {
 
   private final EnrollmentApplicationService enrollmentService;
 
-  @KafkaListener(topics = "user-deleted", groupId = "enrollment-service-group")
-  public void handleUserDeleted(UserDeletedEvent event) {
+  @KafkaListener(topics = "user.events", groupId = "enrollment-service-group")
+  public void handleUserDeleted(EventEnvelope<UserDeletedEvent> envelope) {
+    UserDeletedEvent event = envelope.payload();
     log.info("Received UserDeletedEvent for user: {}", event.getUserId());
     try {
       enrollmentService.cleanupUserData(event.getUserId());

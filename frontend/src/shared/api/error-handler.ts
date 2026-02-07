@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { AppError } from '../types/error'
+import type { AppError } from '../types/error'
 
 export const handleApiError = (error: unknown): AppError => {
   if (axios.isAxiosError(error)) {

@@ -3,6 +3,7 @@ package com.lms.enrollment.application;
 import com.lms.enrollment.api.*;
 import com.lms.enrollment.client.CourseServiceClient;
 import com.lms.enrollment.domain.*;
+import com.lms.enrollment.infrastructure.EnrollmentEventPublisher;
 import com.lms.common.exception.ForbiddenException;
 import com.lms.common.exception.ResourceNotFoundException;
 import com.lms.common.audit.AuditLogger;
@@ -37,6 +38,7 @@ public class EnrollmentApplicationService {
   private final CourseServiceClient courseServiceClient;
   private final StringRedisTemplate redisTemplate;
   private final AuditLogger auditLogger;
+  private final EnrollmentEventPublisher eventPublisher;
 
   @Value("${lms.enrollment.max-per-user:10}")
   private int maxEnrollmentsPerUser;
@@ -46,12 +48,14 @@ public class EnrollmentApplicationService {
       LessonProgressRepository lessonProgressRepository,
       CourseServiceClient courseServiceClient,
       StringRedisTemplate redisTemplate,
-      AuditLogger auditLogger) {
+      AuditLogger auditLogger,
+      EnrollmentEventPublisher eventPublisher) {
     this.enrollmentRepository = enrollmentRepository;
     this.lessonProgressRepository = lessonProgressRepository;
     this.courseServiceClient = courseServiceClient;
     this.redisTemplate = redisTemplate;
     this.auditLogger = auditLogger;
+    this.eventPublisher = eventPublisher;
   }
 
   public EnrollmentResponse enroll(UUID userId, EnrollRequest request) {
@@ -87,6 +91,8 @@ public class EnrollmentApplicationService {
       Enrollment saved = enrollmentRepository.save(enrollment);
       log.info("User {} enrolled in course {}", userId, courseId);
       auditLogger.logSuccess("COURSE_ENROLL", "ENROLLMENT", saved.getId().toString(), Map.of("courseId", courseId));
+
+      eventPublisher.publishEnrollmentCreated(saved.getId(), saved.getUserId(), saved.getCourseId());
 
       return mapToEnrollmentResponse(saved);
     } finally {

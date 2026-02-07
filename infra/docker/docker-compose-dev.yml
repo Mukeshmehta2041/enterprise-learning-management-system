@@ -121,6 +121,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
       - REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET:-9a4f4e354565456c4a56534d4a58436c646b4c614253426b4c624d6d45674c50}
       - AUTH_SERVICE_URL=http://lms-auth-service:8082
@@ -145,8 +146,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   lms-auth-service:
@@ -154,7 +158,7 @@ services:
       context: ../../services/lms-auth-service
     container_name: lms-auth-service
     environment:
-      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET:-9a4f4e354565456c4a56534d4a58436c646b4c614253426b4c624d6d45674c50}
       - USER_SERVICE_URL=http://lms-user-service:8081
     depends_on:
@@ -168,11 +172,17 @@ services:
       context: ../../services/lms-course-service
     container_name: lms-course-service
     environment:
-      - DATABASE_URL=jdbc:postgresql://postgres:5432/lms
-      - DATABASE_USER=lms
-      - DATABASE_PASSWORD=lms
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
+      - SPRING_DATASOURCE_USERNAME=lms
+      - SPRING_DATASOURCE_PASSWORD=lms
+      - SPRING_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   lms-enrollment-service:
@@ -183,9 +193,12 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
       - LMS_COURSE_SERVICE_URL=http://lms-course-service:8083
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   lms-content-service:
@@ -197,7 +210,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
     depends_on:
       postgres:
         condition: service_healthy
@@ -237,9 +250,14 @@ services:
       context: ../../services/lms-notification-service
     container_name: lms-notification-service
     environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
+      - SPRING_DATASOURCE_USERNAME=lms
+      - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_REDIS_HOST=redis
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
       kafka:

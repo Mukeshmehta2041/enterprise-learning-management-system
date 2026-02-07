@@ -47,16 +47,19 @@ public class JwtAuthenticationGatewayFilterFactory
         return chain.filter(exchange);
       }
 
-      if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
-        return onError(exchange, "Missing Authorization Header", HttpStatus.UNAUTHORIZED);
+      String token = null;
+      if (request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+          token = authHeader.substring(7);
+        }
+      } else if (request.getQueryParams().containsKey("token")) {
+        token = request.getQueryParams().getFirst("token");
       }
 
-      String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-      if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        return onError(exchange, "Invalid Authorization Header", HttpStatus.UNAUTHORIZED);
+      if (token == null) {
+        return onError(exchange, "Missing Authentication Token", HttpStatus.UNAUTHORIZED);
       }
-
-      String token = authHeader.substring(7);
 
       return validateToken(token)
           .flatMap(claims -> {

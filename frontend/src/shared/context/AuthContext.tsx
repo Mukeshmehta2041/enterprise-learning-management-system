@@ -5,16 +5,19 @@ import { apiClient } from '@/shared/api/client'
 
 interface AuthContextType {
   user: User | null
+  token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (token: string) => Promise<void>
   logout: () => void
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [token, setToken] = useState<string | null>(localStorage.getItem('accessToken'))
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchCurrentUser = async () => {
@@ -24,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to fetch user', error)
       localStorage.removeItem('accessToken')
+      setToken(null)
       setUser(null)
     } finally {
       setIsLoading(false)
@@ -31,21 +35,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken')
     if (token) {
       fetchCurrentUser()
     } else {
       setIsLoading(false)
     }
-  }, [])
+  }, [token])
 
-  const login = async (token: string) => {
-    localStorage.setItem('accessToken', token)
+  const login = async (newToken: string) => {
+    localStorage.setItem('accessToken', newToken)
+    setToken(newToken)
     await fetchCurrentUser()
   }
 
   const logout = () => {
     localStorage.removeItem('accessToken')
+    setToken(null)
     setUser(null)
   }
 
@@ -53,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token,
         isAuthenticated: !!user,
         isLoading,
         login,
@@ -64,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {

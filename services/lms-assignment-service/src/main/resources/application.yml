@@ -5,7 +5,7 @@ spring:
   application:
     name: lms-assignment-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/lms}
     username: ${SPRING_DATASOURCE_USERNAME:lms}
     password: ${SPRING_DATASOURCE_PASSWORD:lms}
     driver-class-name: org.postgresql.Driver
@@ -32,7 +32,7 @@ spring:
     create-schemas: true
     baseline-on-migrate: true
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9093}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

@@ -33,9 +33,11 @@ public class PaymentPlan {
   @Column(nullable = false)
   private BigDecimal price;
 
+  @Builder.Default
   @Column(nullable = false)
   private String currency = "USD";
 
+  @Builder.Default
   @Column(nullable = false)
   private String planInterval = "MONTHLY"; // MONTHLY, YEARLY, ONE_TIME
 

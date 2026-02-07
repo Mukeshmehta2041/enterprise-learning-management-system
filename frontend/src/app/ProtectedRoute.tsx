@@ -1,12 +1,14 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext'
+import { useAccess, type Role } from '@/shared/hooks/useAccess'
 
 interface ProtectedRouteProps {
-  requiredRoles?: string[]
+  requiredRoles?: Role[]
 }
 
 export function ProtectedRoute({ requiredRoles }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, user } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+  const { hasRole } = useAccess()
   const location = useLocation()
 
   if (isLoading) {
@@ -22,11 +24,8 @@ export function ProtectedRoute({ requiredRoles }: ProtectedRouteProps) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  if (requiredRoles && user) {
-    const hasRole = requiredRoles.some((role) => user.roles.includes(role))
-    if (!hasRole) {
-      return <Navigate to="/dashboard" replace />
-    }
+  if (requiredRoles && !hasRole(requiredRoles)) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return <Outlet />

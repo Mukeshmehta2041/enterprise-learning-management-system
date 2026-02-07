@@ -5,7 +5,7 @@ spring:
   application:
     name: lms-content-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/lms}
     username: ${SPRING_DATASOURCE_USERNAME:lms}
     password: ${SPRING_DATASOURCE_PASSWORD:lms}
     driver-class-name: org.postgresql.Driver
@@ -31,7 +31,7 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9093}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -57,7 +57,7 @@ springdoc:
 
 lms:
   course-service:
-    url: ${LMS_COURSE_SERVICE_URL:http://localhost:8083}
+    url: ${LMS_COURSE_SERVICE_URL:http://lms-course-service:8083}
 
 management:
   endpoints:

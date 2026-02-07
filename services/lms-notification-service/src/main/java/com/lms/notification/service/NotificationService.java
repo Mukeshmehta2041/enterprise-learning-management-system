@@ -23,6 +23,9 @@ public class NotificationService {
   @Autowired
   private RedisTemplate<String, Object> redisTemplate;
 
+  @Autowired
+  private NotificationStreamService streamService;
+
   @Async
   public void handleDomainEvent(DomainEvent event) {
     log.info("Processing event: {}", event.getEventType());
@@ -115,6 +118,9 @@ public class NotificationService {
 
     String userKey = "notifications:" + userId;
     redisTemplate.opsForSet().add(userKey, notification.getId());
+
+    // Broadcast in real-time
+    streamService.broadcast(userId, notification);
 
     log.info("Notification stored for user: {}", userId);
   }

@@ -8,12 +8,15 @@ import {
   Settings,
   CreditCard,
   X,
-  LogOut
+  LogOut,
+  GraduationCap
 } from 'lucide-react'
 import { IconButton } from '@/shared/ui'
 import { useAuth } from '@/shared/context/AuthContext'
+import { useAccess, type Role } from '@/shared/hooks/useAccess'
+import { useTenant } from '@/shared/context/TenantContext'
 
-const navItems = [
+const navItems: Array<{ name: string; href: string; icon: any; roles?: Role[] }> = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Courses', href: '/courses', icon: BookOpen },
   { name: 'Assignments', href: '/assignments', icon: ClipboardList },
@@ -36,6 +39,8 @@ export function Sidebar({ onClose, className }: SidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const { hasRole } = useAccess()
+  const { tenant } = useTenant()
 
   const handleLogout = () => {
     logout()
@@ -52,12 +57,11 @@ export function Sidebar({ onClose, className }: SidebarProps) {
         user.email[0]).toUpperCase().substring(0, 2)
     : '??'
 
-  const role = user?.roles[0] || 'User'
+  const roleNames = user?.roles.join(', ') || 'User'
 
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
-    if (!user) return false;
-    return item.roles.some(role => user.roles.includes(role));
+    return hasRole(item.roles);
   });
 
   return (
@@ -70,9 +74,14 @@ export function Sidebar({ onClose, className }: SidebarProps) {
       <div className="flex h-16 items-center justify-between px-6 border-b border-slate-100">
         <Link
           to="/"
-          className="text-xl font-bold tracking-tight text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          className="flex items-center gap-2 text-xl font-bold tracking-tight text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          LMS Portal
+          {tenant?.branding.logoUrl ? (
+            <img src={tenant.branding.logoUrl} alt="" className="h-8 w-8" />
+          ) : (
+            <GraduationCap className="h-8 w-8 text-primary" />
+          )}
+          <span className="truncate">{tenant?.branding.institutionName || 'LMS Platform'}</span>
         </Link>
         {onClose && (
           <IconButton
@@ -93,9 +102,9 @@ export function Sidebar({ onClose, className }: SidebarProps) {
               to={item.href}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
+                'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                 isActive
-                  ? 'bg-indigo-50 text-indigo-700'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
               )}
             >
@@ -103,7 +112,7 @@ export function Sidebar({ onClose, className }: SidebarProps) {
                 className={cn(
                   'mr-3 h-5 w-5 flex-shrink-0',
                   isActive
-                    ? 'text-indigo-600'
+                    ? 'text-primary'
                     : 'text-slate-400 group-hover:text-slate-500',
                 )}
                 aria-hidden="true"
@@ -115,14 +124,14 @@ export function Sidebar({ onClose, className }: SidebarProps) {
       </nav>
       <div className="p-4 border-t border-slate-100 space-y-2">
         <div className="flex items-center gap-3 px-2 py-3 rounded-md bg-slate-50">
-          <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs uppercase">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
             {userInitials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-slate-900 truncate">
               {fullName}
             </p>
-            <p className="text-xs text-slate-500 truncate capitalize">{role}</p>
+            <p className="text-xs text-slate-500 truncate capitalize">{roleNames}</p>
           </div>
         </div>
         <button

@@ -8,6 +8,7 @@ export const EnrollmentSchema = z.object({
   courseThumbnailUrl: z.string().optional(),
   status: z.enum(['ENROLLED', 'COMPLETED', 'CANCELLED']),
   progress: z.number().min(0).max(100),
+  completedLessonIds: z.array(z.string()).default([]),
   lastAccessedAt: z.string(),
   enrolledAt: z.string(),
 })
@@ -21,9 +22,9 @@ export const EnrollRequestSchema = z.object({
 export type EnrollRequest = z.infer<typeof EnrollRequestSchema>
 
 export const ProgressUpdateSchema = z.object({
-  enrollmentId: z.string(),
   lessonId: z.string(),
-  status: z.enum(['STARTED', 'COMPLETED']),
+  completed: z.boolean().optional(),
+  status: z.enum(['STARTED', 'COMPLETED']).optional(),
 })
 
 export type ProgressUpdate = z.infer<typeof ProgressUpdateSchema>

@@ -12,7 +12,7 @@ export function CourseCard({ course }: CourseCardProps) {
   return (
     <Link
       to={`/courses/${course.id}`}
-      className="block transition-transform hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+      className="block transition-transform hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <Card className="h-full overflow-hidden flex flex-col">
         {course.thumbnailUrl ? (
@@ -31,7 +31,7 @@ export function CourseCard({ course }: CourseCardProps) {
 
         <div className="p-4 flex-grow flex flex-col">
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-full">
               {course.category}
             </span>
             <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-full">
@@ -60,7 +60,7 @@ export function CourseCard({ course }: CourseCardProps) {
               </div>
             </div>
 
-            <div className="font-bold text-blue-600">
+            <div className="font-bold text-primary">
               ${course.price.toFixed(2)}
             </div>
           </div>

@@ -15,7 +15,7 @@ public class UserDeletedConsumer {
 
   private final CourseApplicationService courseService;
 
-  @KafkaListener(topics = "user-events", groupId = "course-service-group")
+  @KafkaListener(topics = "user.events", groupId = "course-service-group")
   public void handleUserDeleted(EventEnvelope<UserDeletedEvent> envelope) {
     UserDeletedEvent event = envelope.payload();
     log.info("Received UserDeletedEvent for user: {}", event.getUserId());

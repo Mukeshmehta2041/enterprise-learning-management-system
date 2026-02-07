@@ -4,7 +4,7 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/lms}
     username: ${SPRING_DATASOURCE_USERNAME:lms}
     password: ${SPRING_DATASOURCE_PASSWORD:lms}
     driver-class-name: org.postgresql.Driver
@@ -17,11 +17,11 @@ spring:
       hibernate.default_schema: lms_payment
   flyway:
     enabled: true
-    default-schema: lms_payment
+    schemas: lms_payment
     create-schemas: false
     baseline-on-migrate: true
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9093}
     producer:
       acks: all
 

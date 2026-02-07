@@ -1,10 +1,11 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useCourse } from '../api/useCourses'
 import { useEnrollment, useEnrollSub } from '@/features/enrollments/api/useEnrollments'
+import { useAccess } from '@/shared/hooks/useAccess'
 import { Container, Card } from '@/shared/ui/Layout'
 import { Heading1, Heading2, Heading3, Muted, Paragraph, Small } from '@/shared/ui/Typography'
 import { Button } from '@/shared/ui/Button'
-import { BookOpen, Clock, Star, Users, ChevronRight, PlayCircle, FileText, HelpCircle } from 'lucide-react'
+import { BookOpen, Clock, Star, Users, ChevronRight, PlayCircle, FileText, HelpCircle, Edit } from 'lucide-react'
 import { CourseSkeleton } from '../components/CourseSkeleton'
 import type { Module, Lesson } from '@/shared/types/course'
 
@@ -14,6 +15,7 @@ export function CourseDetailPage() {
   const { data: course, isLoading: isCourseLoading, isError } = useCourse(courseId!)
   const { data: enrollment, isLoading: isEnrollmentLoading } = useEnrollment(courseId!)
   const enrollMutation = useEnrollSub()
+  const { hasRole } = useAccess()
 
   const isLoading = isCourseLoading || isEnrollmentLoading
 
@@ -68,17 +70,30 @@ export function CourseDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
-          <div>
-            <div className="flex items-center gap-2 mb-4 text-sm font-medium text-blue-600">
-              <Link to="/courses">Courses</Link>
-              <ChevronRight size={14} />
-              <span className="text-slate-500">{course.category}</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-4 text-sm font-medium text-blue-600">
+                <Link to="/courses">Courses</Link>
+                <ChevronRight size={14} />
+                <span className="text-slate-500">{course.category}</span>
+              </div>
+              <Heading1 className="mb-4">{course.title}</Heading1>
             </div>
-            <Heading1 className="mb-4">{course.title}</Heading1>
-            <Paragraph className="text-xl text-slate-600 leading-relaxed">
-              {course.description}
-            </Paragraph>
+            {hasRole(['INSTRUCTOR', 'ADMIN']) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => navigate(`/instructor/courses/${courseId}/edit`)}
+              >
+                <Edit size={16} />
+                Edit Course
+              </Button>
+            )}
           </div>
+          <Paragraph className="text-xl text-slate-600 leading-relaxed">
+            {course.description}
+          </Paragraph>
 
           <div className="flex flex-wrap gap-6 py-6 border-y border-slate-100">
             <div className="flex items-center gap-2">

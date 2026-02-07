@@ -1,8 +1,6 @@
 import { useEnrollments } from '../api/useEnrollments'
 import { EnrollmentCard } from '../components/EnrollmentCard'
-import { Container } from '@/shared/ui/Layout'
-import { Heading1, TextMuted, Heading4 } from '@/shared/ui/Typography'
-import { Button } from '@/shared/ui/Button'
+import { Container, Heading1, TextMuted, Heading4, Button, EmptyState } from '@/shared/ui'
 import { useNavigate } from 'react-router-dom'
 import { GraduationCap, AlertCircle } from 'lucide-react'
 
@@ -35,17 +33,14 @@ export function MyLearningPage() {
               <div key={i} className="h-64 bg-slate-100 animate-pulse rounded-xl" />
             ))
           ) : enrollments?.length === 0 ? (
-            <div className="col-span-full py-16 flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                <GraduationCap size={40} className="text-slate-300" />
-              </div>
-              <Heading4>No enrollments yet</Heading4>
-              <TextMuted className="mb-8 max-w-sm">
-                You haven't enrolled in any courses yet. Start your learning journey today!
-              </TextMuted>
-              <Button size="lg" onClick={() => navigate('/courses')}>
-                Browse Catalog
-              </Button>
+            <div className="col-span-full">
+              <EmptyState
+                title="No enrollments yet"
+                description="You haven't enrolled in any courses yet. Start your learning journey today!"
+                icon={GraduationCap}
+                actionLabel="Browse Catalog"
+                onAction={() => navigate('/courses')}
+              />
             </div>
           ) : (
             enrollments?.map((enrollment) => (

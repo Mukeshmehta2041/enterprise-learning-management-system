@@ -15,10 +15,10 @@ Contract.make {
     response {
         status OK()
         body([
-            accessToken: "some-access-token",
-            refreshToken: "some-refresh-token",
-            tokenType: "Bearer",
-            expiresIn: 900
+            access_token: "some-access-token",
+            refresh_token: "some-refresh-token",
+            token_type: "Bearer",
+            expires_in: 900
         ])
         headers {
             contentType(applicationJson())

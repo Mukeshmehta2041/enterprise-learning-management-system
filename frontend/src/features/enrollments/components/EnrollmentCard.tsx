@@ -27,7 +27,7 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
         )}
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200">
           <div
-            className="h-full bg-blue-600 transition-all duration-500"
+            className="h-full bg-primary transition-all duration-500"
             style={{ width: `${enrollment.progress}%` }}
           />
         </div>
@@ -37,7 +37,7 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
         <div className="flex items-center justify-between mb-2">
           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enrollment.status === 'COMPLETED'
             ? 'bg-emerald-100 text-emerald-700'
-            : 'bg-blue-100 text-blue-700'
+            : 'bg-primary/10 text-primary'
             }`}>
             {enrollment.status}
           </span>
@@ -58,7 +58,7 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
 
           <Link
             to={`/courses/${enrollment.courseId}`}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded"
+            className="text-primary hover:text-primary/80 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             {enrollment.status === 'COMPLETED' ? 'Review' : 'Continue'}
           </Link>

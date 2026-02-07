@@ -5,11 +5,12 @@ import { cn } from '@/shared/utils/cn'
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline'
   size?: 'sm' | 'md' | 'lg'
-  icon: ReactNode
+  icon?: ReactNode
+  'aria-label': string
 }
 
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, variant = 'ghost', size = 'md', icon, disabled, ...props }, ref) => {
+  ({ className, variant = 'ghost', size = 'md', icon, children, disabled, 'aria-label': ariaLabel, ...props }, ref) => {
     const variants = {
       primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500',
       secondary: 'bg-slate-200 text-slate-900 hover:bg-slate-300 focus:ring-slate-500',
@@ -28,6 +29,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       <button
         ref={ref}
         disabled={disabled}
+        aria-label={ariaLabel}
         className={cn(
           'inline-flex items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
           variants[variant],
@@ -36,7 +38,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         )}
         {...props}
       >
-        {icon}
+        <span aria-hidden="true">{icon || children}</span>
       </button>
     )
   }

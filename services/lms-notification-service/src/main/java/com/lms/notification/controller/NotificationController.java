@@ -3,11 +3,14 @@ package com.lms.notification.controller;
 import com.lms.common.security.RBACEnforcer;
 import com.lms.common.security.UserContext;
 import com.lms.notification.model.InAppNotification;
+import com.lms.notification.service.NotificationStreamService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.Instant;
 import java.util.List;
@@ -21,8 +24,20 @@ public class NotificationController {
   @Autowired
   private RedisTemplate<String, Object> redisTemplate;
 
+  @Autowired
+  private NotificationStreamService streamService;
+
   @Autowired(required = false)
   private RBACEnforcer rbacEnforcer;
+
+  @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public SseEmitter streamNotifications(@RequestAttribute(required = false) UserContext userContext) {
+    if (userContext == null || userContext.getUserId() == null) {
+      log.warn("Unauthorized attempt to access notification stream");
+      throw new RBACEnforcer.AccessDeniedException("Unauthorized");
+    }
+    return streamService.createEmitter(userContext.getUserId());
+  }
 
   public record MarkAsReadRequest(List<String> notificationIds) {
   }

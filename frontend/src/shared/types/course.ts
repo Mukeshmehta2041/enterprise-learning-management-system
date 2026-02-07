@@ -50,11 +50,14 @@ export type CourseDetail = z.infer<typeof CourseDetailSchema>
 
 export const CourseFiltersSchema = z.object({
   cursor: z.string().optional(),
+  page: z.number().optional(),
   limit: z.number().optional(),
   category: z.string().optional(),
   level: z.string().optional(),
   status: z.string().optional(),
   search: z.string().optional(),
+  sort: z.string().optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 })
 
 export type CourseFilters = z.infer<typeof CourseFiltersSchema>

@@ -32,8 +32,7 @@ public class EventConsumer {
       "enrollment.events",
       "assignment.events",
       "payment.events",
-      "course.events",
-      "assignment-events" // Added some common variants
+      "course.events"
   }, groupId = "notification-service")
   public void consume(String message) {
     try {

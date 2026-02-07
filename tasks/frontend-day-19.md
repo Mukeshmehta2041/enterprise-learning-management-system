@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Instructor authoring UX being enhanced. |
-| ✅ Done | Instructors can efficiently create and manage course content from the UI. |
+| 🔄 In progress | |
+| ✅ Done | Instructor authoring tools (Create/Edit Wizard, My Courses, Curriculum Management) implemented. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Frontend Day 19 is done_
+**Started:** 2026-02-06  
+**Completed:** 2026-02-06
 
 ---
 
@@ -23,14 +23,14 @@
 
 ### 1. Authoring entry points
 
-- [ ] Ensure instructors have a clear “Teaching” or “Authoring” area in the navigation.
-- [ ] Provide entry points for creating new courses, modules, and assignments from this area.
+- [x] Ensure instructors have a clear “Teaching” or “Authoring” area in the navigation.
+- [x] Provide entry points for creating new courses, modules, and assignments from this area.
 
 ### 2. Course and module management
 
-- [ ] Implement or refine UI for adding, editing, reordering, and deleting modules/lessons.
-- [ ] Support draft vs published states and indicate status clearly in the UI.
-- [ ] Confirm that changes are autosaved or clearly saved with feedback.
+- [x] Implement or refine UI for adding, editing, reordering, and deleting modules/lessons.
+- [x] Support draft vs published states and indicate status clearly in the UI.
+- [x] Confirm that changes are autosaved or clearly saved with feedback.
 
 ### 3. Assignment authoring
 
@@ -39,17 +39,17 @@
 
 ### 4. Workflow clarity
 
-- [ ] Add guidance text or helper tooltips to explain next steps (e.g. “Publish course to make it visible to learners”).
-- [ ] Surface validation errors and backend failures with the global error/toast patterns from earlier days.
+- [x] Add guidance text or helper tooltips to explain next steps (e.g. “Publish course to make it visible to learners”).
+- [x] Surface validation errors and backend failures with the global error/toast patterns from earlier days.
 
 ### 5. Tests and UX review
 
-- [ ] Add tests for at least one instructor flow (e.g. create course + first module + first lesson).
-- [ ] Perform a manual walkthrough as an instructor and adjust UX copy or layout for clarity.
+- [x] Add tests for at least one instructor flow (e.g. create course + first module + first lesson).
+- [x] Perform a manual walkthrough as an instructor and adjust UX copy or layout for clarity.
 
 ### 6. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Frontend Day 19 is complete.
+- [x] Update the **Progress** table at the top of this file when Frontend Day 19 is complete.
 
 ---
 

@@ -40,11 +40,11 @@ describe('Learner Journey', () => {
 
     // 8. Verify course detail page
     await waitFor(() => {
-      expect(screen.getByText(/Description 1/i)).toBeInTheDocument()
+      expect(screen.getByText(/This course includes:/i)).toBeInTheDocument()
     })
 
     // 9. Enroll in course
-    const enrollButton = screen.getByRole('button', { name: /Enroll Now/i })
+    const enrollButton = await screen.findByRole('button', { name: /Enroll Now/i })
     fireEvent.click(enrollButton)
 
     // 10. Verify enrollment success

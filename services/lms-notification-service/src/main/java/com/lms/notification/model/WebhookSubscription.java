@@ -31,6 +31,7 @@ public class WebhookSubscription {
   @Column(name = "secret", nullable = false)
   private String secret;
 
+  @Builder.Default
   @Column(name = "active", nullable = false)
   private boolean active = true;
 

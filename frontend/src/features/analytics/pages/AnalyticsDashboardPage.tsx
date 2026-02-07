@@ -1,14 +1,34 @@
-import { useGlobalStats, useCourseAnalytics } from '../api/analyticsHooks';
+import { useGlobalStats, useCourseAnalytics, useEnrollmentTrends } from '../api/analyticsHooks';
 import { Card, PageHeader, Container } from '@/shared/ui/Layout';
-import { Users, BookOpen, GraduationCap, DollarSign, TrendingUp, Star } from 'lucide-react';
+import { Users, BookOpen, GraduationCap, DollarSign, TrendingUp, Filter, Calendar, FileText, Star } from 'lucide-react';
 import { TextMuted, TextSmall } from '@/shared/ui/Typography';
 import { Button } from '@/shared/ui';
+import { useState } from 'react';
+import { CSVLink } from 'react-csv';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from 'recharts';
 
 export function AnalyticsDashboardPage() {
-  const { data: globalStats, isLoading: isGlobalLoading } = useGlobalStats();
-  const { data: courseStats, isLoading: isCourseLoading } = useCourseAnalytics();
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [selectedCourse, setSelectedCourse] = useState<string>('');
 
-  if (isGlobalLoading || isCourseLoading) {
+  const { data: globalStats, isLoading: isGlobalLoading } = useGlobalStats();
+  const { data: courseStats, isLoading: isCourseLoading } = useCourseAnalytics({
+    courseId: selectedCourse || undefined,
+  });
+  const { data: trends, isLoading: isTrendLoading } = useEnrollmentTrends();
+
+  if (isGlobalLoading || isCourseLoading || isTrendLoading) {
     return <div className="p-8 text-center text-slate-500">Loading analytics data...</div>;
   }
 
@@ -49,11 +69,61 @@ export function AnalyticsDashboardPage() {
         title="Instructor Analytics"
         description="Monitor your courses performance and student engagement."
         actions={
-          <Button variant="outline" size="sm">
-            Export Report
-          </Button>
+          <div className="flex gap-2">
+            <CSVLink
+              data={courseStats || []}
+              filename={`course-analytics-${new Date().toISOString().split('T')[0]}.csv`}
+              className="inline-flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-md text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+            >
+              <FileText className="h-4 w-4" />
+              Export CSV
+            </CSVLink>
+          </div>
         }
       />
+
+      {/* Filters */}
+      <Card className="mb-8 p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-slate-400" aria-hidden="true" />
+            <label htmlFor="course-filter" className="text-sm font-medium text-slate-700">Filter by Course:</label>
+          </div>
+
+          <select
+            id="course-filter"
+            className="text-sm border border-slate-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+          >
+            <option value="">All Courses</option>
+            {courseStats?.map(course => (
+              <option key={course.courseId} value={course.courseId}>{course.courseTitle}</option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <Calendar className="h-4 w-4 text-slate-400" aria-hidden="true" />
+            <label htmlFor="start-date" className="sr-only">Start Date</label>
+            <input
+              id="start-date"
+              type="date"
+              className="text-sm border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={dateRange.start}
+              onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+            />
+            <span className="text-slate-400">to</span>
+            <label htmlFor="end-date" className="sr-only">End Date</label>
+            <input
+              id="end-date"
+              type="date"
+              className="text-sm border border-slate-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={dateRange.end}
+              onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+            />
+          </div>
+        </div>
+      </Card>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -74,6 +144,74 @@ export function AnalyticsDashboardPage() {
             </div>
           </Card>
         ))}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <Card title="Enrollment Trends" description="Daily enrollment counts over time.">
+          <div className="h-[300px] w-full pt-4" role="img" aria-label="Line chart showing enrollment trends over the selected period.">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trends}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#4f46e5"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: '#4f46e5' }}
+                  activeDot={{ r: 6, strokeWidth: 0 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card title="Course Revenue" description="Revenue breakdown by course.">
+          <div className="h-[300px] w-full pt-4" role="img" aria-label="Bar chart showing revenue per course.">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={courseStats}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="courseTitle"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  dy={10}
+                  hide
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="revenue" fill="#6366f1" radius={[4, 4, 0, 0]}>
+                  {courseStats?.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e'][index % 4]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

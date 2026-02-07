@@ -1,3 +1,6 @@
+-- Enable extensions required by microservices
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE SCHEMA IF NOT EXISTS lms_user;
 CREATE SCHEMA IF NOT EXISTS lms_course;
 CREATE SCHEMA IF NOT EXISTS lms_enrollment;

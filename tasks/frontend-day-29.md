@@ -14,7 +14,7 @@
 | 🔄 In progress | Deep accessibility improvements underway. |
 | ✅ Done | Key LMS flows meet strong accessibility standards. |
 
-**Started:** _fill when you begin_  
+**Started:** 2026-02-07  
 **Completed:** _fill when Frontend Day 29 is done_
 
 ---

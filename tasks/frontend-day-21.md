@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Privacy and consent UI being implemented. |
-| ✅ Done | Users can review and manage privacy and data settings from the UI. |
+| 🔄 In progress | |
+| ✅ Done | Privacy center, communication preferences, and data subject actions UI implemented. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Frontend Day 21 is done_
+**Started:** 2026-02-06  
+**Completed:** 2026-02-06
 
 ---
 
@@ -23,27 +23,27 @@
 
 ### 1. Privacy center entry point
 
-- [ ] Add a “Privacy & Settings” or similar entry point from the profile/account area.
-- [ ] Clearly explain what users can control here (email preferences, data exports, tracking, etc.).
+- [x] Add a “Privacy & Settings” or similar entry point from the profile/account area.
+- [x] Clearly explain what users can control here (email preferences, data exports, tracking, etc.).
 
 ### 2. Communication and notification preferences
 
-- [ ] Provide toggles for marketing emails, product updates, and course-related notifications (as supported by backend).
-- [ ] Ensure these settings are persisted via appropriate APIs and reflected in the UI.
+- [x] Provide toggles for marketing emails, product updates, and course-related notifications (as supported by backend).
+- [x] Ensure these settings are persisted via appropriate APIs and reflected in the UI.
 
 ### 3. Data and tracking controls
 
-- [ ] Surface options for analytics/tracking consent where required (cookie banner or preferences panel).
-- [ ] Link to privacy policy and terms of service in relevant locations.
+- [x] Surface options for analytics/tracking consent where required (cookie banner or preferences panel).
+- [x] Link to privacy policy and terms of service in relevant locations.
 
 ### 4. Data subject actions (UI only)
 
-- [ ] Add UI hooks for data subject requests (e.g. “Request data export”, “Request account deletion”) that call or queue backend workflows.
-- [ ] Show clear confirmation and timelines (e.g. “We’ll process this within X days”) where applicable.
+- [x] Add UI hooks for data subject requests (e.g. “Request data export”, “Request account deletion”) that call or queue backend workflows.
+- [x] Show clear confirmation and timelines (e.g. “We’ll process this within X days”) where applicable.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Frontend Day 21 is complete.
+- [x] Update the **Progress** table at the top of this file when Frontend Day 21 is complete.
 
 ---
 

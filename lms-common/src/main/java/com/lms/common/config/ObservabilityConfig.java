@@ -2,6 +2,7 @@ package com.lms.common.config;
 
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.aop.ObservedAspect;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,7 +10,8 @@ import org.springframework.context.annotation.Configuration;
 public class ObservabilityConfig {
 
   @Bean
-  public ObservedAspect observedAspect(ObservationRegistry observationRegistry) {
+  @ConditionalOnMissingBean(ObservedAspect.class)
+  public ObservedAspect commonObservedAspect(ObservationRegistry observationRegistry) {
     return new ObservedAspect(observationRegistry);
   }
 }

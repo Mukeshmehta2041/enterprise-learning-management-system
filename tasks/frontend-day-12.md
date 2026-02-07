@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Frontend integration tests and mocks being added. |
+| 🔄 In progress | |
 | ✅ Done | Core learner and instructor journeys covered by frontend integration tests. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 12 is done_
+**Started:** 2026-02-06
+**Completed:** 2026-02-06
 
 ---
 
@@ -23,29 +23,29 @@
 
 ### 1. Test harness and mocking
 
-- [ ] Ensure you have a testing setup (e.g. React Testing Library + Jest/Vitest) configured for the frontend.
-- [ ] Add an API mocking layer (e.g. MSW) for frontend tests to simulate backend responses.
-- [ ] Create reusable test utilities for rendering with providers (router, AuthContext, React Query).
+- [x] Ensure you have a testing setup (e.g. React Testing Library + Jest/Vitest) configured for the frontend.
+- [x] Add an API mocking layer (e.g. MSW) for frontend tests to simulate backend responses.
+- [x] Create reusable test utilities for rendering with providers (router, AuthContext, React Query).
 
 ### 2. Core learner journeys
 
-- [ ] Write integration tests for login → browse courses → enroll → view course content.
-- [ ] Include assertions for loading states, error states, and empty states.
-- [ ] Cover both happy path and a couple of failure scenarios (e.g. invalid credentials, API failures).
+- [x] Write integration tests for login → browse courses → enroll → view course content.
+- [x] Include assertions for loading states, error states, and empty states.
+- [x] Cover both happy path and a couple of failure scenarios (e.g. invalid credentials, API failures).
 
 ### 3. Instructor and admin flows
 
-- [ ] Add tests for key instructor flows (e.g. view analytics, manage courses, review enrollments).
-- [ ] Ensure role-based routes correctly redirect unauthorized users.
+- [x] Add tests for key instructor flows (e.g. view analytics, manage courses, review enrollments).
+- [x] Ensure role-based routes correctly redirect unauthorized users.
 
 ### 4. CI integration
 
-- [ ] Ensure frontend integration tests run in CI (or are wired into the existing CI workflow from Day 10).
-- [ ] Make tests stable and deterministic to avoid flaky builds.
+- [x] Ensure frontend integration tests run in CI (or are wired into the existing CI workflow from Day 10).
+- [x] Make tests stable and deterministic to avoid flaky builds.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Day 12 is complete.
+- [x] Update the **Progress** table at the top of this file when Day 12 is complete.
 
 ---
 

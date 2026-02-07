@@ -2,6 +2,7 @@ import { Paragraph } from '@/shared/ui/Typography'
 import { useState, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useCourse } from '../api/useCourses'
+import { useEnrollment, useUpdateProgress } from '@/features/enrollments/api/useEnrollments'
 import { Heading3, Small } from '@/shared/ui/Typography'
 import { Button } from '@/shared/ui/Button'
 import {
@@ -12,7 +13,8 @@ import {
   PlayCircle,
   FileText,
   HelpCircle,
-  ArrowLeft
+  ArrowLeft,
+  CheckCircle2
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import type { Module, Lesson } from '@/shared/types/course'
@@ -20,7 +22,9 @@ import type { Module, Lesson } from '@/shared/types/course'
 export function LessonPlayerPage() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>()
   const navigate = useNavigate()
-  const { data: course, isLoading, isError } = useCourse(courseId!)
+  const { data: course, isLoading: isCourseLoading, isError } = useCourse(courseId!)
+  const { data: enrollment, isLoading: isEnrollmentLoading } = useEnrollment(courseId!)
+  const updateProgress = useUpdateProgress(courseId!)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   const allLessons = useMemo(() => {
@@ -35,21 +39,38 @@ export function LessonPlayerPage() {
   const nextLesson = allLessons[currentLessonIndex + 1]
   const prevLesson = allLessons[currentLessonIndex - 1]
 
+  const isCompleted = enrollment?.completedLessonIds.includes(lessonId!) || false
+  const progressPercentage = enrollment?.completedLessonIds.length && allLessons.length
+    ? Math.round((enrollment.completedLessonIds.length / allLessons.length) * 100)
+    : 0
+
+  const handleToggleComplete = () => {
+    updateProgress.mutate({
+      lessonId: lessonId!,
+      completed: !isCompleted
+    })
+  }
+
+  const isLoading = isCourseLoading || isEnrollmentLoading
+
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center" role="status" aria-live="polite">
-        Loading player...
+      <div className="h-screen flex items-center justify-center bg-slate-900" role="status" aria-live="polite">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-slate-400 font-medium">Loading player...</p>
+        </div>
       </div>
     )
   }
 
   if (isError || !course || !currentLesson) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center">
+      <div className="h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
         <Heading3>Lesson not found</Heading3>
         <Button
           variant="outline"
-          className="mt-4"
+          className="mt-4 border-slate-700 text-white hover:bg-slate-800"
           onClick={() => navigate(`/courses/${courseId}`)}
         >
           Back to Course
@@ -66,7 +87,7 @@ export function LessonPlayerPage() {
           <Link
             to={`/courses/${courseId}`}
             aria-label="Back to course"
-            className="p-2 hover:bg-slate-800 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+            className="p-2 hover:bg-slate-800 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           >
             <ArrowLeft size={20} />
           </Link>
@@ -76,9 +97,27 @@ export function LessonPlayerPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Button
+            variant={isCompleted ? "secondary" : "primary"}
+            size="sm"
+            onClick={handleToggleComplete}
+            isLoading={updateProgress.isPending}
+            className="hidden sm:flex"
+          >
+            {isCompleted ? (
+              <>
+                <CheckCircle2 size={16} className="mr-2 text-emerald-500" />
+                Completed
+              </>
+            ) : (
+              'Mark as Complete'
+            )}
+          </Button>
+
           <Button
             variant="ghost"
+            size="icon"
             className="text-white hover:bg-slate-800"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             aria-label={isSidebarOpen ? 'Close course content' : 'Open course content'}
@@ -97,16 +136,34 @@ export function LessonPlayerPage() {
           <div className="flex-grow flex items-center justify-center bg-black">
             {currentLesson.contentType === 'VIDEO' && (
               <div className="aspect-video w-full max-w-5xl bg-slate-900 flex flex-col items-center justify-center border border-slate-800 rounded-lg">
-                <PlayCircle size={64} className="text-blue-500 mb-4" />
+                <PlayCircle size={64} className="text-primary mb-4" />
                 <Paragraph className="text-slate-400 text-center px-4">
                   Video Player Placeholder<br />
                   <span className="text-sm">Source: {currentLesson.contentUrl || 'No URL provided'}</span>
                 </Paragraph>
+                {!isCompleted && (
+                  <Button
+                    onClick={handleToggleComplete}
+                    className="mt-6"
+                    size="sm"
+                  >
+                    Mark Lesson as Done
+                  </Button>
+                )}
               </div>
             )}
             {currentLesson.contentType === 'DOCUMENT' && (
               <div className="h-full w-full max-w-4xl bg-white text-slate-900 p-8 overflow-auto">
-                <h2 className="text-2xl font-bold mb-6">{currentLesson.title}</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold">{currentLesson.title}</h2>
+                  <Button
+                    variant={isCompleted ? "outline" : "primary"}
+                    size="sm"
+                    onClick={handleToggleComplete}
+                  >
+                    {isCompleted ? 'Completed' : 'Mark as Done'}
+                  </Button>
+                </div>
                 <div className="prose max-w-none">
                   <p>Document content would be rendered here.</p>
                   <p>{currentLesson.description}</p>
@@ -118,7 +175,7 @@ export function LessonPlayerPage() {
                 <HelpCircle size={48} className="text-orange-500 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Knowledge Check</h2>
                 <p className="text-slate-400 mb-6">Test your understanding of the previous lessons.</p>
-                <Button size="lg" className="w-full">Start Quiz</Button>
+                <Button size="lg" className="w-full" variant="primary">Start Quiz</Button>
               </div>
             )}
           </div>
@@ -142,7 +199,8 @@ export function LessonPlayerPage() {
             </div>
 
             <Button
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-30"
+              variant="primary"
+              className="disabled:opacity-30"
               disabled={!nextLesson}
               onClick={() => navigate(`/courses/${courseId}/lesson/${nextLesson?.id}`)}
             >
@@ -159,8 +217,8 @@ export function LessonPlayerPage() {
         )}>
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
             <h2 className="font-bold">Course Content</h2>
-            <div className="text-xs px-2 py-1 bg-blue-500/10 text-blue-400 rounded-full font-semibold">
-              15% Complete
+            <div className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full font-semibold">
+              {progressPercentage}% Complete
             </div>
           </div>
 
@@ -173,33 +231,42 @@ export function LessonPlayerPage() {
                   </h3>
                 </div>
                 <div>
-                  {module.lessons.sort((a: Lesson, b: Lesson) => a.order - b.order).map((lesson: Lesson) => (
-                    <Link
-                      key={lesson.id}
-                      to={`/courses/${courseId}/lesson/${lesson.id}`}
-                      aria-current={lesson.id === lessonId ? 'page' : undefined}
-                      className={cn(
-                        "flex items-start gap-3 p-4 hover:bg-slate-800 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
-                        lesson.id === lessonId ? "bg-slate-800 border-l-2 border-blue-500" : ""
-                      )}
-                    >
-                      <div className="mt-0.5">
-                        <div className="w-5 h-5 rounded-full border-2 border-slate-700 group-hover:border-slate-500 transition-colors flex items-center justify-center">
+                  {module.lessons.sort((a: Lesson, b: Lesson) => a.order - b.order).map((lesson: Lesson) => {
+                    const isLessonCompleted = enrollment?.completedLessonIds.includes(lesson.id)
+                    return (
+                      <Link
+                        key={lesson.id}
+                        to={`/courses/${courseId}/lesson/${lesson.id}`}
+                        aria-current={lesson.id === lessonId ? 'page' : undefined}
+                        className={cn(
+                          "flex items-start gap-3 p-4 hover:bg-slate-800 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900",
+                          lesson.id === lessonId ? "bg-slate-800 border-l-2 border-primary" : ""
+                        )}
+                      >
+                        <div className="mt-0.5">
+                          <div className={cn(
+                            "w-5 h-5 rounded-full border-2 transition-colors flex items-center justify-center",
+                            isLessonCompleted
+                              ? "bg-emerald-500 border-emerald-500 text-white"
+                              : "border-slate-700 group-hover:border-slate-500"
+                          )}>
+                            {isLessonCompleted && <CheckCircle2 size={12} fill="currentColor" className="text-emerald-500 stroke-white" />}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-grow">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          {lesson.contentType === 'VIDEO' && <PlayCircle size={14} className="text-slate-400" />}
-                          {lesson.contentType === 'DOCUMENT' && <FileText size={14} className="text-slate-400" />}
-                          {lesson.contentType === 'QUIZ' && <HelpCircle size={14} className="text-slate-400" />}
-                          <span className={lesson.id === lessonId ? "text-blue-400" : "text-slate-300"}>
-                            {lesson.title}
-                          </span>
+                        <div className="flex-grow">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            {lesson.contentType === 'VIDEO' && <PlayCircle size={14} className="text-slate-400" />}
+                            {lesson.contentType === 'DOCUMENT' && <FileText size={14} className="text-slate-400" />}
+                            {lesson.contentType === 'QUIZ' && <HelpCircle size={14} className="text-slate-400" />}
+                            <span className={lesson.id === lessonId ? "text-primary" : "text-slate-300"}>
+                              {lesson.title}
+                            </span>
+                          </div>
+                          {lesson.duration && <Small className="text-slate-500">{lesson.duration}</Small>}
                         </div>
-                        {lesson.duration && <Small className="text-slate-500">{lesson.duration}</Small>}
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             ))}

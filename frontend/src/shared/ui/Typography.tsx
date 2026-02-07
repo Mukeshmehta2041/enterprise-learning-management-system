@@ -4,35 +4,36 @@ import { cn } from '@/shared/utils/cn'
 interface TextProps {
   children: ReactNode
   className?: string
+  id?: string
 }
 
-export function Heading1({ children, className }: TextProps) {
+export function Heading1({ children, className, id }: TextProps) {
   return (
-    <h1 className={cn('scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-slate-900', className)}>
+    <h1 id={id} className={cn('scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl text-slate-900', className)}>
       {children}
     </h1>
   )
 }
 
-export function Heading2({ children, className }: TextProps) {
+export function Heading2({ children, className, id }: TextProps) {
   return (
-    <h2 className={cn('scroll-m-20 border-b border-slate-200 pb-2 text-3xl font-semibold tracking-tight first:mt-0 text-slate-900', className)}>
+    <h2 id={id} className={cn('scroll-m-20 border-b border-slate-200 pb-2 text-3xl font-semibold tracking-tight first:mt-0 text-slate-900', className)}>
       {children}
     </h2>
   )
 }
 
-export function Heading3({ children, className }: TextProps) {
+export function Heading3({ children, className, id }: TextProps) {
   return (
-    <h3 className={cn('scroll-m-20 text-2xl font-semibold tracking-tight text-slate-900', className)}>
+    <h3 id={id} className={cn('scroll-m-20 text-2xl font-semibold tracking-tight text-slate-900', className)}>
       {children}
     </h3>
   )
 }
 
-export function Heading4({ children, className }: TextProps) {
+export function Heading4({ children, className, id }: TextProps) {
   return (
-    <h4 className={cn('scroll-m-20 text-xl font-semibold tracking-tight text-slate-900', className)}>
+    <h4 id={id} className={cn('scroll-m-20 text-xl font-semibold tracking-tight text-slate-900', className)}>
       {children}
     </h4>
   )
