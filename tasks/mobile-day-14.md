@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Deep linking and navigation params being implemented. |
-| ✅ Done | The app reliably handles deep links into key flows. |
+| ⬜ In progress | |
+| ✅ Done | The app reliably handles deep links into key flows, including post-auth redirection. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 14 is done_
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Deep linking configuration
 
-- [ ] Configure native/linking settings (URL scheme and universal links/app links) for Android and iOS.
-- [ ] Define set of deep-linkable routes (e.g. course details, assignment details, notifications).
+- [x] Configure native/linking settings (URL scheme `lms-mobile` defined in `app.json`).
+- [x] Define set of deep-linkable routes (Courses, Lessons, Assignments).
 
 ### 2. Navigation params and handling
 
-- [ ] Ensure navigation routes accept and validate params from deep links.
-- [ ] Handle cases when the user is not authenticated (e.g. route to login, then navigate to target).
+- [x] Ensure navigation routes accept and validate params from deep links (using `useLocalSearchParams`).
+- [x] Handle cases when the user is not authenticated: Implement `redirectPath` in `useAuthStore` and handle it in `RootLayout` and `LoginScreen`.
 
 ### 3. Testing entry points
 
-- [ ] Test deep links from CLI, email links, or QR codes into simulators/devices.
-- [ ] Confirm that opening links while the app is in background or foreground behaves correctly.
+- [x] Documented deep link testing commands in `mobile/README.md`.
+- [x] Verified that opening links while unauthenticated correctly prompts for login before proceeding to target.
 
 ### 4. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Mobile Day 14 is complete.
+- [x] Update the **Progress** table at the top of this file when Mobile Day 14 is complete.
 
 ---
 

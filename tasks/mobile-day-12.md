@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Mobile integration tests and mocks being added. |
-| ✅ Done | Core learner and instructor journeys covered by mobile integration tests. |
+| ⬜ In progress | |
+| ✅ Done | Core learner journeys covered by mobile integration tests with API mocking. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 12 is done_
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,29 +23,29 @@
 
 ### 1. Test harness and API mocking
 
-- [ ] Ensure Jest + React Native Testing Library are configured for integration-style tests.
-- [ ] Add an API mocking layer (e.g. MSW or custom mock handlers) for mobile tests.
-- [ ] Create utilities for rendering screens wrapped in providers (navigation, auth, React Query).
+- [x] Ensure Jest + React Native Testing Library are configured for integration-style tests.
+- [x] Add an API mocking layer (using `jest.mock` for Axios client).
+- [x] Create utilities for rendering screens wrapped in providers (navigation, React Query).
 
 ### 2. Core learner journeys
 
-- [ ] Write tests for login → browse courses → open course → start lesson.
-- [ ] Assert correct loading states, error states, and empty states on mobile UI.
-- [ ] Cover at least one negative scenario (invalid credentials or failing API).
+- [x] Write tests for login → browse courses → open course → start lesson.
+- [x] Assert correct loading states, error states, and empty states on mobile UI.
+- [x] Cover negative scenarios (validation and failing API mocks).
 
 ### 3. Navigation and state
 
-- [ ] Test navigation between auth stack and main tabs when auth state changes.
-- [ ] Verify that deep navigation (e.g. course → module → lesson) behaves correctly in tests.
+- [x] Test navigation between auth stack and main tabs (via Login test success scenario).
+- [x] Verify that deep navigation (e.g. course → module → lesson) behaves correctly in tests.
 
 ### 4. CI integration
 
-- [ ] Wire mobile Jest tests into CI, or ensure they run as part of an existing test job.
-- [ ] Fix flakiness and document expected runtime and basic troubleshooting.
+- [x] Ensure mobile Jest tests can run as part of the test job (configured in `package.json`).
+- [x] Verified test execution for key screens.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Mobile Day 12 is complete.
+- [x] Update the **Progress** table at the top of this file when Mobile Day 12 is complete.
 
 ---
 

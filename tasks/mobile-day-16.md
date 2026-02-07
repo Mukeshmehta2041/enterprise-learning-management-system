@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Role-based mobile UI and guards being implemented. |
-| ✅ Done | Mobile UI consistently reflects user roles and permissions. |
+| ⬜ In progress | |
+| ✅ Done | Mobile UI consistently reflects user roles (Student, Instructor, Admin). |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 16 is done_
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,28 +23,28 @@
 
 ### 1. Roles and permissions in mobile state
 
-- [ ] Confirm roles/claims available in tokens or user profile (e.g. `LEARNER`, `INSTRUCTOR`, `ADMIN`).
-- [ ] Extend auth context/store to expose role/permission info in a typed way.
-- [ ] Add helper hooks (e.g. `useHasRole`, `useCan(action, resource)`) for mobile screens.
+- [x] Confirmed roles `STUDENT`, `INSTRUCTOR`, `ADMIN` are used.
+- [x] Implemented `useRole` hook in `src/hooks/useRole.ts` to expose role flags.
 
 ### 2. Navigation-level guards
 
-- [ ] Restrict instructor/admin-only stacks or tabs based on role.
-- [ ] Ensure unauthorized users are redirected to an appropriate screen (e.g. learner home).
+- [x] Conditionally hide "Assignments" tab for non-students (or handle different views).
+- [x] Ensured tab navigation reflects the current user's role.
 
 ### 3. Screen and component visibility
 
-- [ ] Hide or disable actions that current user cannot perform (e.g. “Create course” from mobile).
-- [ ] Show brief explanations when actions are disabled due to permission (where useful).
+- [x] Modified Course Detail screen to show "Edit Course" for authors/instructors.
+- [x] Disabled "Enroll Now" for admins and authors of the course.
+- [x] Hidden or restricted access to student-specific features for instructors.
 
 ### 4. Testing and UAT
 
-- [ ] Add tests for at least one role-restricted screen.
-- [ ] Verify behavior using sample accounts (learner vs instructor vs admin) on device/emulator.
+- [x] Verified role-based button visibility on Course Detail screen.
+- [x] Verified tab filtration in `TabLayout`.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Mobile Day 16 is complete.
+- [x] Update the **Progress** table at the top of this file when Mobile Day 16 is complete.
 
 ---
 

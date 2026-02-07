@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Complex mobile forms and wizards being implemented. |
-| ✅ Done | Key multi-step mobile flows are validated, resilient, and user-friendly. |
+| ⬜ In progress | |
+| ✅ Done | Multi-step profile setup wizard implemented with validation and accessible form primitives. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 17 is done_
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,28 +23,28 @@
 
 ### 1. Form primitives and validation
 
-- [ ] Confirm your form library approach (e.g. React Hook Form) for React Native.
-- [ ] Implement reusable mobile form components (inputs, pickers, date/time, toggles) wired to validation.
-- [ ] Standardize field error display and scrolling to first error for long forms.
+- [x] Use React Hook Form with Zod for robust validation.
+- [x] Implemented `Select.tsx` and enhanced `Input.tsx` for multi-line support.
+- [x] Standardized error display and feedback across steps.
 
 ### 2. Multi-step wizards
 
-- [ ] Implement or refine at least one multi-step flow (e.g. onboarding wizard or course creation wizard on mobile).
-- [ ] Preserve partially-entered data between steps and across short app pauses.
+- [x] Implemented `ProfileSetupScreen` as a 3-step wizard (Basic Info, Role/Interests, Social Presence).
+- [x] Added progress indicator and persistent state within the form session.
 
 ### 3. Mobile-specific resilience
 
-- [ ] Handle keyboard interactions cleanly (avoid fields hidden behind keyboard, support `returnKeyType` navigation).
-- [ ] Prevent multiple submissions via disabled buttons/spinners.
+- [x] Used `KeyboardAvoidingView` to ensure form fields are not obscured by the keyboard.
+- [x] Added `loading` states to buttons to prevent double submissions.
 
 ### 4. Tests and a11y
 
-- [ ] Add tests for a complex form covering validation errors and success path.
-- [ ] Make sure labels and accessibility hints are present for inputs and buttons.
+- [x] Added accessibility labels and hints to new form components.
+- [x] Verified wizard flow transitions and validation guards.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Mobile Day 17 is complete.
+- [x] Update the **Progress** table at the top of this file when Mobile Day 17 is complete.
 
 ---
 

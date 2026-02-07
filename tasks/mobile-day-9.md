@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | |
+| ⬜ In progress | |
 | ✅ Done | Day 9 implemented (notifications and basic payments on mobile) |
 
-**Started:** Mobile Day 9  
-**Completed:** -
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,25 +23,25 @@
 
 ### 1. Notifications UI
 
-- [ ] Add a notifications entry point (icon in header or dedicated screen).
-- [ ] Implement notifications list with unread/read states.
-- [ ] Use React Query to fetch notifications for the current user.
-- [ ] Implement a mutation to mark notifications as read (optimistic update is acceptable).
+- [x] Add a notifications entry point (icon in header or dedicated screen).
+- [x] Implement notifications list with unread/read states.
+- [x] Use React Query to fetch notifications for the current user.
+- [x] Implement a mutation to mark notifications as read (optimistic update is acceptable).
 
 ### 2. Payments UI
 
-- [ ] Implement a simple plans screen listing available payment plans.
-- [ ] Implement a flow to start checkout (e.g. call Payment Service to create a payment/intent).
-- [ ] Decide whether to hand off to web/payment view (e.g. in-app browser) or display basic status in-app based on backend behavior.
+- [x] Implement a simple plans screen listing available payment plans.
+- [x] Implement a flow to start checkout (e.g. call Payment Service to create a payment/intent).
+- [x] Decide whether to hand off to web/payment view (e.g. in-app browser) or display basic status in-app based on backend behavior.
 
 ### 3. Safety and UX
 
-- [ ] Disable payment buttons while a payment request is in progress.
-- [ ] Do not treat payments as successful until confirmed by the backend.
+- [x] Disable payment buttons while a payment request is in progress.
+- [x] Do not treat payments as successful until confirmed by the backend.
 
 ### 4. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Day 9 is complete.
+- [x] Update the **Progress** table at the top of this file when Day 9 is complete.
 
 ---
 

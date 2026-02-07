@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | |
+| ⬜ In progress | |
 | ✅ Done | Day 7 implemented (enrollments and progress views on mobile) |
 
-**Started:** Mobile Day 7  
-**Completed:** -
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,24 +23,24 @@
 
 ### 1. Enrollment actions
 
-- [ ] Add an \"Enroll\" CTA on the course detail screen for eligible users.
-- [ ] Implement a mutation to call the Enrollment Service enroll endpoint.
-- [ ] Handle loading, success, and error states (including duplicate enroll attempts in the UI).
+- [x] Add an \"Enroll\" CTA on the course detail screen for eligible users.
+- [x] Implement a mutation to call the Enrollment Service enroll endpoint.
+- [x] Handle loading, success, and error states (including duplicate enroll attempts in the UI).
 
 ### 2. \"My learning\" / dashboard
 
-- [ ] Implement a Home or Dashboard screen listing current enrollments with progress.
-- [ ] Show course title, status, progress percentage, and quick access to continue learning.
-- [ ] Use React Query to fetch the learner’s enrollments.
+- [x] Implement a Home or Dashboard screen listing current enrollments with progress.
+- [x] Show course title, status, progress percentage, and quick access to continue learning.
+- [x] Use React Query to fetch the learner’s enrollments.
 
 ### 3. Progress visualization
 
-- [ ] Implement small, mobile-friendly progress indicators (bars, badges).
-- [ ] Ensure layout remains clear on smaller devices.
+- [x] Implement small, mobile-friendly progress indicators (bars, badges).
+- [x] Ensure layout remains clear on smaller devices.
 
 ### 4. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Day 7 is complete.
+- [x] Update the **Progress** table at the top of this file when Day 7 is complete.
 
 ---
 

@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | |
+| ⬜ In progress | |
 | ✅ Done | Day 6 implemented (content player and basic offline behavior) |
 
-**Started:** Mobile Day 6  
-**Completed:** -
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,23 +23,23 @@
 
 ### 1. Lesson detail and navigation
 
-- [ ] Implement a `LessonScreen` reachable from `CourseDetailScreen` (e.g. tap a lesson).
-- [ ] Show lesson title, type, and content area; include navigation to previous/next lessons.
+- [x] Implement a `LessonScreen` reachable from `CourseDetailScreen` (e.g. tap a lesson).
+- [x] Show lesson title, type, and content area; include navigation to previous/next lessons.
 
 ### 2. Content player
 
-- [ ] Integrate appropriate components for lesson types (e.g. video player for video, scrollable text for articles, basic webview for docs if needed).
-- [ ] Ensure controls are usable on mobile and respect safe areas.
+- [x] Integrate appropriate components for lesson types (e.g. video player for video, scrollable text for articles, basic webview for docs if needed).
+- [x] Ensure controls are usable on mobile and respect safe areas.
 
 ### 3. Data fetching and offline basics
 
-- [ ] Use React Query hooks to fetch lesson content.
-- [ ] Ensure previously loaded lesson data can still be shown if the network drops (stale data) while making it clear when offline.
-- [ ] Display user-friendly offline and error messages with retry options.
+- [x] Use React Query hooks to fetch lesson content.
+- [x] Ensure previously loaded lesson data can still be shown if the network drops (stale data) while making it clear when offline.
+- [x] Display user-friendly offline and error messages with retry options.
 
 ### 4. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Day 6 is complete.
+- [x] Update the **Progress** table at the top of this file when Day 6 is complete.
 
 ---
 

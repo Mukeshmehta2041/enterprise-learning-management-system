@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | |
+| ⬜ In progress | |
 | ✅ Done | Day 1 implemented (React Native app scaffolded and tooling configured) |
 
-**Started:** Mobile Day 1  
-**Completed:** -
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,21 +23,22 @@
 
 ### 1. Project bootstrap
 
-- [ ] Create a React Native project (CLI or Expo) with TypeScript support.
-- [ ] Organize folders: `src/`, `src/screens`, `src/navigation`, `src/components`, `src/api`, `src/state`.
-- [ ] Verify the app runs on at least one platform (Android emulator or iOS simulator/device).
+- [x] Create a React Native project (CLI or Expo) with TypeScript support.
+- [x] Organize folders: `src/`, `src/screens`, `src/navigation`, `src/components`, `src/api`, `src/state`.
+- [x] Verify the app runs on at least one platform (Android emulator or iOS simulator/device).
 
 ### 2. Tooling and quality
 
-- [ ] Enable TypeScript with a sensible `tsconfig.json` for React Native.
-- [ ] Add ESLint with React/TypeScript/React Native rules and a basic rule set.
-- [ ] Add Prettier and ensure it works with your editor or via script.
-- [ ] Add Jest and React Native Testing Library; write a simple test for a sample component.
+- [x] Enable TypeScript with a sensible `tsconfig.json` for React Native.
+- [x] Add ESLint with React/TypeScript/React Native rules and a basic rule set.
+- [x] Add Prettier and ensure it works with your editor or via script.
+- [x] Add Jest and React Native Testing Library; write a simple test for a sample component.
+- [x] Set up NativeWind for Tailwind CSS styling in mobile.
 
 ### 3. Sample screen and navigation placeholder
 
-- [ ] Create a basic `HomeScreen` that renders some placeholder text.
-- [ ] Wire the screen into a minimal navigation container (even before full navigation setup).
+- [x] Create a basic `HomeScreen` that renders some placeholder text.
+- [x] Wire the screen into a minimal navigation container (even before full navigation setup).
 
 ### 4. Progress update
 

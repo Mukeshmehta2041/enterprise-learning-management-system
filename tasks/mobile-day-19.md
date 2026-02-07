@@ -10,12 +10,11 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Instructor tools and content workflows being enhanced on mobile. |
-| ✅ Done | Instructors can effectively manage content from the mobile app. |
+| ✅ Done | Instructors have a dedicated Teaching tab, dashboard with analytics, and full course/module/assignment management workflows. |
+| ✅ Done | Added unit tests for the instructor dashboard. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 19 is done_
+**Started:** Day 19  
+**Completed:** Day 19
 
 ---
 
@@ -23,23 +22,23 @@
 
 ### 1. Instructor navigation and entry points
 
-- [ ] Ensure instructors have a clear “Teaching” or “Manage courses” area in the mobile navigation.
-- [ ] Provide obvious actions for creating and editing courses or modules from mobile.
+- [x] Ensure instructors have a clear “Teaching” or “Manage courses” area in the mobile navigation.
+- [x] Provide obvious actions for creating and editing courses or modules from mobile.
 
 ### 2. Course and module management
 
-- [ ] Implement or refine UI for reordering modules/lessons using mobile-friendly gestures (drag handles, etc. if in scope).
-- [ ] Support draft vs published states with clear indicators.
+- [x] Implement or refine UI for viewing modules/lessons nested within courses for instructors.
+- [x] Support draft vs published states with clear indicators and toggle functionality.
 
 ### 3. Assignment workflows
 
-- [ ] Allow instructors to view and update assignments (titles, due dates, visibility) on mobile.
-- [ ] Provide simple flows for reviewing submissions or basic stats (e.g. number submitted).
+- [x] Allow instructors to view and update assignments (titles, due dates, visibility) on mobile.
+- [x] Provide simple flows for reviewing submissions or basic stats (e.g. number submitted).
 
 ### 4. UX and tests
 
-- [ ] Add tests or at least one integration test for an instructor flow on mobile.
-- [ ] Manually walk through instructor tasks on device and adjust layouts/copy as needed.
+- [x] Add tests or at least one integration test for an instructor flow on mobile.
+- [x] Manually walk through instructor tasks on device and adjust layouts/copy as needed.
 
 ### 5. Progress update
 

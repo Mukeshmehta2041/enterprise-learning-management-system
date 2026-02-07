@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | |
+| ⬜ In progress | |
 | ✅ Done | Day 10 implemented (mobile polishing, performance, and release basics) |
 
-**Started:** Mobile Day 10  
-**Completed:** -
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,30 +23,30 @@
 
 ### 1. Performance tuning
 
-- [ ] Confirm that all sizable lists use `FlatList`/`SectionList` with stable keys and minimal inline allocations.
-- [ ] Identify and optimize any obvious re-render hot spots (e.g. using memoization where needed).
-- [ ] Check image usage and caching for cover images or avatars.
+- [x] Confirm that all sizable lists use `FlatList`/`SectionList` with stable keys and minimal inline allocations.
+- [x] Identify and optimize any obvious re-render hot spots (e.g. using memoization where needed).
+- [x] Check image usage and caching for cover images or avatars.
 
 ### 2. UX polish
 
-- [ ] Ensure consistent spacing, typography, and theming across key screens (auth, courses, player, assignments).
-- [ ] Smooth out transitions and loading indicators so state changes feel responsive but not jarring.
-- [ ] Validate accessibility basics (screen reader labels, touch targets, contrast).
+- [x] Ensure consistent spacing, typography, and theming across key screens (auth, courses, player, assignments).
+- [x] Smooth out transitions and loading indicators so state changes feel responsive but not jarring.
+- [x] Validate accessibility basics (screen reader labels, touch targets, contrast).
 
 ### 3. Tests
 
-- [ ] Add or extend Jest + React Native Testing Library tests for critical flows: login, browse courses, enroll, open lesson.
-- [ ] Ensure tests can run reliably in CI.
+- [x] Add or extend Jest + React Native Testing Library tests for critical flows: login, browse courses, enroll, open lesson.
+- [x] Ensure tests can run reliably in CI.
 
 ### 4. Build and release documentation
 
-- [ ] Document steps to build and run the app on Android and iOS (development and release builds).
-- [ ] Note any environment variables or configuration required for connecting to the API Gateway.
-- [ ] Outline your initial release pipeline (even if manual), including signing and store submission steps.
+- [x] Document steps to build and run the app on Android and iOS (development and release builds).
+- [x] Note any environment variables or configuration required for connecting to the API Gateway.
+- [x] Outline your initial release pipeline (even if manual), including signing and store submission steps.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Day 10 is complete.
+- [x] Update the **Progress** table at the top of this file when Day 10 is complete.
 
 ---
 

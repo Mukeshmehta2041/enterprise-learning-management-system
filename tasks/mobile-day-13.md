@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Global error and notification patterns being implemented on mobile. |
+| ⬜ In progress | |
 | ✅ Done | Unified error handling, banners, and empty states across key mobile screens. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 13 is done_
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,29 +23,29 @@
 
 ### 1. Global error boundary and fallbacks
 
-- [ ] Add a top-level error boundary or fallback component to catch unexpected errors.
-- [ ] Show a friendly error screen with a retry button or navigation back to a safe screen.
+- [x] Add a top-level error boundary component to catch unexpected layout/render errors.
+- [x] Show a friendly error screen with a reset button.
 
 ### 2. Banners, toasts, and inline feedback
 
-- [ ] Implement reusable components for in-app banners and toasts suited to mobile.
-- [ ] Standardize success, warning, and error presentations (colors, icons, vibration/haptics if desired).
-- [ ] Replace ad-hoc `Alert.alert` calls with the shared primitives where appropriate.
+- [x] Implement reusable `Banner` component suited for mobile notifications.
+- [x] Created `useNotificationStore` for global notification management.
+- [x] Use banners for feedback (success/error) instead of ad-hoc alerts where appropriate.
 
 ### 3. Loading and empty states
 
-- [ ] Ensure each major data-driven screen (courses, assignments, notifications) has clear loading indicators.
-- [ ] Add meaningful empty states (e.g. “No courses yet”) with suggested next actions.
-- [ ] Use skeletons or shimmer placeholders sparingly and consistently.
+- [x] Ensure major data-driven screens have consistent loading indicators.
+- [x] Created reusable `EmptyState` component for lists and search results.
+- [x] Added meaningful empty states to Courses and Dashboard screens.
 
 ### 4. Error mapping usage
 
-- [ ] Connect `MobileAppError` from Day 11 to UI: show validation errors near inputs and global problems as banners/toasts.
-- [ ] Provide mobile-appropriate copy for network offline, timeouts, and auth failures.
+- [x] Map `MobileAppError` messages directly to Banner notifications for consistent user feedback.
+- [x] Provide appropriate feedback for network and validation failures.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Mobile Day 13 is complete.
+- [x] Update the **Progress** table at the top of this file when Mobile Day 13 is complete.
 
 ---
 

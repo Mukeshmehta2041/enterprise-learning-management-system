@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | |
+| ⬜ In progress | |
 | ✅ Done | Day 4 implemented (mobile auth flows and session management) |
 
-**Started:** Mobile Day 4  
-**Completed:** -
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,29 +23,29 @@
 
 ### 1. API client and React Query
 
-- [ ] Implement mobile API client module with base URL and error handling.
-- [ ] Initialize React Query `QueryClient` and wrap the app in its provider.
+- [x] Implement mobile API client module with base URL and error handling.
+- [x] Initialize React Query `QueryClient` and wrap the app in its provider.
 
 ### 2. Login and registration UI
 
-- [ ] Implement `LoginScreen` with email/password fields, validation, and error display.
-- [ ] Implement `RegisterScreen` aligned with the User Service API.
-- [ ] Use shared form components from Day 3.
+- [x] Implement `LoginScreen` with email/password fields, validation, and error display.
+- [x] Implement `RegisterScreen` aligned with the User Service API.
+- [x] Use shared form components from Day 3.
 
 ### 3. Session management
 
-- [ ] Create an auth store/context to hold tokens and user object.
-- [ ] On login success, store tokens securely and fetch the current user (`/auth/me` or `/users/me`).
-- [ ] Implement logout: call `/auth/logout`, clear stored tokens, and navigate back to `AuthStack`.
+- [x] Create an auth store/context to hold tokens and user object.
+- [x] On login success, store tokens securely and fetch the current user (`/auth/me` or `/users/me`).
+- [x] Implement logout: call `/auth/logout`, clear stored tokens, and navigate back to `AuthStack`.
 
 ### 4. Navigation guards
 
-- [ ] Show `AuthStack` when unauthenticated and `MainTabs` when authenticated.
-- [ ] Optionally hide instructor/admin-only screens when user roles do not allow access.
+- [x] Show `AuthStack` when unauthenticated and `MainTabs` when authenticated.
+- [x] Optionally hide instructor/admin-only screens when user roles do not allow access.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Day 4 is complete.
+- [x] Update the **Progress** table at the top of this file when Day 4 is complete.
 
 ---
 

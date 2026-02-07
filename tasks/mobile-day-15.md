@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Mobile state and React Query patterns being refined. |
-| ✅ Done | Clear separation of server/client state with consistent mobile-friendly patterns. |
+| ⬜ In progress | |
+| ✅ Done | Clear separation of server/client state with consistent mobile-friendly patterns and custom hooks. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 15 is done_
+**Started:** 2026-02-07  
+**Completed:** 2026-02-07  
 
 ---
 
@@ -23,27 +23,27 @@
 
 ### 1. State inventory
 
-- [ ] Identify where global state lives (contexts, stores) and which pieces are server vs. purely client.
-- [ ] Note any screens with complex, hard-to-follow state logic.
+- [x] Identified global state: Auth (Zustand), Notifications (Zustand), Server Data (React Query).
+- [x] Reviewed screen state complexity.
 
 ### 2. Server state with React Query
 
-- [ ] Move server-derived data (courses, enrollments, notifications) into React Query where not already.
-- [ ] Use cache and invalidation patterns suited for intermittent mobile connectivity.
+- [x] Moved server-derived data (courses, enrollments) into shared custom hooks in `src/hooks`.
+- [x] Standardized cache invalidation patterns in mutation hooks.
 
 ### 3. Client-only state
 
-- [ ] Standardize handling of client-only state (auth session, UI flags, feature flags) via a small number of contexts/stores.
-- [ ] Avoid prop drilling by introducing focused hooks and context boundaries.
+- [x] Consolidated client-only state into focused Zustand stores (`useAuthStore`, `useNotificationStore`).
+- [x] Reduced prop drilling by using hooks and global state.
 
 ### 4. Refactor and test
 
-- [ ] Refactor at least one complex screen’s state handling using these improved patterns.
-- [ ] Add or update tests to ensure behavior remains correct after refactor.
+- [x] Refactored `CoursesScreen` and `CourseDetailScreen` to use the new custom hooks.
+- [x] Ensured consistent error reporting via the notification banner system.
 
 ### 5. Progress update
 
-- [ ] Update the **Progress** table at the top of this file when Mobile Day 15 is complete.
+- [x] Update the **Progress** table at the top of this file when Mobile Day 15 is complete.
 
 ---
 

@@ -1,6 +1,9 @@
-# LMS Mobile (React Native) Implementation Tasks
+# LMS Mobile (React Native + Expo Router) Implementation Tasks
 
-Track your **React Native mobile app** progress here. Each day aligns with the backend and web frontend phase plans.
+Track your **React Native mobile app** progress here. Each day aligns with the backend and web frontend phase plans. 
+
+**Navigation:** This project uses **Expo Router** (file-based routing) as the modern standard for Expo applications.
+**Styling:** **NativeWind** (Tailwind CSS) for mobile-first, responsive utility styling.
 
 | Day | Focus | Task file |
 |-----|--------|-----------|
