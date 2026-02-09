@@ -8,10 +8,16 @@ const basicInfoSchema = z.object({
   description: z.string().min(50, 'Description should be at least 50 characters'),
   category: z.string().min(1, 'Please select a category'),
   level: z.string().min(1, 'Please select a level'),
-  price: z.coerce.number().min(0, 'Price cannot be negative'),
+  price: z.number().min(0, 'Price cannot be negative'),
 })
 
-type BasicInfoValues = z.infer<typeof basicInfoSchema>
+type BasicInfoValues = {
+  title: string
+  description: string
+  category: string
+  level: string
+  price: number
+}
 
 interface BasicInfoFormProps {
   initialData?: Partial<BasicInfoValues>
@@ -19,6 +25,7 @@ interface BasicInfoFormProps {
   onNext?: (data: BasicInfoValues) => void
   onSubmit?: (data: BasicInfoValues) => void
   onCancel?: () => void
+  isSubmitting?: boolean
 }
 
 export function BasicInfoForm({
@@ -27,6 +34,7 @@ export function BasicInfoForm({
   onNext,
   onSubmit,
   onCancel,
+  isSubmitting,
 }: BasicInfoFormProps) {
   const mergedDefaultValues = defaultValues || initialData || {}
 
@@ -109,8 +117,8 @@ export function BasicInfoForm({
               Cancel
             </Button>
           )}
-          <Button type="submit" className={!onCancel ? 'ml-auto' : ''}>
-            {onNext ? 'Continue to Curriculum' : 'Save Changes'}
+          <Button type="submit" className={!onCancel ? 'ml-auto' : ''} disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : (onNext ? 'Continue to Curriculum' : 'Save Changes')}
           </Button>
         </div>
       </form>

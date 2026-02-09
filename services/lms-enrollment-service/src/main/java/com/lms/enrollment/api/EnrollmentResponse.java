@@ -6,10 +6,13 @@ import java.util.UUID;
 
 public record EnrollmentResponse(
     UUID id,
-    UUID userId,
     UUID courseId,
+    String courseTitle,
+    String courseThumbnailUrl,
+    UUID userId,
     String status,
     BigDecimal progressPct,
     Instant enrolledAt,
-    Instant completedAt) {
+    Instant completedAt,
+    Instant lastAccessedAt) {
 }

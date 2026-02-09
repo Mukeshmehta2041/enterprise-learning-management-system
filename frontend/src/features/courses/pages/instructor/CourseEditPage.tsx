@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import {
   Container,
   Heading1,
@@ -8,17 +9,65 @@ import {
   TabsTrigger,
   TabsContent,
   Button,
-  Breadcrumbs,
 } from '@/shared/ui'
-import { useCourse } from '../../api/useCourses'
+import { useCourse, useUpdateCourse, usePublishCourse, useSaveAsDraft } from '../../api/useCourses'
+import { useUI } from '@/shared/context/UIContext'
 import { BasicInfoForm } from '../../components/instructor/BasicInfoForm'
 import { CurriculumForm } from '../../components/instructor/CurriculumForm'
 import { Save, Rocket, Settings, List, Info, DollarSign } from 'lucide-react'
+import { useToast } from '@/shared/context/ToastContext'
 
 export function CourseEditPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
   const { data: course, isLoading, isError } = useCourse(courseId!)
+  const { setBreadcrumbs } = useUI()
+  const { success, error: showError } = useToast()
+
+  const updateCourseMutation = useUpdateCourse()
+  const publishCourseMutation = usePublishCourse()
+  const saveAsDraftMutation = useSaveAsDraft()
+
+  useEffect(() => {
+    if (course) {
+      setBreadcrumbs([
+        { label: 'Instructor', href: '/instructor/courses' },
+        { label: 'My Courses', href: '/instructor/courses' },
+        { label: `Edit: ${course.title}` },
+      ])
+    }
+    return () => setBreadcrumbs(null)
+  }, [course, setBreadcrumbs])
+
+  const handlePublish = async () => {
+    try {
+      await publishCourseMutation.mutateAsync(courseId!)
+      success('Course published successfully')
+    } catch (error) {
+      showError('Failed to publish course')
+    }
+  }
+
+  const handleSaveDraft = async () => {
+    try {
+      await saveAsDraftMutation.mutateAsync(courseId!)
+      success('Course saved as draft')
+    } catch (error) {
+      showError('Failed to save draft')
+    }
+  }
+
+  const handleUpdateInfo = async (data: any) => {
+    try {
+      await updateCourseMutation.mutateAsync({
+        id: courseId!,
+        data,
+      })
+      success('Course information updated')
+    } catch (error) {
+      showError('Failed to update course information')
+    }
+  }
 
   if (isLoading) {
     return (
@@ -45,15 +94,7 @@ export function CourseEditPage() {
 
   return (
     <Container className="py-8">
-      <div className="mb-6">
-        <Breadcrumbs
-          items={[
-            { label: 'Instructor', href: '/instructor/courses' },
-            { label: 'My Courses', href: '/instructor/courses' },
-            { label: 'Edit Course' },
-          ]}
-        />
-      </div>
+
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
@@ -61,13 +102,22 @@ export function CourseEditPage() {
           <TextMuted>Course ID: {course.id}</TextMuted>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={handlePublish}
+            disabled={publishCourseMutation.isPending || course.status === 'PUBLISHED'}
+          >
             <Rocket size={18} />
-            Publish Changes
+            {publishCourseMutation.isPending ? 'Publishing...' : 'Publish Changes'}
           </Button>
-          <Button className="gap-2">
+          <Button
+            className="gap-2"
+            onClick={handleSaveDraft}
+            disabled={saveAsDraftMutation.isPending || course.status === 'DRAFT'}
+          >
             <Save size={18} />
-            Save Draft
+            {saveAsDraftMutation.isPending ? 'Saving...' : 'Save Draft'}
           </Button>
         </div>
       </div>
@@ -114,7 +164,8 @@ export function CourseEditPage() {
                 level: course.level,
                 price: course.price,
               }}
-              onSubmit={(data) => console.log('Update info', data)}
+              onSubmit={handleUpdateInfo}
+              isSubmitting={updateCourseMutation.isPending}
             />
           </div>
         </TabsContent>

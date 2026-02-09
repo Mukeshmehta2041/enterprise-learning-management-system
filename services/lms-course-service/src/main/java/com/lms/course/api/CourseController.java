@@ -36,13 +36,18 @@ public class CourseController {
   @Operation(summary = "List courses", description = "Retrieves a paginated list of courses")
   public ResponseEntity<CourseListResponse> listCourses(
       @RequestParam(required = false) String status,
+      @RequestParam(required = false) String category,
+      @RequestParam(required = false) String level,
+      @RequestParam(required = false) String search,
+      @RequestParam(required = false) String sort,
+      @RequestParam(required = false, defaultValue = "desc") String order,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit,
       @RequestParam(required = false, defaultValue = "1") Integer page,
       @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
       @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
 
-    UUID userId = currentUserId != null ? UUID.fromString(currentUserId) : null;
+    UUID userId = currentUserId != null ? !currentUserId.isBlank() ? UUID.fromString(currentUserId) : null : null;
     Set<String> roles = parseRoles(currentRolesHeader);
 
     CourseStatus courseStatus = null;
@@ -54,7 +59,8 @@ public class CourseController {
       }
     }
 
-    CourseListResponse response = courseService.listCourses(courseStatus, cursor, limit, page, userId, roles);
+    CourseListResponse response = courseService.listCourses(
+        courseStatus, category, level, search, sort, order, cursor, limit, page, userId, roles);
     return ResponseEntity.ok(response);
   }
 
@@ -128,6 +134,40 @@ public class CourseController {
     UUID userId = UUID.fromString(currentUserId);
 
     CourseDetailResponse response = courseService.updateCourse(courseId, request, userId, roles);
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/{courseId}/publish")
+  public ResponseEntity<CourseDetailResponse> publishCourse(
+      @PathVariable UUID courseId,
+      @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
+
+    if (currentUserId == null || currentUserId.isBlank()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Set<String> roles = parseRoles(currentRolesHeader);
+    UUID userId = UUID.fromString(currentUserId);
+
+    CourseDetailResponse response = courseService.publishCourse(courseId, userId, roles);
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/{courseId}/draft")
+  public ResponseEntity<CourseDetailResponse> saveDraft(
+      @PathVariable UUID courseId,
+      @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
+
+    if (currentUserId == null || currentUserId.isBlank()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Set<String> roles = parseRoles(currentRolesHeader);
+    UUID userId = UUID.fromString(currentUserId);
+
+    CourseDetailResponse response = courseService.saveAsDraft(courseId, userId, roles);
     return ResponseEntity.ok(response);
   }
 

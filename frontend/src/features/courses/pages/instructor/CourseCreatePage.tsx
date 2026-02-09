@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Container, Heading1, TextMuted, Stepper, Card } from '@/shared/ui'
 import { BasicInfoForm } from '../../components/instructor/BasicInfoForm'
 import { CurriculumForm } from '../../components/instructor/CurriculumForm'
@@ -6,6 +6,7 @@ import { CourseReview } from '../../components/instructor/CourseReview'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { useCreateCourse } from '../../api/useCreateCourse'
+import { useUI } from '@/shared/context/UIContext'
 
 const steps = [
   { title: 'Information', description: 'Basic course details' },
@@ -15,6 +16,7 @@ const steps = [
 
 export function CourseCreatePage() {
   const [currentStep, setCurrentStep] = useState(1)
+  const { setBreadcrumbs } = useUI()
   const [courseData, setCourseData] = useState<any>({
     title: '',
     description: '',
@@ -23,6 +25,16 @@ export function CourseCreatePage() {
     price: 0,
     modules: []
   })
+
+  useEffect(() => {
+    setBreadcrumbs([
+      { label: 'Instructor', href: '/instructor/courses' },
+      { label: 'My Courses', href: '/instructor/courses' },
+      { label: 'New Course' },
+    ])
+    return () => setBreadcrumbs(null)
+  }, [setBreadcrumbs])
+
   const navigate = useNavigate()
   const createCourse = useCreateCourse()
 

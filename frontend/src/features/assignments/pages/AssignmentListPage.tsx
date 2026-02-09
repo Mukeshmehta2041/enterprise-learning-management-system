@@ -1,14 +1,23 @@
 import { useAssignments } from '../api/useAssignments'
+import { useEffect } from 'react'
 import { Container, Card } from '@/shared/ui/Layout'
 import { Heading1, Heading3, TextMuted, Small } from '@/shared/ui/Typography'
 import { Button } from '@/shared/ui/Button'
 import { Link } from 'react-router-dom'
 import { FileText, Calendar, ChevronRight, AlertCircle } from 'lucide-react'
+import { useUI } from '@/shared/context/UIContext'
 
 export function AssignmentListPage() {
   const { data: assignments, isLoading, isError, error, refetch } = useAssignments()
+  const { setBreadcrumbs } = useUI()
 
-  const isOverdue = (dueDate: string) => {
+  useEffect(() => {
+    setBreadcrumbs([{ label: 'Assignments' }])
+    return () => setBreadcrumbs(null)
+  }, [setBreadcrumbs])
+
+  const isOverdue = (dueDate: string | null | undefined) => {
+    if (!dueDate) return false
     return new Date(dueDate) < new Date()
   }
 
@@ -63,7 +72,7 @@ export function AssignmentListPage() {
                         <div className={`flex items-center gap-1 text-xs ${isOverdue(assignment.dueDate) ? 'text-red-600' : 'text-slate-500'
                           }`}>
                           <Calendar size={12} />
-                          <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                          <span>Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No deadline'}</span>
                         </div>
                       </div>
                     </div>

@@ -15,10 +15,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,52 +74,75 @@ public class CourseApplicationService {
   }
 
   @Transactional(readOnly = true)
-  public CourseListResponse listCourses(CourseStatus status, String cursor, Integer limit, Integer page,
+  public CourseListResponse listCourses(
+      CourseStatus status, String category, String level, String search,
+      String sort, String order,
+      String cursor, Integer limit, Integer page,
       UUID currentUserId,
       Set<String> roles) {
+
     int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
     int pageNumber = (page != null) ? page : 1;
 
-    Instant cursorTime = (cursor != null && !cursor.isBlank())
-        ? Instant.parse(cursor)
-        : Instant.now().plusSeconds(60);
+    Specification<Course> spec = (root, query, cb) -> {
+      List<Predicate> predicates = new ArrayList<>();
 
-    List<Course> courses;
-
-    if (roles.contains("ADMIN")) {
-      if (status != null) {
-        courses = courseRepository.findByStatusAndCreatedAtLessThanOrderByCreatedAtDesc(status, cursorTime,
-            PageRequest.of(0, pageSize + 1));
-      } else {
-        courses = courseRepository.findByCreatedAtLessThanOrderByCreatedAtDesc(cursorTime,
-            PageRequest.of(0, pageSize + 1));
+      // Ensure distinct results because of joins
+      if (query.getResultType() != Long.class) {
+        query.distinct(true);
       }
-    } else if (roles.contains("INSTRUCTOR")) {
-      // Instructors see published courses + those they are instructors for
-      courses = courseRepository.findPublishedOrInstructor(currentUserId, cursorTime, PageRequest.of(0, pageSize + 1));
+
+      // Status filtering based on roles
       if (status != null) {
-        courses = courses.stream().filter(c -> c.getStatus() == status).collect(Collectors.toList());
+        predicates.add(cb.equal(root.get("status"), status));
+      } else if (!roles.contains("ADMIN")) {
+        // Students and non-logged-in users only see PUBLISHED
+        // Instructors see PUBLISHED + their own courses
+        if (roles.contains("INSTRUCTOR") && currentUserId != null) {
+          predicates.add(cb.or(
+              cb.equal(root.get("status"), CourseStatus.PUBLISHED),
+              cb.equal(root.join("instructors", jakarta.persistence.criteria.JoinType.LEFT).get("userId"),
+                  currentUserId)));
+        } else {
+          predicates.add(cb.equal(root.get("status"), CourseStatus.PUBLISHED));
+        }
       }
-    } else {
-      // Students only see published courses
-      courses = courseRepository.findByStatusAndCreatedAtLessThanOrderByCreatedAtDesc(CourseStatus.PUBLISHED,
-          cursorTime,
-          PageRequest.of(0, pageSize + 1));
-    }
 
-    boolean hasNext = courses.size() > pageSize;
-    List<Course> resultList = hasNext ? courses.subList(0, pageSize) : courses;
+      if (category != null && !category.isBlank()) {
+        predicates.add(cb.equal(cb.upper(root.get("category")), category.toUpperCase()));
+      }
 
-    List<CourseResponse> content = resultList.stream()
+      if (level != null && !level.isBlank()) {
+        predicates.add(cb.equal(cb.upper(root.get("level")), level.toUpperCase()));
+      }
+
+      if (search != null && !search.isBlank()) {
+        String searchPattern = "%" + search.toLowerCase() + "%";
+        predicates.add(cb.or(
+            cb.like(cb.lower(root.get("title")), searchPattern),
+            cb.like(cb.lower(root.get("description")), searchPattern)));
+      }
+
+      return cb.and(predicates.toArray(new Predicate[0]));
+    };
+
+    String sortField = (sort != null && !sort.isBlank()) ? sort : "createdAt";
+    Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Pageable pageable = PageRequest.of(pageNumber - 1, pageSize, Sort.by(direction, sortField));
+
+    Page<Course> coursePage = courseRepository.findAll(spec, pageable);
+
+    List<CourseResponse> content = coursePage.getContent().stream()
         .map(this::mapToCourseResponse)
         .collect(Collectors.toList());
 
-    String nextCursor = hasNext ? resultList.get(resultList.size() - 1).getCreatedAt().toString() : null;
-
-    long totalElements = status != null ? courseRepository.countByStatus(status) : courseRepository.count();
-    int totalPages = (int) Math.ceil((double) totalElements / pageSize);
-
-    return new CourseListResponse(content, nextCursor, totalElements, totalPages, pageSize, pageNumber);
+    return new CourseListResponse(
+        content,
+        null, // Pagination via page numbers for now as it's easier with Specification
+        coursePage.getTotalElements(),
+        coursePage.getTotalPages(),
+        pageSize,
+        pageNumber);
   }
 
   @Transactional(readOnly = true)
@@ -246,6 +272,15 @@ public class CourseApplicationService {
     if (request.description() != null) {
       course.setDescription(request.description());
     }
+    if (request.category() != null) {
+      course.setCategory(request.category());
+    }
+    if (request.level() != null) {
+      course.setLevel(request.level());
+    }
+    if (request.price() != null) {
+      course.setPrice(request.price());
+    }
     if (request.status() != null) {
       course.setStatus(request.status());
     }
@@ -256,6 +291,40 @@ public class CourseApplicationService {
     log.info("Course updated: {} by user: {}", courseId, currentUserId);
     auditLogger.logSuccess("COURSE_UPDATE", "COURSE", courseId.toString(),
         Map.of("status", updated.getStatus().name()));
+
+    return courseCacheService.mapToCourseDetailResponse(updated);
+  }
+
+  public CourseDetailResponse publishCourse(UUID courseId, UUID currentUserId, Set<String> roles) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    if (!canModifyCourse(course, currentUserId, roles)) {
+      throw new ForbiddenException("Not authorized to publish this course");
+    }
+
+    course.setStatus(CourseStatus.PUBLISHED);
+    Course updated = courseRepository.save(course);
+    courseEventPublisher.publishCourseUpdated(updated);
+    courseCacheService.evictCourse(courseId);
+    auditLogger.logSuccess("COURSE_PUBLISH", "COURSE", courseId.toString());
+
+    return courseCacheService.mapToCourseDetailResponse(updated);
+  }
+
+  public CourseDetailResponse saveAsDraft(UUID courseId, UUID currentUserId, Set<String> roles) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    if (!canModifyCourse(course, currentUserId, roles)) {
+      throw new ForbiddenException("Not authorized to update this course");
+    }
+
+    course.setStatus(CourseStatus.DRAFT);
+    Course updated = courseRepository.save(course);
+    courseEventPublisher.publishCourseUpdated(updated);
+    courseCacheService.evictCourse(courseId);
+    auditLogger.logSuccess("COURSE_SAVE_DRAFT", "COURSE", courseId.toString());
 
     return courseCacheService.mapToCourseDetailResponse(updated);
   }
@@ -440,9 +509,11 @@ public class CourseApplicationService {
   }
 
   private CourseResponse mapToCourseResponse(Course course) {
-    List<UUID> instructorIds = course.getInstructors().stream()
+    if (course == null)
+      return null;
+    List<UUID> instructorIds = course.getInstructors() != null ? course.getInstructors().stream()
         .map(CourseInstructor::getUserId)
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()) : List.of();
 
     return new CourseResponse(
         course.getId(),
@@ -452,7 +523,7 @@ public class CourseApplicationService {
         course.getCategory(),
         course.getLevel(),
         course.getPrice(),
-        course.getStatus().name(),
+        course.getStatus() != null ? course.getStatus().name() : "DRAFT",
         instructorIds,
         course.getCreatedAt(),
         course.getUpdatedAt());
@@ -483,9 +554,11 @@ public class CourseApplicationService {
   }
 
   private ModuleResponse mapToModuleResponse(CourseModule module) {
-    List<LessonResponse> lessons = module.getLessons().stream()
+    if (module == null)
+      return null;
+    List<LessonResponse> lessons = module.getLessons() != null ? module.getLessons().stream()
         .map(this::mapToLessonResponse)
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()) : List.of();
 
     return new ModuleResponse(
         module.getId(),
@@ -497,10 +570,12 @@ public class CourseApplicationService {
   }
 
   private LessonResponse mapToLessonResponse(Lesson lesson) {
+    if (lesson == null)
+      return null;
     return new LessonResponse(
         lesson.getId(),
         lesson.getTitle(),
-        lesson.getType().name(),
+        lesson.getType() != null ? lesson.getType().name() : "VIDEO",
         lesson.getDurationMinutes(),
         lesson.getSortOrder(),
         lesson.getCreatedAt(),

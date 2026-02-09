@@ -1,7 +1,9 @@
 package com.lms.analytics.controller;
 
 import com.lms.common.security.RBACEnforcer;
-import com.lms.common.security.UserContext;
+import com.lms.analytics.dto.CourseAnalyticsDTO;
+import com.lms.analytics.dto.EnrollmentTrendDTO;
+import com.lms.analytics.dto.GlobalStatsDTO;
 import com.lms.analytics.model.EnrollmentAggregate;
 import com.lms.analytics.service.AnalyticsService;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +14,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestAttribute;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -43,5 +45,29 @@ public class AnalyticsController {
 
     EnrollmentAggregate stats = analyticsService.getEnrollmentStats(courseId, date);
     return ResponseEntity.ok(stats);
+  }
+
+  @GetMapping("/trends")
+  public ResponseEntity<List<EnrollmentTrendDTO>> getTrends() {
+    if (rbacEnforcer != null) {
+      rbacEnforcer.checkRole("ADMIN", "INSTRUCTOR");
+    }
+    return ResponseEntity.ok(analyticsService.getEnrollmentTrends());
+  }
+
+  @GetMapping("/global")
+  public ResponseEntity<GlobalStatsDTO> getGlobalStats() {
+    if (rbacEnforcer != null) {
+      rbacEnforcer.checkRole("ADMIN", "INSTRUCTOR");
+    }
+    return ResponseEntity.ok(analyticsService.getGlobalStats());
+  }
+
+  @GetMapping("/courses")
+  public ResponseEntity<List<CourseAnalyticsDTO>> getCourseAnalytics() {
+    if (rbacEnforcer != null) {
+      rbacEnforcer.checkRole("ADMIN", "INSTRUCTOR");
+    }
+    return ResponseEntity.ok(analyticsService.getCourseAnalytics());
   }
 }

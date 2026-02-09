@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAssignment, useSubmission, useSubmitAssignment } from '../api/useAssignments'
+import { useUI } from '@/shared/context/UIContext'
 import { Container, Card } from '@/shared/ui/Layout'
 import { Heading1, Heading2, Heading3, Paragraph, Small } from '@/shared/ui/Typography'
 import { Button } from '@/shared/ui/Button'
@@ -21,6 +22,17 @@ export function AssignmentDetailPage() {
   const { data: assignment, isLoading: isAssignmentLoading } = useAssignment(assignmentId!)
   const { data: submission, isLoading: isSubmissionLoading } = useSubmission(assignmentId!)
   const submitMutation = useSubmitAssignment()
+  const { setBreadcrumbs } = useUI()
+
+  useEffect(() => {
+    if (assignment) {
+      setBreadcrumbs([
+        { label: 'Assignments', href: '/assignments' },
+        { label: assignment.title }
+      ])
+    }
+    return () => setBreadcrumbs(null)
+  }, [assignment, setBreadcrumbs])
 
   const [content, setContent] = useState('')
 
@@ -62,7 +74,7 @@ export function AssignmentDetailPage() {
     )
   }
 
-  const isOverdue = new Date(assignment.dueDate) < new Date()
+  const isOverdue = assignment?.dueDate ? new Date(assignment.dueDate) < new Date() : false
 
   return (
     <Container className="py-8">
@@ -84,7 +96,7 @@ export function AssignmentDetailPage() {
             <div className="flex flex-wrap gap-4 py-4 border-y border-slate-100 mb-6">
               <div className="flex items-center gap-2 text-slate-600">
                 <Calendar size={18} className="text-blue-500" />
-                <span className="text-sm">Due: {new Date(assignment.dueDate).toLocaleString()}</span>
+                <span className="text-sm">Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleString() : 'No deadline'}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-600">
                 <Award size={18} className="text-yellow-500" />
@@ -138,7 +150,7 @@ export function AssignmentDetailPage() {
               </div>
 
               <div className="p-4 bg-white border border-slate-200 rounded-lg mb-6">
-                <Small className="text-slate-400 block mb-2">Submitted on {new Date(submission.submissionDate).toLocaleString()}</Small>
+                <Small className="text-slate-400 block mb-2">Submitted on {submission.submissionDate ? new Date(submission.submissionDate).toLocaleString() : 'Date unknown'}</Small>
                 <div className="text-slate-700 whitespace-pre-wrap">{submission.content}</div>
               </div>
 
@@ -175,7 +187,7 @@ export function AssignmentDetailPage() {
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-500">Due Date</span>
                 <span className={isOverdue ? 'text-red-600 font-medium' : 'text-slate-900'}>
-                  {new Date(assignment.dueDate).toLocaleDateString()}
+                  {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No deadline'}
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">

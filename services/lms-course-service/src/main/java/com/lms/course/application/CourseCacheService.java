@@ -55,7 +55,7 @@ public class CourseCacheService {
         course.getCategory(),
         course.getLevel(),
         course.getPrice(),
-        course.getStatus().name(),
+        course.getStatus() != null ? course.getStatus().name() : "DRAFT",
         modules,
         instructorIds,
         course.getCreatedAt(),
@@ -63,9 +63,11 @@ public class CourseCacheService {
   }
 
   private ModuleResponse mapToModuleResponse(CourseModule module) {
-    List<LessonResponse> lessons = module.getLessons().stream()
+    if (module == null)
+      return null;
+    List<LessonResponse> lessons = module.getLessons() != null ? module.getLessons().stream()
         .map(this::mapToLessonResponse)
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()) : List.of();
 
     return new ModuleResponse(
         module.getId(),
@@ -77,10 +79,12 @@ public class CourseCacheService {
   }
 
   private LessonResponse mapToLessonResponse(Lesson lesson) {
+    if (lesson == null)
+      return null;
     return new LessonResponse(
         lesson.getId(),
         lesson.getTitle(),
-        lesson.getType().name(),
+        lesson.getType() != null ? lesson.getType().name() : "VIDEO",
         lesson.getDurationMinutes(),
         lesson.getSortOrder(),
         lesson.getCreatedAt(),

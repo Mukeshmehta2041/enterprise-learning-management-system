@@ -27,18 +27,32 @@ public class CourseServiceClient {
   @Retry(name = "courseService")
   public boolean isCoursePublished(UUID courseId) {
     try {
-      CourseResponse course = restClient.get()
-          .uri("/api/v1/courses/{courseId}", courseId)
-          .header("X-Roles", "ADMIN") // Internal call privilege
-          .header("X-User-Id", UUID.randomUUID().toString())
-          .retrieve()
-          .body(CourseResponse.class);
-
+      CourseResponse course = getCourseResponse(courseId);
       return course != null && "PUBLISHED".equalsIgnoreCase(course.status());
     } catch (Exception e) {
       log.error("Error checking course status for: {}", courseId, e);
       throw e; // Rethrow for resilience4j to catch
     }
+  }
+
+  @CircuitBreaker(name = "courseService")
+  @Retry(name = "courseService")
+  public CourseResponse getCourse(UUID courseId) {
+    try {
+      return getCourseResponse(courseId);
+    } catch (Exception e) {
+      log.error("Error fetching course details for: {}", courseId, e);
+      return new CourseResponse(courseId, "Untitled Course", "UNKNOWN", null);
+    }
+  }
+
+  private CourseResponse getCourseResponse(UUID courseId) {
+    return restClient.get()
+        .uri("/api/v1/courses/{courseId}", courseId)
+        .header("X-Roles", "ADMIN") // Internal call privilege
+        .header("X-User-Id", UUID.randomUUID().toString())
+        .retrieve()
+        .body(CourseResponse.class);
   }
 
   public boolean isCoursePublishedFallback(UUID courseId, Throwable t) {
@@ -87,10 +101,11 @@ public class CourseServiceClient {
     return 0;
   }
 
-  public record CourseResponse(UUID id, String status) {
+  public record CourseResponse(UUID id, String title, String status, String thumbnailUrl) {
   }
 
-  public record CourseDetailResponse(UUID id, List<ModuleResponse> modules) {
+  public record CourseDetailResponse(UUID id, String title, String status, String thumbnailUrl,
+      List<ModuleResponse> modules) {
   }
 
   public record ModuleResponse(UUID id, List<LessonResponse> lessons) {

@@ -230,14 +230,18 @@ public class EnrollmentApplicationService {
   }
 
   private EnrollmentResponse mapToEnrollmentResponse(Enrollment enrollment) {
+    var course = courseServiceClient.getCourse(enrollment.getCourseId());
     return new EnrollmentResponse(
         enrollment.getId(),
-        enrollment.getUserId(),
         enrollment.getCourseId(),
+        course.title(),
+        course.thumbnailUrl(),
+        enrollment.getUserId(),
         enrollment.getStatus().name(),
         enrollment.getProgressPct(),
         enrollment.getEnrolledAt(),
-        enrollment.getCompletedAt());
+        enrollment.getCompletedAt(),
+        enrollment.getUpdatedAt());
   }
 
   public static class ConflictException extends RuntimeException {

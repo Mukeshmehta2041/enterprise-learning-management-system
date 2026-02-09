@@ -10,7 +10,7 @@ import { NetworkStatusIndicator } from '@/shared/components/NetworkStatusIndicat
 import { PWAInstallBanner } from '@/shared/components/PWAInstallBanner'
 
 export function AppLayout() {
-  const { isSidebarOpen, setSidebarOpen, toggleSidebar } = useUI()
+  const { isSidebarOpen, setSidebarOpen, toggleSidebar, breadcrumbItems } = useUI()
   const { user } = useAuth()
   const { tenant } = useTenant()
   const location = useLocation()
@@ -101,7 +101,7 @@ export function AppLayout() {
 
         <main id="main-content" className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
           <div className="mx-auto w-full">
-            {!isDashboard && <Breadcrumbs />}
+            {!isDashboard && <Breadcrumbs items={breadcrumbItems || undefined} />}
             <Outlet />
           </div>
         </main>

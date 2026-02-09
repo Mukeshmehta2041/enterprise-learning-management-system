@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
 import { CourseSchema, CourseDetailSchema, type Course, type CourseFilters, type CourseDetail } from '@/shared/types/course'
 import { type PaginatedResponse } from '@/shared/types/error'
@@ -42,5 +42,50 @@ export function useCourse(id: string) {
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
     gcTime: 20 * 60 * 1000,
+  })
+}
+
+export function useUpdateCourse() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CourseDetail> }) => {
+      const response = await apiClient.patch<CourseDetail>(`/courses/${id}`, data)
+      return response.data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] })
+      queryClient.setQueryData(['courses', data.id], data)
+    },
+  })
+}
+
+export function usePublishCourse() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.post<CourseDetail>(`/courses/${id}/publish`)
+      return response.data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] })
+      queryClient.setQueryData(['courses', data.id], data)
+    },
+  })
+}
+
+export function useSaveAsDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.post<CourseDetail>(`/courses/${id}/draft`)
+      return response.data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] })
+      queryClient.setQueryData(['courses', data.id], data)
+    },
   })
 }

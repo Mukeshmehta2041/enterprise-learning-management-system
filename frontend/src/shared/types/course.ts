@@ -5,10 +5,18 @@ export const LessonSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   contentUrl: z.string().optional(),
-  contentType: z.enum(['VIDEO', 'DOCUMENT', 'QUIZ']),
+  type: z.enum(['VIDEO', 'DOCUMENT', 'QUIZ']).optional(),
+  contentType: z.enum(['VIDEO', 'DOCUMENT', 'QUIZ']).optional(),
+  durationMinutes: z.number().nullable().optional(),
   duration: z.string().optional(),
-  order: z.number(),
-})
+  sortOrder: z.number().optional(),
+  order: z.number().optional(),
+}).transform((data) => ({
+  ...data,
+  contentType: (data.type || data.contentType || 'VIDEO') as 'VIDEO' | 'DOCUMENT' | 'QUIZ',
+  order: data.sortOrder ?? data.order ?? 0,
+  duration: data.durationMinutes ? `${data.durationMinutes}m` : (data.duration || '0m'),
+}))
 
 export type Lesson = z.infer<typeof LessonSchema>
 
@@ -16,17 +24,23 @@ export const ModuleSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().optional(),
-  order: z.number(),
+  sortOrder: z.number().optional(),
+  order: z.number().optional(),
   lessons: z.array(LessonSchema),
-})
+}).transform((data) => ({
+  ...data,
+  order: data.sortOrder ?? data.order ?? 0,
+}))
 
 export type Module = z.infer<typeof ModuleSchema>
 
 export const CourseSchema = z.object({
   id: z.string(),
   title: z.string(),
+  slug: z.string().optional(),
   description: z.string(),
   instructorId: z.string().optional().default(''),
+  instructorIds: z.array(z.string()).optional(),
   instructorName: z.string().optional().default('Instructor'),
   thumbnailUrl: z.string().optional().nullable(),
   category: z.string(),

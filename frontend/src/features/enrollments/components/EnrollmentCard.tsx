@@ -53,7 +53,7 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
         <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center gap-1 text-slate-500">
             <Clock size={14} />
-            <Small>Last accessed: {new Date(enrollment.lastAccessedAt).toLocaleDateString()}</Small>
+            <Small>Last accessed: {enrollment.lastAccessedAt ? new Date(enrollment.lastAccessedAt).toLocaleDateString() : 'Never'}</Small>
           </div>
 
           <Link

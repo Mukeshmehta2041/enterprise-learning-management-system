@@ -1,12 +1,20 @@
 import { useEnrollments } from '../api/useEnrollments'
+import { useEffect } from 'react'
 import { EnrollmentCard } from '../components/EnrollmentCard'
 import { Container, Heading1, TextMuted, Heading4, Button, EmptyState } from '@/shared/ui'
 import { useNavigate } from 'react-router-dom'
 import { GraduationCap, AlertCircle } from 'lucide-react'
+import { useUI } from '@/shared/context/UIContext'
 
 export function MyLearningPage() {
   const { data: enrollments, isLoading, isError, error, refetch } = useEnrollments()
   const navigate = useNavigate()
+  const { setBreadcrumbs } = useUI()
+
+  useEffect(() => {
+    setBreadcrumbs([{ label: 'My Learning' }])
+    return () => setBreadcrumbs(null)
+  }, [setBreadcrumbs])
 
   return (
     <Container className="py-8">

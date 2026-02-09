@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCourses } from '../api/useCourses'
 import { CourseCard } from '../components/CourseCard'
 import { CourseSkeleton } from '../components/CourseSkeleton'
+import { useUI } from '@/shared/context/UIContext'
 import {
   Heading1,
   TextMuted,
@@ -50,6 +51,12 @@ export function CourseListPage() {
   const [showFilters, setShowFilters] = useState(false)
   const { hasRole } = useAccess()
   const navigate = useNavigate()
+  const { setBreadcrumbs } = useUI()
+
+  useEffect(() => {
+    setBreadcrumbs([{ label: 'Courses' }])
+    return () => setBreadcrumbs(null)
+  }, [setBreadcrumbs])
 
   const { data, isLoading, isError, error, refetch } = useCourses(filters)
 

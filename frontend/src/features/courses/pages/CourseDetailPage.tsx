@@ -1,11 +1,13 @@
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useCourse } from '../api/useCourses'
 import { useEnrollment, useEnrollSub } from '@/features/enrollments/api/useEnrollments'
 import { useAccess } from '@/shared/hooks/useAccess'
+import { useUI } from '@/shared/context/UIContext'
 import { Container, Card } from '@/shared/ui/Layout'
 import { Heading1, Heading2, Heading3, Muted, Paragraph, Small } from '@/shared/ui/Typography'
 import { Button } from '@/shared/ui/Button'
-import { BookOpen, Clock, Star, Users, ChevronRight, PlayCircle, FileText, HelpCircle, Edit } from 'lucide-react'
+import { BookOpen, Clock, Star, Users, PlayCircle, FileText, HelpCircle, Edit } from 'lucide-react'
 import { CourseSkeleton } from '../components/CourseSkeleton'
 import type { Module, Lesson } from '@/shared/types/course'
 
@@ -16,6 +18,17 @@ export function CourseDetailPage() {
   const { data: enrollment, isLoading: isEnrollmentLoading } = useEnrollment(courseId!)
   const enrollMutation = useEnrollSub()
   const { hasRole } = useAccess()
+  const { setBreadcrumbs } = useUI()
+
+  useEffect(() => {
+    if (course) {
+      setBreadcrumbs([
+        { label: 'Courses', href: '/courses' },
+        { label: course.title }
+      ])
+    }
+    return () => setBreadcrumbs(null)
+  }, [course, setBreadcrumbs])
 
   const isLoading = isCourseLoading || isEnrollmentLoading
 
@@ -72,11 +85,6 @@ export function CourseDetailPage() {
         <div className="lg:col-span-2 space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-4 text-sm font-medium text-blue-600">
-                <Link to="/courses">Courses</Link>
-                <ChevronRight size={14} />
-                <span className="text-slate-500">{course.category}</span>
-              </div>
               <Heading1 className="mb-4">{course.title}</Heading1>
             </div>
             {hasRole(['INSTRUCTOR', 'ADMIN']) && (
