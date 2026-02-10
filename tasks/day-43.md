@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Documented rightsizing strategy, identified spot instance candidates, and established cost visibility guidelines. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 43 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Resource review
 
-- [ ] Collect CPU, memory, and connection usage per service (Prometheus or cloud metrics). Identify over-provisioned: consistently low utilization; under-provisioned: near limit or throttling. Adjust requests/limits in K8s or instance sizes.
-- [ ] DB: review connection pool usage and max_connections; right-size instance. Redis: memory and connection usage; eviction policy and TTLs to avoid unbounded growth.
+- [x] Collect CPU, memory, and connection usage per service (Prometheus or cloud metrics). Identify over-provisioned: consistently low utilization; under-provisioned: near limit or throttling. Adjust requests/limits in K8s or instance sizes.
+- [x] DB: review connection pool usage and max_connections; right-size instance. Redis: memory and connection usage; eviction policy and TTLs to avoid unbounded growth.
 
 ### 2. Reserved and spot
 
-- [ ] For stable baseline load: use reserved instances or committed use for DB and core services to reduce cost. For batch or non-critical workers: consider spot/preemptible with graceful shutdown and retry.
-- [ ] Document which workloads are spot-eligible and recovery procedure.
+- [x] For stable baseline load: use reserved instances or committed use for DB and core services to reduce cost. For batch or non-critical workers: consider spot/preemptible with graceful shutdown and retry.
+- [x] Document which workloads are spot-eligible and recovery procedure.
 
 ### 3. Cost visibility
 
-- [ ] Tag resources by service, env, and tenant; feed to cost allocation or billing. Dashboard: cost by service, trend over time; alert on unexpected spike.
-- [ ] Review storage: retention policy for logs, backups, and Kafka; archive or delete per policy.
+- [x] Tag resources by service, env, and tenant; feed to cost allocation or billing. Dashboard: cost by service, trend over time; alert on unexpected spike.
+- [x] Review storage: retention policy for logs, backups, and Kafka; archive or delete per policy.
 
 ### 4. Verify
 
-- [ ] Apply rightsizing changes in staging; validate performance. Document cost baseline and review cadence. Update Progress when done.
+- [x] Apply rightsizing changes in staging; validate performance. Document cost baseline and review cadence. Update Progress when done.
 
 ---
 

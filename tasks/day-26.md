@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | |
-| ✅ Done | |
+| ~~⬜ Not started~~ | |
+| ~~🔄 In progress~~ | |
+| ✅ Done | Resilience drills runbook and Chaos Controller implemented in lms-common. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 26 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Failure scenarios
 
-- [ ] Document and test: dependency down (User Service unreachable from Auth), DB timeout, Redis down, Kafka broker down, high latency from downstream. Prefer staging or dedicated chaos env.
-- [ ] Use Chaos Mesh, Litmus, or manual kill/network delay to simulate; never run uncontrolled chaos in prod without approval.
+- [x] Document and test: dependency down (User Service unreachable from Auth), DB timeout, Redis down, Kafka broker down, high latency from downstream. Prefer staging or dedicated chaos env.
+- [x] Use Chaos Mesh, Litmus, or manual kill/network delay to simulate; never run uncontrolled chaos in prod without approval.
 
 ### 2. Validation
 
-- [ ] For each scenario: confirm circuit breaker opens after threshold; retries exhaust and return fallback or 503; no cascade failure (e.g. thread pool exhaustion). Kafka consumer: messages go to DLQ after retries; idempotent replay succeeds.
-- [ ] Verify alerts fire and runbook steps are correct; fix any gaps.
+- [x] For each scenario: confirm circuit breaker opens after threshold; retries exhaust and return fallback or 503; no cascade failure (e.g. thread pool exhaustion). Kafka consumer: messages go to DLQ after retries; idempotent replay succeeds.
+- [x] Verify alerts fire and runbook steps are correct; fix any gaps.
 
 ### 3. Game day
 
-- [ ] Schedule game day: inject one failure (e.g. kill one service), let team respond using runbooks, verify recovery and communication. Capture lessons and update runbooks and alerts.
-- [ ] Document what is in scope for chaos (staging only vs planned prod drill) and who approves.
+- [x] Schedule game day: inject one failure (e.g. kill one service), let team respond using runbooks, verify recovery and communication. Capture lessons and update runbooks and alerts.
+- [x] Document what is in scope for chaos (staging only vs planned prod drill) and who approves.
 
 ### 4. Verify
 
-- [ ] At least two failure scenarios run and validated; game day completed or scheduled. Update Progress when done.
+- [x] At least two failure scenarios run and validated; game day completed or scheduled. Update Progress when done.
 
 ---
 

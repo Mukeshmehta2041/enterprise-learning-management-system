@@ -11,5 +11,7 @@ public record UserDataExport(
     String displayName,
     String avatarUrl,
     Set<String> roles,
-    String status) {
+    String status,
+    java.util.List<java.util.Map<String, Object>> enrollments,
+    java.util.List<java.util.Map<String, Object>> submissions) {
 }

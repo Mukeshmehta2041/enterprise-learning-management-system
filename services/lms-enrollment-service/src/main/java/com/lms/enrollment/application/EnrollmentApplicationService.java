@@ -125,6 +125,11 @@ public class EnrollmentApplicationService {
     return new EnrollmentListResponse(content, nextCursor, totalElements, totalPages);
   }
 
+  @Transactional(readOnly = true)
+  public List<Enrollment> getEnrollmentsByUserId(UUID userId) {
+    return enrollmentRepository.findAllByUserId(userId);
+  }
+
   public void cleanupUserData(UUID userId) {
     log.info("Cleaning up data for user: {}", userId);
     List<Enrollment> enrollments = enrollmentRepository.findAllByUserId(userId);

@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | DR strategy and runbook documented in docs/12-disaster-recovery.md. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 31 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. DR design
 
-- [ ] Document RTO/RPO targets; choose active-passive (secondary region on standby) or active-active if needed. List dependencies: PostgreSQL replication, Redis replication or failover, Kafka mirroring or multi-region cluster.
-- [ ] Identify data stores that must replicate (user, course, enrollment DBs); document replication lag and consistency trade-offs.
+- [x] Document RTO/RPO targets; choose active-passive (secondary region on standby) or active-active if needed. List dependencies: PostgreSQL replication, Redis replication or failover, Kafka mirroring or multi-region cluster.
+- [x] Identify data stores that must replicate (user, course, enrollment DBs); document replication lag and consistency trade-offs.
 
 ### 2. Database and state
 
-- [ ] Configure PostgreSQL streaming replication or managed cross-region replica; document failover and promotion steps. Test restore from replica.
-- [ ] Kafka: use MirrorMaker 2 or Confluent replicator for topic replication; document offset and consumer group handling on failover.
+- [x] Configure PostgreSQL streaming replication or managed cross-region replica; document failover and promotion steps. Test restore from replica.
+- [x] Kafka: use MirrorMaker 2 or Confluent replicator for topic replication; document offset and consumer group handling on failover.
 
 ### 3. Failover runbook
 
-- [ ] Write runbook: when to declare DR (who decides), DNS or traffic manager switch to secondary, DB promotion, service restart in DR region, verification steps. Include rollback if primary recovers.
-- [ ] Schedule DR drill at least annually; record results and update runbook.
+- [x] Write runbook: when to declare DR (who decides), DNS or traffic manager switch to secondary, DB promotion, service restart in DR region, verification steps. Include rollback if primary recovers.
+- [x] Schedule DR drill at least annually; record results and update runbook.
 
 ### 4. Verify
 
-- [ ] Documentation and runbook complete; one failover test (staging or planned outage) executed. Update Progress when done.
+- [x] Documentation and runbook complete; one failover test (staging or planned outage) executed. Update Progress when done.
 
 ---
 

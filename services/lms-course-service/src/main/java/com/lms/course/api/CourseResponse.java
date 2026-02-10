@@ -1,9 +1,11 @@
 package com.lms.course.api;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@JsonFilter("sparseFilter")
 public record CourseResponse(
     UUID id,
     String title,

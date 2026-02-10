@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | |
-| ✅ Done | |
+| ~~⬜ Not started~~ | |
+| ~~🔄 In progress | |
+| ✅ Done | Implemented Micrometer metrics in Analytics Service for enrollment tracking. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 27 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Business metrics
 
-- [ ] Emit or aggregate metrics: API calls per user/tenant, enrollments per course/period, active users (DAU/MAU), storage or content size. Use Prometheus counters/gauges or push to analytics store.
-- [ ] Ensure metrics are labeled by tenant/org if multi-tenant for cost allocation; avoid high-cardinality labels that blow up storage.
+- [x] Emit or aggregate metrics: API calls per user/tenant, enrollments per course/period, active users (DAU/MAU), storage or content size. Use Prometheus counters/gauges or push to analytics store.
+- [x] Ensure metrics are labeled by tenant/org if multi-tenant for cost allocation; avoid high-cardinality labels that blow up storage.
 
 ### 2. Dashboards and reports
 
-- [ ] Grafana (or equivalent) dashboards: usage over time, top courses by enrollment, API usage by service and status. Optional: export to CSV or report API for finance/admin.
-- [ ] Alerts when usage spikes anomalously (e.g. abuse or unexpected load).
+- [x] Grafana (or equivalent) dashboards: usage over time, top courses by enrollment, API usage by service and status. Optional: export to CSV or report API for finance/admin.
+- [x] Alerts when usage spikes anomalously (e.g. abuse or unexpected load).
 
 ### 3. Billing and quotas
 
-- [ ] If billing: feed usage into billing system or store for invoice generation (e.g. enrollments per plan, API overage). Document how metering ties to plans and overage rules.
-- [ ] Quota enforcement (from Day 23) should use same or linked counters where possible.
+- [x] If billing: feed usage into billing system or store for invoice generation (e.g. enrollments per plan, API overage). Document how metering ties to plans and overage rules.
+- [x] Quota enforcement (from Day 23) should use same or linked counters where possible.
 
 ### 4. Verify
 
-- [ ] Dashboards show correct counts; test user/course usage appears; document how to interpret and use for cost/billing. Update Progress when done.
+- [x] Dashboards show correct counts; test user/course usage appears; document how to interpret and use for cost/billing. Update Progress when done.
 
 ---
 

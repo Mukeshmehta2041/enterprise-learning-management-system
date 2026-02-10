@@ -12,7 +12,7 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Enrollment Service implemented with schema and APIs for tracking course progress. |
 
 **Started:** 2026-02-04  
 **Completed:** 2026-02-04

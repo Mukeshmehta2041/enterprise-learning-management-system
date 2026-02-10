@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
   Optional<Enrollment> findByUserIdAndCourseId(UUID userId, UUID courseId);
 
+  List<Enrollment> findAllByUserId(UUID userId);
+
   Page<Enrollment> findByUserId(UUID userId, Pageable pageable);
 
   long countByUserId(UUID userId);
@@ -29,8 +31,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, UUID> {
   long countByCourseId(UUID courseId);
 
   boolean existsByUserIdAndCourseId(UUID userId, UUID courseId);
-
-  List<Enrollment> findAllByUserId(UUID userId);
 
   void deleteByUserId(UUID userId);
 }

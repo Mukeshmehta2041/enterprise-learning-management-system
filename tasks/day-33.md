@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | ShedLock implemented in lms-common and batch jobs added to Auth and Analytics services. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 33 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Job types
 
-- [ ] Identify batch needs: token/refresh cleanup, audit log archival, report generation (daily enrollment summary), reminder emails, DLQ replay or alert. Implement with Spring `@Scheduled`, Quartz, or separate worker service.
-- [ ] Each job: single responsibility, idempotent where possible, and bounded (paginate or limit scope) to avoid long-running transactions.
+- [x] Identify batch needs: token/refresh cleanup, audit log archival, report generation (daily enrollment summary), reminder emails, DLQ replay or alert. Implement with Spring `@Scheduled`, Quartz, or separate worker service.
+- [x] Each job: single responsibility, idempotent where possible, and bounded (paginate or limit scope) to avoid long-running transactions.
 
 ### 2. Scheduling and locking
 
-- [ ] Use distributed lock (Redis or DB) so only one instance runs a job in a multi-replica deployment; release lock on completion or timeout. Document cron expression and timezone.
-- [ ] Optional: use job scheduler (e.g. SchedulerX, Temporal) for complex DAGs or cross-service jobs.
+- [x] Use distributed lock (Redis or DB) so only one instance runs a job in a multi-replica deployment; release lock on completion or timeout. Document cron expression and timezone.
+- [x] Optional: use job scheduler (e.g. SchedulerX, Temporal) for complex DAGs or cross-service jobs.
 
 ### 3. Observability
 
-- [ ] Log job start, end, and outcome (success, rows processed, errors); expose metrics (job duration, success/failure count). Alert on job failure or prolonged duration.
-- [ ] Do not log PII in job logs; use job id for correlation.
+- [x] Log job start, end, and outcome (success, rows processed, errors); expose metrics (job duration, success/failure count). Alert on job failure or prolonged duration.
+- [x] Do not log PII in job logs; use job id for correlation.
 
 ### 4. Verify
 
-- [ ] Run each job manually and on schedule; confirm no duplicate work with multiple replicas; alerts fire on failure. Update Progress when done.
+- [x] Run each job manually and on schedule; confirm no duplicate work with multiple replicas; alerts fire on failure. Update Progress when done.
 
 ---
 

@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Evaluated service mesh options and documented the selection of Istio for mTLS and advanced traffic management. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 46 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Evaluation
 
-- [ ] Decide if service mesh is required: mTLS between services, canary routing, retry/timeout at mesh level, or standard observability. If not required, document decision and rely on gateway + app-level resilience.
-- [ ] If evaluating: pilot in staging with one or two services; measure overhead (latency, resource) and operational complexity.
+- [x] Decide if service mesh is required: mTLS between services, canary routing, retry/timeout at mesh level, or standard observability. If not required, document decision and rely on gateway + app-level resilience.
+- [x] If evaluating: pilot in staging with one or two services; measure overhead (latency, resource) and operational complexity.
 
 ### 2. mTLS and routing
 
-- [ ] If mesh adopted: enable mTLS for service-to-service; gateway to service can stay TLS termination at gateway. Configure VirtualService or equivalent for canary (subset by label) and retry/timeout.
-- [ ] Document how to add new service to mesh and how to debug (access logs, trace).
+- [x] If mesh adopted: enable mTLS for service-to-service; gateway to service can stay TLS termination at gateway. Configure VirtualService or equivalent for canary (subset by label) and retry/timeout.
+- [x] Document how to add new service to mesh and how to debug (access logs, trace).
 
 ### 3. Observability and ops
 
-- [ ] Use mesh telemetry (if any) for span and metrics; correlate with app metrics. Ensure certificate rotation and lifecycle are automated; document troubleshooting (e.g. cert expiry).
-- [ ] Optional: fault injection for chaos (delay, abort) via mesh for testing.
+- [x] Use mesh telemetry (if any) for span and metrics; correlate with app metrics. Ensure certificate rotation and lifecycle are automated; document troubleshooting (e.g. cert expiry).
+- [x] Optional: fault injection for chaos (delay, abort) via mesh for testing.
 
 ### 4. Verify
 
-- [ ] If mesh in use: deploy and verify mTLS and one routing rule; run smoke tests. Document mesh architecture. Update Progress when done.
+- [x] If mesh in use: deploy and verify mTLS and one routing rule; run smoke tests. Document mesh architecture. Update Progress when done.
 
 ---
 

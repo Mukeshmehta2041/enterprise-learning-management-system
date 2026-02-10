@@ -43,7 +43,11 @@ public class EnrollmentController {
 
     UUID userId = UUID.fromString(userIdHeader);
     EnrollmentListResponse response = enrollmentService.getMyEnrollments(userId, cursor, limit);
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok()
+        .header("Deprecation", "true")
+        .header("Sunset", "2025-06-30")
+        .header("Link", "</api/v2/enrollments/me>; rel=\"successor-version\"")
+        .body(response);
   }
 
   @GetMapping
@@ -54,7 +58,11 @@ public class EnrollmentController {
 
     UUID userId = UUID.fromString(userIdHeader);
     EnrollmentListResponse response = enrollmentService.getMyEnrollments(userId, cursor, limit);
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok()
+        .header("Deprecation", "true")
+        .header("Sunset", "2025-06-30")
+        .header("Link", "</api/v2/enrollments/me>; rel=\"successor-version\"")
+        .body(response);
   }
 
   @GetMapping("/course/{courseId}")

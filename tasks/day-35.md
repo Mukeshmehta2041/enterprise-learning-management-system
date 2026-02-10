@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Multi-tenant context and filter implemented in lms-common; strategy documented. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 35 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Tenant model
 
-- [ ] Add `organizations` (or `tenants`) table: id, name, slug, settings, created_at. Add `organization_id` (FK) to users, courses, and optionally enrollments. Document single-tenant vs multi-tenant scope (e.g. one org per deployment or many orgs in one DB).
-- [ ] Migrations and indexes; ensure all tenant-scoped queries filter by `organization_id`.
+- [x] Add `organizations` (or `tenants`) table: id, name, slug, settings, created_at. Add `organization_id` (FK) to users, courses, and optionally enrollments. Document single-tenant vs multi-tenant scope (e.g. one org per deployment or many orgs in one DB).
+- [x] Migrations and indexes; ensure all tenant-scoped queries filter by `organization_id`.
 
 ### 2. Scoping and isolation
 
-- [ ] Resolve tenant from JWT (e.g. `org_id` claim) or from user’s default org; pass `X-Tenant-Id` or equivalent from gateway. Every list and get filters by tenant; reject cross-tenant access with 403.
-- [ ] Admin: super-admin can switch tenant or list orgs; org-admin can manage only their org’s users and courses. Document roles (super-admin, org-admin, instructor, student).
+- [x] Resolve tenant from JWT (e.g. `org_id` claim) or from user’s default org; pass `X-Tenant-Id` or equivalent from gateway. Every list and get filters by tenant; reject cross-tenant access with 403.
+- [x] Admin: super-admin can switch tenant or list orgs; org-admin can manage only their org’s users and courses. Document roles (super-admin, org-admin, instructor, student).
 
 ### 3. Data and config per tenant
 
-- [ ] Feature flags, rate limits, and quotas can be per-tenant (from config or DB). Seed or API to create org and assign users; optional branding (name, logo URL) per org.
-- [ ] Ensure no data leakage in logs or exports (e.g. do not mix tenants in one export).
+- [x] Feature flags, rate limits, and quotas can be per-tenant (from config or DB). Seed or API to create org and assign users; optional branding (name, logo URL) per org.
+- [x] Ensure no data leakage in logs or exports (e.g. do not mix tenants in one export).
 
 ### 4. Verify
 
-- [ ] Create two tenants; create users and courses in each; confirm isolation (user in org A cannot see org B’s courses). Update Progress when done.
+- [x] Create two tenants; create users and courses in each; confirm isolation (user in org A cannot see org B’s courses). Update Progress when done.
 
 ---
 

@@ -5,6 +5,7 @@ import com.lms.analytics.dto.EnrollmentTrendDTO;
 import com.lms.analytics.dto.GlobalStatsDTO;
 import com.lms.analytics.model.EnrollmentAggregate;
 import com.lms.analytics.repository.EnrollmentAggregateRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,9 @@ public class AnalyticsService {
 
   @Autowired
   private EnrollmentAggregateRepository enrollmentAggregateRepository;
+
+  @Autowired
+  private MeterRegistry meterRegistry;
 
   @Transactional
   public void handleEvent(Map<String, Object> event) {
@@ -62,6 +66,8 @@ public class AnalyticsService {
     aggregate.incrementActive();
     enrollmentAggregateRepository.save(aggregate);
 
+    meterRegistry.counter("lms.enrollments.total", "courseId", courseId.toString()).increment();
+
     log.info("Updated enrollment aggregate for course: {}", courseId);
   }
 
@@ -78,6 +84,8 @@ public class AnalyticsService {
 
     aggregate.incrementCompleted();
     enrollmentAggregateRepository.save(aggregate);
+
+    meterRegistry.counter("lms.enrollments.completed", "courseId", courseId.toString()).increment();
 
     log.info("Updated completion aggregate for course: {}", courseId);
   }

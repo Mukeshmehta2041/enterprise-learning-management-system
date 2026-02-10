@@ -2,15 +2,19 @@ package com.lms.course.api;
 
 import com.lms.course.application.CourseApplicationService;
 import com.lms.course.domain.CourseStatus;
+import com.lms.common.api.SparseFieldFilter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -34,7 +38,7 @@ public class CourseController {
 
   @GetMapping
   @Operation(summary = "List courses", description = "Retrieves a paginated list of courses")
-  public ResponseEntity<CourseListResponse> listCourses(
+  public ResponseEntity<?> listCourses(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String category,
       @RequestParam(required = false) String level,
@@ -44,6 +48,7 @@ public class CourseController {
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit,
       @RequestParam(required = false, defaultValue = "1") Integer page,
+      @RequestParam(required = false) String fields,
       @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
       @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
 
@@ -61,7 +66,19 @@ public class CourseController {
 
     CourseListResponse response = courseService.listCourses(
         courseStatus, category, level, search, sort, order, cursor, limit, page, userId, roles);
-    return ResponseEntity.ok(response);
+
+    MappingJacksonValue filteredResponse = SparseFieldFilter.filter(response, fields);
+
+    CacheControl cacheControl = (userId == null)
+        ? CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic()
+        : CacheControl.noCache().mustRevalidate();
+
+    return ResponseEntity.ok()
+        .cacheControl(cacheControl)
+        .header("Deprecation", "true")
+        .header("Sunset", "2025-12-31")
+        .header("Link", "</api/v2/courses>; rel=\"successor-version\"")
+        .body(filteredResponse);
   }
 
   @GetMapping("/me")
@@ -97,9 +114,15 @@ public class CourseController {
 
     Set<String> roles = parseRoles(currentRolesHeader);
     UUID userId = UUID.fromString(currentUserId);
-
     CourseDetailResponse response = courseService.getCourseById(courseId, userId, roles);
-    return ResponseEntity.ok(response);
+
+    CacheControl cacheControl = CacheControl.maxAge(Duration.ofMinutes(10)).cachePublic();
+
+    return ResponseEntity.ok()
+        .cacheControl(cacheControl)
+        .header("Deprecation", "true")
+        .header("Sunset", "2025-12-31")
+        .body(response);
   }
 
   @PostMapping

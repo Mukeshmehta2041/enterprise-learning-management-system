@@ -17,13 +17,17 @@ public class RefreshTokenService {
 
   private static final Logger log = LoggerFactory.getLogger(RefreshTokenService.class);
   private static final String REFRESH_TOKEN_PREFIX = "refresh:";
+  private static final String USER_TOKENS_PREFIX = "user:tokens:";
 
-  private final RedisTemplate<String, RefreshTokenData> redisTemplate;
+  private final RedisTemplate<String, RefreshTokenData> refreshTokenRedisTemplate;
+  private final RedisTemplate<String, Object> redisTemplate;
   private final RefreshTokenProperties refreshTokenProperties;
 
   public RefreshTokenService(
-      @Qualifier("refreshTokenRedisTemplate") RedisTemplate<String, RefreshTokenData> redisTemplate,
+      @Qualifier("refreshTokenRedisTemplate") RedisTemplate<String, RefreshTokenData> refreshTokenRedisTemplate,
+      RedisTemplate<String, Object> redisTemplate,
       RefreshTokenProperties refreshTokenProperties) {
+    this.refreshTokenRedisTemplate = refreshTokenRedisTemplate;
     this.redisTemplate = redisTemplate;
     this.refreshTokenProperties = refreshTokenProperties;
   }
@@ -36,11 +40,15 @@ public class RefreshTokenService {
     RefreshTokenData tokenData = new RefreshTokenData(userId, email, now, expiresAt);
 
     String key = REFRESH_TOKEN_PREFIX + tokenId;
-    redisTemplate.opsForValue().set(
+    refreshTokenRedisTemplate.opsForValue().set(
         key,
         tokenData,
         refreshTokenProperties.getTtlDays(),
         TimeUnit.DAYS);
+
+    String userTokensKey = USER_TOKENS_PREFIX + userId;
+    redisTemplate.opsForSet().add(userTokensKey, tokenId);
+    redisTemplate.expire(userTokensKey, refreshTokenProperties.getTtlDays(), TimeUnit.DAYS);
 
     log.debug("Created refresh token for user: {}", userId);
     return tokenId;
@@ -48,7 +56,7 @@ public class RefreshTokenService {
 
   public RefreshTokenData getRefreshToken(String tokenId) {
     String key = REFRESH_TOKEN_PREFIX + tokenId;
-    RefreshTokenData data = redisTemplate.opsForValue().get(key);
+    RefreshTokenData data = refreshTokenRedisTemplate.opsForValue().get(key);
 
     if (data == null) {
       log.debug("Refresh token not found or expired: {}", tokenId);
@@ -60,8 +68,25 @@ public class RefreshTokenService {
 
   public void revokeRefreshToken(String tokenId) {
     String key = REFRESH_TOKEN_PREFIX + tokenId;
+    RefreshTokenData data = refreshTokenRedisTemplate.opsForValue().get(key);
+    if (data != null) {
+      String userTokensKey = USER_TOKENS_PREFIX + data.getUserId();
+      redisTemplate.opsForSet().remove(userTokensKey, tokenId);
+    }
     Boolean deleted = redisTemplate.delete(key);
     log.debug("Revoked refresh token {}: {}", tokenId, deleted);
+  }
+
+  public void revokeAllForUser(UUID userId) {
+    String userTokensKey = USER_TOKENS_PREFIX + userId;
+    java.util.Set<Object> tokenIds = redisTemplate.opsForSet().members(userTokensKey);
+    if (tokenIds != null) {
+      for (Object tokenId : tokenIds) {
+        refreshTokenRedisTemplate.delete(REFRESH_TOKEN_PREFIX + tokenId);
+      }
+    }
+    redisTemplate.delete(userTokensKey);
+    log.info("Revoked all refresh tokens for user: {}", userId);
   }
 
   public String rotateRefreshToken(String oldTokenId, UUID userId, String email) {

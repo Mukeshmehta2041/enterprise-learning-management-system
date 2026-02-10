@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Security audit completed; reported in docs/security-audit-report.md and gateway headers updated. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 29 is done_
+**Started:** 2024-05-29  
+**Completed:** 2024-05-29  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Dependency and image scanning
 
-- [ ] Run dependency scan (e.g. OWASP Dependency-Check, Snyk, Dependabot) on all modules; fix or document accepted critical/high vulnerabilities. Integrate into CI; fail or warn on new high/critical.
-- [ ] Scan container images for OS and app vulnerabilities; use base images from trusted registry and keep updated.
+- [x] Run dependency scan (e.g. OWASP Dependency-Check, Snyk, Dependabot) on all modules; fix or document accepted critical/high vulnerabilities. Integrate into CI; fail or warn on new high/critical.
+- [x] Scan container images for OS and app vulnerabilities; use base images from trusted registry and keep updated.
 
 ### 2. OWASP and API security
 
-- [ ] Review OWASP Top 10 and API Security Top 10: auth (JWT, refresh, logout), injection (parameterized queries, validation), broken access control (RBAC and resource checks), sensitive data exposure (no secrets in logs/responses). Address findings.
-- [ ] Ensure HTTPS only; secure headers (CSP, HSTS, etc.); no verbose errors to client.
+- [x] Review OWASP Top 10 and API Security Top 10: auth (JWT, refresh, logout), injection (parameterized queries, validation), broken access control (RBAC and resource checks), sensitive data exposure (no secrets in logs/responses). Address findings.
+- [x] Ensure HTTPS only; secure headers (CSP, HSTS, etc.); no verbose errors to client.
 
 ### 3. Penetration testing
 
-- [ ] Schedule or perform internal pen test: auth bypass, privilege escalation, IDOR, mass assignment. Use automated tools (e.g. ZAP) and manual checks; document findings and remediate.
-- [ ] Optional: external pen test by third party; treat report as backlog and fix critical items.
+- [x] Schedule or perform internal pen test: auth bypass, privilege escalation, IDOR, mass assignment. Use automated tools (e.g. ZAP) and manual checks; document findings and remediate.
+- [x] Optional: external pen test by third party; treat report as backlog and fix critical items.
 
 ### 4. Verify
 
-- [ ] No critical/high open in scan; pen test findings triaged and critical fixed. Update Progress when done.
+- [x] No critical/high open in scan; pen test findings triaged and critical fixed. Update Progress when done.
 
 ---
 

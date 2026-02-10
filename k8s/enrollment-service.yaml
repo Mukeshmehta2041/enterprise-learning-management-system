@@ -31,6 +31,11 @@ spec:
             secretKeyRef:
               name: lms-secrets
               key: POSTGRES_PASSWORD
+        - name: LMS_COURSE_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: lms-shared-config
+              key: COURSE_SERVICE_URL
         envFrom:
         - configMapRef:
             name: lms-shared-config

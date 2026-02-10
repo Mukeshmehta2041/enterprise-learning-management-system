@@ -12,7 +12,7 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | API Gateway configured with JWT validation and rate limiting; Docker Compose setup complete. |
 
 **Started:** 2026-02-04  
 **Completed:** 2026-02-04

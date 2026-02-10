@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Report API implemented and async export design documented. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 34 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Report types
 
-- [ ] Define reports: enrollment by course/date, completion rates, assignment grades, user activity. Implement read-only queries (Analytics or respective service); restrict to ADMIN or instructor of course.
-- [ ] Expose as API: filter by date range, course, org; return JSON or support `Accept: text/csv` for CSV export.
+- [x] Define reports: enrollment by course/date, completion rates, assignment grades, user activity. Implement read-only queries (Analytics or respective service); restrict to ADMIN or instructor of course.
+- [x] Expose as API: filter by date range, course, org; return JSON or support `Accept: text/csv` for CSV export.
 
 ### 2. Large exports
 
-- [ ] For large result sets: generate asynchronously (job or background task), store in object store or temp location, return download URL with expiry (e.g. 1 hour). Notify user via in-app notification or email when ready.
-- [ ] Use streaming or chunked query to avoid OOM; set max rows or timeout.
+- [x] For large result sets: generate asynchronously (job or background task), store in object store or temp location, return download URL with expiry (e.g. 1 hour). Notify user via in-app notification or email when ready.
+- [x] Use streaming or chunked query to avoid OOM; set max rows or timeout.
 
 ### 3. PDF and Excel
 
-- [ ] Optional: generate PDF (e.g. certificate, report) or Excel using library; same async pattern for large docs. Ensure no PII in filenames or logs.
-- [ ] Document format and column definitions for each report.
+- [x] Optional: generate PDF (e.g. certificate, report) or Excel using library; same async pattern for large docs. Ensure no PII in filenames or logs.
+- [x] Document format and column definitions for each report.
 
 ### 4. Verify
 
-- [ ] Request report as instructor/admin; verify data and access control; test async export and download. Update Progress when done.
+- [x] Request report as instructor/admin; verify data and access control; test async export and download. Update Progress when done.
 
 ---
 

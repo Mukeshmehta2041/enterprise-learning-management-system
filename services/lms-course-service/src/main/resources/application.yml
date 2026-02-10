@@ -20,6 +20,10 @@ management:
 
 server:
   port: 8083
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024
 
 spring:
   application:
@@ -29,10 +33,16 @@ spring:
       host: ${SPRING_REDIS_HOST:localhost}
       port: 6379
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/lms}
-    username: ${SPRING_DATASOURCE_USERNAME:lms}
-    password: ${SPRING_DATASOURCE_PASSWORD:lms}
-    driver-class-name: org.postgresql.Driver
+    primary:
+      url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/lms}
+      username: ${SPRING_DATASOURCE_USERNAME:lms}
+      password: ${SPRING_DATASOURCE_PASSWORD:lms}
+      driver-class-name: org.postgresql.Driver
+    replica:
+      url: ${SPRING_DATASOURCE_REPLICA_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/lms}}
+      username: ${SPRING_DATASOURCE_USERNAME:lms}
+      password: ${SPRING_DATASOURCE_PASSWORD:lms}
+      driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -79,3 +89,8 @@ lms:
 springdoc:
   api-docs:
     path: /api/v1/courses/v3/api-docs
+  group-configs:
+    - group: v1
+      paths-to-match: /api/v1/**
+    - group: v2
+      paths-to-match: /api/v2/**

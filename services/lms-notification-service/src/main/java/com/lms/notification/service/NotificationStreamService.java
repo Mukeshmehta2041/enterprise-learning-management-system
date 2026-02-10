@@ -9,6 +9,7 @@ import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -67,6 +68,20 @@ public class NotificationStreamService implements MessageListener {
   public void broadcast(String userId, InAppNotification notification) {
     log.debug("Publishing notification to Redis channel: {}{}", CHANNEL_PREFIX, userId);
     redisTemplate.convertAndSend(CHANNEL_PREFIX + userId, notification);
+  }
+
+  @Scheduled(fixedRate = 30000) // Every 30 seconds
+  public void sendHeartbeat() {
+    emitters.forEach((userId, emitter) -> {
+      try {
+        emitter.send(SseEmitter.event()
+            .name("ping")
+            .data("heartbeat"));
+      } catch (IOException e) {
+        log.debug("Heartbeat failed for user {}, removing emitter", userId);
+        removeEmitter(userId);
+      }
+    });
   }
 
   @Override

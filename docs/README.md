@@ -24,6 +24,13 @@ This folder contains the design and specification documentation for the Learning
 | [09-devops.md](09-devops.md) | Docker, Compose, env, CI/CD, K8s, secrets |
 | [10-best-practices.md](10-best-practices.md) | Code structure, validation, testing, OpenAPI |
 | [11-phase-plan.md](11-phase-plan.md) | Phase 1–5 checklist and implementation order |
+| [12-disaster-recovery.md](12-disaster-recovery.md) | Multi-region DR strategy and failover runbook |
+| [13-caching-and-cdn.md](13-caching-and-cdn.md) | HTTP caching, CDN design, and invalidation flow |
+| [14-reporting-and-exports.md](14-reporting-and-exports.md) | Async bulk exports, CSV/PDF generation, and security |
+| [15-multi-tenancy.md](15-multi-tenancy.md) | Multi-tenant architecture, tenant isolation, and roles |
+| [onboarding.md](onboarding.md) | Developer and Ops onboarding guide, prerequisites |
+| [api-v2-migration.md](api-v2-migration.md) | Guide for migrating from V1 to V2 API |
+| [security-audit-report.md](security-audit-report.md) | Security audit findings and remediation |
 | [runbooks/](runbooks/) | Operational runbooks for DR, Go-Live, and Incident Response |
 
 ## API Specs (Phase 1 Services)

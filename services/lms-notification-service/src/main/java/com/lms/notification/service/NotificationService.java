@@ -43,9 +43,28 @@ public class NotificationService {
       case "PaymentCompleted":
         handlePaymentCompleted(event);
         break;
+      case "USER_DELETED":
+        handleUserDeletedEvent(event);
+        break;
       default:
         log.debug("No notification handler for event: {}", event.getEventType());
     }
+  }
+
+  private void handleUserDeletedEvent(DomainEvent event) {
+    String userId = event.getAggregateId();
+    log.info("Cleaning up notifications for deleted user: {}", userId);
+
+    String userKey = "notifications:" + userId;
+    java.util.Set<Object> notificationIds = redisTemplate.opsForSet().members(userKey);
+
+    if (notificationIds != null) {
+      for (Object id : notificationIds) {
+        redisTemplate.delete("notifications:" + userId + ":" + id);
+      }
+    }
+    redisTemplate.delete(userKey);
+    log.info("Successfully cleaned up notifications for user: {}", userId);
   }
 
   private void handleUserCreated(DomainEvent event) {

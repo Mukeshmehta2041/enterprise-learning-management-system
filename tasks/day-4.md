@@ -12,7 +12,7 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Course Service implemented with PostgreSQL schema and initial CRUD APIs. |
 
 **Started:** 2026-02-04  
 **Completed:** 2026-02-04

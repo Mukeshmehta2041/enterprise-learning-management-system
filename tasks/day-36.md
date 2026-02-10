@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Implemented SSE for real-time notifications with Redis Pub/Sub scaling and JWT auth support. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 36 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Channel choice
 
-- [ ] Choose WebSocket or Server-Sent Events (SSE): SSE is simpler (one-way, HTTP); WebSocket for bidirectional. Use for: in-app notifications, live progress updates, or instructor announcements.
-- [ ] Document endpoint (e.g. `/api/v1/notifications/stream`) and message format (JSON: type, payload, timestamp).
+- [x] Choose WebSocket or Server-Sent Events (SSE): SSE is simpler (one-way, HTTP); WebSocket for bidirectional. Use for: in-app notifications, live progress updates, or instructor announcements.
+- [x] Document endpoint (e.g. `/api/v1/notifications/stream`) and message format (JSON: type, payload, timestamp).
 
 ### 2. Authentication and authorization
 
-- [ ] Authenticate connection with JWT (query param or first message); reject unauthenticated. Scope messages to user (only their notifications) or to course (instructor + enrolled students). Do not broadcast to other tenants.
-- [ ] Optional: heartbeat/ping to detect dead connections; close and clean up on token expiry.
+- [x] Authenticate connection with JWT (query param or first message); reject unauthenticated. Scope messages to user (only their notifications) or to course (instructor + enrolled students). Do not broadcast to other tenants.
+- [x] Optional: heartbeat/ping to detect dead connections; close and clean up on token expiry.
 
 ### 3. Backend integration
 
-- [ ] When a relevant event occurs (e.g. grade posted, notification created), push to connected clients via in-memory broadcaster or Redis Pub/Sub so multiple gateway/service instances can push. Document scaling (sticky session or Redis adapter).
-- [ ] Limit connection count per user and per instance; return 503 when at capacity.
+- [x] When a relevant event occurs (e.g. grade posted, notification created), push to connected clients via in-memory broadcaster or Redis Pub/Sub so multiple gateway/service instances can push. Document scaling (sticky session or Redis adapter).
+- [x] Limit connection count per user and per instance; return 503 when at capacity.
 
 ### 4. Verify
 
-- [ ] Connect as user; trigger event (e.g. create notification); confirm message received. Test reconnection and auth failure. Update Progress when done.
+- [x] Connect as user; trigger event (e.g. create notification); confirm message received. Test reconnection and auth failure. Update Progress when done.
 
 ---
 

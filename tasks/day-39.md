@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Implemented ExperimentManager with deterministic bucket allocation and documented A/B testing strategy. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 39 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Experiment model
 
-- [ ] Define experiments: id, name, variants (e.g. control, treatment_a), allocation % per variant, start/end date, and targeting (optional: by segment or tenant). Store in DB or config; assign user to variant deterministically (e.g. hash(userId, experimentId) % 100).
-- [ ] API for clients: `GET /api/v1/experiments` or include in auth/me response so client knows which variant to show. Backend can use variant to toggle behaviour (e.g. new enrollment flow).
+- [x] Define experiments: id, name, variants (e.g. control, treatment_a), allocation % per variant, start/end date, and targeting (optional: by segment or tenant). Store in DB or config; assign user to variant deterministically (e.g. hash(userId, experimentId) % 100).
+- [x] API for clients: `GET /api/v1/experiments` or include in auth/me response so client knows which variant to show. Backend can use variant to toggle behaviour (e.g. new enrollment flow).
 
 ### 2. Feature flags and variants
 
-- [ ] Integrate with feature-flag system: experiment variant drives flag value (e.g. experiment “new_ui” variant “on” → flag `new_ui` true). Ensure same user gets same variant for duration of experiment (sticky).
-- [ ] Document how to add new experiment and how to analyze (export events or metrics by variant).
+- [x] Integrate with feature-flag system: experiment variant drives flag value (e.g. experiment “new_ui” variant “on” → flag `new_ui` true). Ensure same user gets same variant for duration of experiment (sticky).
+- [x] Document how to add new experiment and how to analyze (export events or metrics by variant).
 
 ### 3. Metrics and ethics
 
-- [ ] Emit event or metric with experiment id and variant for key actions (enrollment, completion, click); use for analysis. Do not run experiments on sensitive actions (e.g. payment) without explicit consent if required.
-- [ ] Document experiment lifecycle: create → run → conclude → remove or make winning variant default.
+- [x] Emit event or metric with experiment id and variant for key actions (enrollment, completion, click); use for analysis. Do not run experiments on sensitive actions (e.g. payment) without explicit consent if required.
+- [x] Document experiment lifecycle: create → run → conclude → remove or make winning variant default.
 
 ### 4. Verify
 
-- [ ] Create experiment; assign users; confirm variant stable per user; verify events include variant. Update Progress when done.
+- [x] Create experiment; assign users; confirm variant stable per user; verify events include variant. Update Progress when done.
 
 ---
 

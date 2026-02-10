@@ -69,6 +69,11 @@ public class AssignmentService {
     return saved;
   }
 
+  @Transactional(readOnly = true)
+  public List<Submission> getSubmissionsByStudentId(UUID studentId) {
+    return submissionRepository.findAllByStudentId(studentId);
+  }
+
   @Transactional
   public void cleanupUserData(UUID userId) {
     log.info("Cleaning up assignment data for user: {}", userId);

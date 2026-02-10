@@ -12,10 +12,10 @@
 |--------|-------------|
 | ⬜ Not started | |
 | 🔄 In progress | |
-| ✅ Done | |
+| ✅ Done | Mapped security controls to system capabilities and defined evidence collection procedures. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Day 44 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### 1. Control mapping
 
-- [ ] Map controls (e.g. access control, encryption, logging, change management, incident response) to system capabilities: RBAC, TLS, audit logs, CI/CD, runbooks. Identify gaps and document remediation or compensating controls.
-- [ ] Document where evidence lives: access reviews, backup logs, penetration test report, incident log.
+- [x] Map controls (e.g. access control, encryption, logging, change management, incident response) to system capabilities: RBAC, TLS, audit logs, CI/CD, runbooks. Identify gaps and document remediation or compensating controls.
+- [x] Document where evidence lives: access reviews, backup logs, penetration test report, incident log.
 
 ### 2. Evidence and documentation
 
-- [ ] Collect or automate evidence: access logs, change history (Git), deployment logs, backup verification, vulnerability scan results. Store in secure, auditable location; retention per certification requirement.
-- [ ] Policy docs: security policy, incident response, backup and DR, acceptable use; review and version.
+- [x] Collect or automate evidence: access logs, change history (Git), deployment logs, backup verification, vulnerability scan results. Store in secure, auditable location; retention per certification requirement.
+- [x] Policy docs: security policy, incident response, backup and DR, acceptable use; review and version.
 
 ### 3. Gaps and remediation
 
-- [ ] Prioritize gaps (e.g. MFA for admin, encryption at rest, log retention); create tickets and target dates. Document accepted risks and exceptions with approval.
-- [ ] Schedule internal or external audit prep; rehearse evidence presentation.
+- [x] Prioritize gaps (e.g. MFA for admin, encryption at rest, log retention); create tickets and target dates. Document accepted risks and exceptions with approval.
+- [x] Schedule internal or external audit prep; rehearse evidence presentation.
 
 ### 4. Verify
 
-- [ ] Control matrix and evidence index complete; at least one full evidence pull for a control. Update Progress when done.
+- [x] Control matrix and evidence index complete; at least one full evidence pull for a control. Update Progress when done.
 
 ---
 

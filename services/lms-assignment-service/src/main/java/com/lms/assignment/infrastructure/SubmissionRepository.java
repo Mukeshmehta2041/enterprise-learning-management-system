@@ -11,5 +11,7 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
   List<Submission> findByAssignmentId(UUID assignmentId);
 
+  List<Submission> findAllByStudentId(UUID studentId);
+
   void deleteAllByStudentId(UUID studentId);
 }

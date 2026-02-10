@@ -42,7 +42,7 @@
 ### 3. Local run (no Docker yet)
 
 - [x] From root: `mvn clean install` (all modules build).
-- [ ] Run each service on a different port (e.g. gateway 8080, user 8081, auth 8082, course 8083, enrollment 8084). Confirm actuator health (e.g. `GET http://localhost:8081/actuator/health`).
+- [x] Run each service on a different port (e.g. gateway 8080, user 8081, auth 8082, course 8083, enrollment 8084). Confirm actuator health (e.g. `GET http://localhost:8081/actuator/health`).
 
 ### 4. Progress update
 

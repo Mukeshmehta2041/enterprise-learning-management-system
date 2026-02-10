@@ -1,0 +1,26 @@
+spring:
+  config:
+    activate:
+      on-profile: staging
+  datasource:
+    url: ${STAGING_DATABASE_URL}
+    username: ${STAGING_DATABASE_USER}
+    password: ${STAGING_DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+  data:
+    redis:
+      host: ${STAGING_REDIS_HOST}
+      port: 6379
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+jwt:
+  issuer: lms-auth-service-staging

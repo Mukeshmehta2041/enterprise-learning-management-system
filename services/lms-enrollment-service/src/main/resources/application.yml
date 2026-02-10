@@ -75,6 +75,11 @@ spring:
 springdoc:
   api-docs:
     path: /api/v1/enrollments/v3/api-docs
+  group-configs:
+    - group: v1
+      paths-to-match: /api/v1/**
+    - group: v2
+      paths-to-match: /api/v2/**
 
 lms:
   enrollment:

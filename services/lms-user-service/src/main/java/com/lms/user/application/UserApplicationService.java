@@ -2,6 +2,7 @@ package com.lms.user.application;
 
 import com.lms.user.domain.*;
 import com.lms.user.infrastructure.UserEventPublisher;
+import com.lms.user.infrastructure.ExportServiceClient;
 import com.lms.user.api.UserDataExport;
 import com.lms.common.audit.AuditLogger;
 import com.lms.common.exception.ForbiddenException;
@@ -28,6 +29,7 @@ public class UserApplicationService {
   private final PasswordEncoder passwordEncoder;
   private final AuditLogger auditLogger;
   private final UserEventPublisher userEventPublisher;
+  private final ExportServiceClient exportServiceClient;
 
   @Transactional
   public User createUser(String email, String rawPassword, String displayName, String roleName) {
@@ -175,12 +177,17 @@ public class UserApplicationService {
     Profile profile = profileRepository.findByUserId(userId).orElse(null);
     Set<String> roles = getRoleNamesForUser(userId);
 
+    var enrollments = exportServiceClient.getEnrollments(userId);
+    var submissions = exportServiceClient.getSubmissions(userId);
+
     return new UserDataExport(
         user.getId(),
         user.getEmail(),
         profile != null ? profile.getDisplayName() : null,
         profile != null ? profile.getAvatarUrl() : null,
         roles,
-        user.getStatus().name());
+        user.getStatus().name(),
+        enrollments,
+        submissions);
   }
 }

@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Implemented basic OpenAPI, API versioning, and initial Contract tests. |
-| ✅ Done | |
+| 🔄 In progress | |
+| ✅ Done | Implemented basic OpenAPI, API versioning, and initial Contract tests. |
 
 **Started:** February 5, 2026  
-**Completed:** _fill when Day 11 is done_
+**Completed:** February 5, 2026
 
 ---
 
@@ -30,12 +30,12 @@
 ### 2. Contract tests
 
 - [x] Introduce contract tests: consumer contracts (gateway or frontend expectations) and provider tests (each service fulfills contract). Use Pact, Spring Cloud Contract, or OpenAPI-based assertions.
-- [ ] Run contract tests in CI on PR; fail build if contract broken.
+- [x] Run contract tests in CI on PR; fail build if contract broken.
 
 ### 3. API versioning and headers
 
 - [x] Add `X-API-Version` or `Accept` versioning per [03-api-gateway.md](../docs/03-api-gateway.md); gateway forwards version to services.
-- [ ] Document deprecation policy and `Sunset` / `Deprecation` response headers for deprecated endpoints.
+- [x] Document deprecation policy and `Sunset` / `Deprecation` response headers for deprecated endpoints.
 
 ### 4. Verify
 
