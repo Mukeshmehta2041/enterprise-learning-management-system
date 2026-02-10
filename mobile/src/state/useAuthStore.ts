@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
-import { User } from "../types";
+import { create } from 'zustand'
+import * as SecureStore from 'expo-secure-store'
+import { User } from '../types'
 
 interface AuthState {
   user: User | null;
@@ -19,16 +19,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   redirectPath: null,
   setAuth: async (user, token) => {
-    await SecureStore.setItemAsync("auth_token", token);
-    set({ user, token, isLoading: false });
+    await SecureStore.setItemAsync('auth_token', token)
+    set({ user, token, isLoading: false })
   },
   logout: async () => {
-    await SecureStore.deleteItemAsync("auth_token");
-    set({ user: null, token: null, isLoading: false });
+    await SecureStore.deleteItemAsync('auth_token')
+    set({ user: null, token: null, isLoading: false })
   },
   initialize: async () => {
     try {
-      const token = await SecureStore.getItemAsync("auth_token");
+      const token = await SecureStore.getItemAsync('auth_token')
       if (token) {
         // Since we have a token, try to fetch the user profile
         // Import apiClient dynamically or use it if available
@@ -53,12 +53,12 @@ export const useAuthStore = create<AuthState>((set) => ({
           set({ token: null, user: null, isLoading: false });
         }
       } else {
-        set({ isLoading: false });
+        set({ isLoading: false })
       }
     } catch (error) {
-      console.error("Failed to initialize auth", error);
-      set({ isLoading: false });
+      console.error('Failed to initialize auth', error)
+      set({ isLoading: false })
     }
   },
   setRedirectPath: (path) => set({ redirectPath: path }),
-}));
+}))

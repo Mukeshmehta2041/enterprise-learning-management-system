@@ -51,6 +51,7 @@ At a high level, the app is structured as:
 - **Screens**: Auth, Dashboard, Courses, CourseDetail, Player, Assignments, Notifications, Payments, Analytics, Profile.
 - **Shared components**: Buttons, text, inputs, list items, cards, modals, etc.
 - **Data layer**: API client and React Query hooks for all backend calls.
+- **Real-time layer**: Socket.io client for live chat, presence, and instant updates.
 - **State layer**: Auth/session state and any lightweight UI state.
 
 ```mermaid
@@ -66,6 +67,7 @@ flowchart TB
         Dashboard[Dashboard]
         Courses[Courses]
         CourseDetail[Course Detail]
+        Chat[Live Chat]
         Player[Content Player]
         Assignments[Assignments]
         Notifications[Notifications]
@@ -78,7 +80,9 @@ flowchart TB
         UI[UI Components]
         ApiClient[API Client]
         Queries[React Query Hooks]
+        Realtime[Socket.io / useRealtime]
         AuthState[Auth / Session State]
+        AnalyticsUtil[Analytics Utility]
     end
 
     NavContainer --> AuthStack
@@ -87,16 +91,20 @@ flowchart TB
     screens --> shared
     AuthScreens --> AuthState
     Queries --> ApiClient
+    Chat --> Realtime
 ```
 
-## Offline Scope (Day 1–10)
+## Offline & Persistence
 
-For the first 10 days:
+- **Caching**: TanStack Query (React Query) manages data fetching and caching.
+- **Persistence**: `createAsyncStoragePersister` is used to persist query data for up to 24 hours, enabling basic offline view of previously loaded content.
+- **Focus Management**: AppState listeners trigger revalidation when the app returns to the foreground.
+- **Background Sync**: `expo-background-fetch` periodically updates unread notification counts and app badges.
 
-- **Primary goal**: a reliable **online-first** app with basic caching via React Query.
-- Allow React Query to serve **stale data** while revalidating when possible.
-- Optionally persist limited query data for key screens (courses, enrollments) using a React Query persister (future enhancement).
-- Full offline-first behavior and mutation queuing are out of scope for Day 1–10 and can be documented as later phases.
+## Real-time & Events
+
+- **WebSockets**: Socket.io is used for bidirectional communication (e.g., Live Chat).
+- **Push Notifications**: Integrated with Expo Push Notifications for high-priority alerts.
 
 ## Alignment with Web Frontend
 

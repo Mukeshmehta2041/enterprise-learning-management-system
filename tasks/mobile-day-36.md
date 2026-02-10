@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile components and hooks being cleaned up. |
+| ✅ Done | |
+| ✅ Done | Mobile components and hooks being cleaned up. |
 | ✅ Done | Shared mobile components and hooks are well-factored and easy to use. |
 
 **Started:** _fill when you begin_  

@@ -10,7 +10,7 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
+| ✅ Done | |
 | ⬜ In progress | |
 | ✅ Done | Day 1 implemented (React Native app scaffolded and tooling configured) |
 

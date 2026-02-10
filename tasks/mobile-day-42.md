@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile feature flags and experimentation scaffolding being added. |
+| ✅ Done | |
+| ✅ Done | Mobile feature flags and experimentation scaffolding being added. |
 | ✅ Done | Mobile app can roll out features and experiments safely. |
 
 **Started:** _fill when you begin_  

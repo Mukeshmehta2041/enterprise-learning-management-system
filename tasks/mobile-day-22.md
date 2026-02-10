@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Push notifications and in-app inbox being implemented. |
+| ✅ Done | |
+| ⬜ In progress | |
 | ✅ Done | Users reliably receive and manage notifications on mobile. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 22 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. Permissions and device tokens
 
-- [ ] Request push notification permission in a user-friendly way, with pre-permission explanations if needed.
-- [ ] Obtain and register device tokens with your backend for the authenticated user.
+- [x] Request push notification permission in a user-friendly way, with pre-permission explanations if needed.
+- [x] Obtain and register device tokens with your backend for the authenticated user.
 
 ### 2. Handling notifications
 
-- [ ] Implement handlers for foreground, background, and cold-start notifications.
-- [ ] Route users to the relevant screen (course, assignment, announcement) when they tap a notification.
+- [x] Implement handlers for foreground, background, and cold-start notifications.
+- [x] Route users to the relevant screen (course, assignment, announcement) when they tap a notification.
 
 ### 3. Badges and in-app inbox
 
-- [ ] Support app icon badges or simulated badge counts in-app where supported.
-- [ ] Implement an in-app notifications screen listing recent notifications with read/unread status.
+- [x] Support app icon badges or simulated badge counts in-app where supported.
+- [x] Implement an in-app notifications screen listing recent notifications with read/unread status.
 
 ### 4. Testing and UX
 

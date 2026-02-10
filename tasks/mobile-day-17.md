@@ -10,7 +10,7 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
+| ✅ Done | |
 | ⬜ In progress | |
 | ✅ Done | Multi-step profile setup wizard implemented with validation and accessible form primitives. |
 

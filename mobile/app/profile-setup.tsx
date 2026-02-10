@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { AppText } from '../src/components/AppText';
-import { Input } from '../src/components/Input';
-import { Button } from '../src/components/Button';
-import { Select } from '../src/components/Select';
-import { useNotificationStore } from '../src/state/useNotificationStore';
-import { useAuthStore } from '../src/state/useAuthStore';
-import { apiClient } from '../src/api/client';
+import React, { useState } from 'react'
+import { View, KeyboardAvoidingView, Platform, ScrollView, Animated } from 'react-native'
+import { useRouter } from 'expo-router'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { AppText } from '../src/components/AppText'
+import { Input } from '../src/components/Input'
+import { Button } from '../src/components/Button'
+import { Select } from '../src/components/Select'
+import { useNotificationStore } from '../src/state/useNotificationStore'
+import { useAuthStore } from '../src/state/useAuthStore'
+import { apiClient } from '../src/api/client'
 
 const profileSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
@@ -18,19 +18,24 @@ const profileSchema = z.object({
   role: z.enum(['STUDENT', 'INSTRUCTOR']),
   interests: z.string().min(1, 'Please list a few interests'),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
-});
+})
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+type ProfileFormData = z.infer<typeof profileSchema>
 
 export default function ProfileSetupScreen() {
-  const router = useRouter();
-  const [step, setStep] = useState(1);
-  const totalSteps = 3;
-  const showNotification = useNotificationStore((state) => state.showNotification);
-  const user = useAuthStore((state) => state.user);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter()
+  const [step, setStep] = useState(1)
+  const totalSteps = 3
+  const showNotification = useNotificationStore((state) => state.showNotification)
+  const user = useAuthStore((state) => state.user)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { control, handleSubmit, trigger, formState: { errors } } = useForm<ProfileFormData>({
+  const {
+    control,
+    handleSubmit,
+    trigger,
+    formState: { errors },
+  } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       fullName: user?.fullName || '',
@@ -39,44 +44,48 @@ export default function ProfileSetupScreen() {
       interests: '',
       website: '',
     },
-  });
+  })
 
   const nextStep = async () => {
-    let fieldsToValidate: (keyof ProfileFormData)[] = [];
-    if (step === 1) fieldsToValidate = ['fullName', 'bio'];
-    if (step === 2) fieldsToValidate = ['role', 'interests'];
+    let fieldsToValidate: (keyof ProfileFormData)[] = []
+    if (step === 1) fieldsToValidate = ['fullName', 'bio']
+    if (step === 2) fieldsToValidate = ['role', 'interests']
 
-    const isValid = await trigger(fieldsToValidate);
+    const isValid = await trigger(fieldsToValidate)
     if (isValid) {
-      setStep(prev => Math.min(prev + 1, totalSteps));
+      setStep((prev) => Math.min(prev + 1, totalSteps))
     }
-  };
+  }
 
   const prevStep = () => {
-    setStep(prev => Math.max(prev - 1, 1));
-  };
+    setStep((prev) => Math.max(prev - 1, 1))
+  }
 
   const onSubmit = async (data: ProfileFormData) => {
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       // API call to update profile
-      await apiClient.put('/api/v1/users/profile', data);
-      showNotification('Profile setup complete!', 'success');
-      router.replace('/(tabs)');
+      await apiClient.put('/api/v1/users/profile', data)
+      showNotification('Profile setup complete!', 'success')
+      router.replace('/(tabs)')
     } catch (error: any) {
-      showNotification(error.message || 'Failed to update profile', 'error');
+      showNotification(error.message || 'Failed to update profile', 'error')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
           <View key="step1">
-            <AppText variant="h2" className="mb-2">Basic Info</AppText>
-            <AppText color="muted" className="mb-6">Tell us a bit about yourself.</AppText>
+            <AppText variant="h2" className="mb-2">
+              Basic Info
+            </AppText>
+            <AppText color="muted" className="mb-6">
+              Tell us a bit about yourself.
+            </AppText>
 
             <Controller
               control={control}
@@ -111,12 +120,16 @@ export default function ProfileSetupScreen() {
               )}
             />
           </View>
-        );
+        )
       case 2:
         return (
           <View key="step2">
-            <AppText variant="h2" className="mb-2">Your Role & Interests</AppText>
-            <AppText color="muted" className="mb-6">Help us personalize your experience.</AppText>
+            <AppText variant="h2" className="mb-2">
+              Your Role & Interests
+            </AppText>
+            <AppText color="muted" className="mb-6">
+              Help us personalize your experience.
+            </AppText>
 
             <Controller
               control={control}
@@ -128,7 +141,7 @@ export default function ProfileSetupScreen() {
                   onValueChange={onChange}
                   options={[
                     { label: 'Student', value: 'STUDENT' },
-                    { label: 'Instructor', value: 'INSTRUCTOR' }
+                    { label: 'Instructor', value: 'INSTRUCTOR' },
                   ]}
                   error={errors.role?.message}
                 />
@@ -151,12 +164,16 @@ export default function ProfileSetupScreen() {
               )}
             />
           </View>
-        );
+        )
       case 3:
         return (
           <View key="step3">
-            <AppText variant="h2" className="mb-2">Social Presence</AppText>
-            <AppText color="muted" className="mb-6">Optional links to your work.</AppText>
+            <AppText variant="h2" className="mb-2">
+              Social Presence
+            </AppText>
+            <AppText color="muted" className="mb-6">
+              Optional links to your work.
+            </AppText>
 
             <Controller
               control={control}
@@ -175,11 +192,11 @@ export default function ProfileSetupScreen() {
               )}
             />
           </View>
-        );
+        )
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   return (
     <KeyboardAvoidingView
@@ -204,9 +221,7 @@ export default function ProfileSetupScreen() {
           </View>
         </View>
 
-        <View className="flex-1">
-          {renderStep()}
-        </View>
+        <View className="flex-1">{renderStep()}</View>
 
         <View className="flex-row gap-4 mt-8">
           {step > 1 && (
@@ -227,5 +242,5 @@ export default function ProfileSetupScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  )
 }

@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile design system and tokens being hardened. |
+| ✅ Done | |
+| ✅ Done | Mobile design system and tokens being hardened. |
 | ✅ Done | Core mobile components consume design tokens consistently. |
 
 **Started:** _fill when you begin_  

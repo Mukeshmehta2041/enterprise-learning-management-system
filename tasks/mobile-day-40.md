@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile security review and hardening in progress. |
+| ✅ Done | |
+| ✅ Done | Mobile security review and hardening in progress. |
 | ✅ Done | Major mobile security concerns identified and mitigated. |
 
 **Started:** _fill when you begin_  

@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile tech debt items being addressed. |
+| ✅ Done | |
+| ✅ Done | Mobile tech debt items being addressed. |
 | ✅ Done | High-impact mobile tech debt reduced with clear follow-ups documented. |
 
 **Started:** _fill when you begin_  

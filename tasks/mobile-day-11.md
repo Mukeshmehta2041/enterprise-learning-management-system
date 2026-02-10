@@ -10,7 +10,7 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
+| ✅ Done | |
 | ⬜ In progress | |
 | ✅ Done | Mobile API contracts, typings, and error handling aligned with backend specs. |
 

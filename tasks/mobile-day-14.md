@@ -10,7 +10,7 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
+| ✅ Done | |
 | ⬜ In progress | |
 | ✅ Done | The app reliably handles deep links into key flows, including post-auth redirection. |
 

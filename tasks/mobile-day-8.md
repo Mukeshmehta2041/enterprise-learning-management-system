@@ -10,7 +10,7 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
+| ✅ Done | |
 | ⬜ In progress | |
 | ✅ Done | Day 8 implemented (assignments and submissions on mobile) |
 

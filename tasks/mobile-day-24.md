@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile theming and branding being implemented. |
+| ✅ Done | |
+| ⬜ In progress | |
 | ✅ Done | The mobile app adapts to dark mode and tenant branding as needed. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 24 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. Theme tokens and providers
 
-- [ ] Define or refine mobile design tokens (colors, spacing, typography) in a central theme.
-- [ ] Implement a theme provider/hooks to switch between light/dark and tenant-specific themes.
+- [x] Define or refine mobile design tokens (colors, spacing, typography) in a central theme.
+- [x] Implement a theme provider/hooks to switch between light/dark and tenant-specific themes.
 
 ### 2. Dark mode support
 
-- [ ] Respect system dark mode where appropriate, with an override toggle if desired.
-- [ ] Verify core screens for legibility and contrast in both modes.
+- [x] Respect system dark mode where appropriate, with an override toggle if desired.
+- [x] Verify core screens for legibility and contrast in both modes.
 
 ### 3. Institution branding
 
-- [ ] Integrate tenant-specific logos, primary colors, and maybe accent elements based on user/tenant context.
-- [ ] Provide safe fallbacks when branding is missing or misconfigured.
+- [x] Integrate tenant-specific logos, primary colors, and maybe accent elements based on user/tenant context.
+- [x] Provide safe fallbacks when branding is missing or misconfigured.
 
 ### 4. Testing
 

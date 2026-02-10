@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Large lists and infinite scroll being optimized. |
+| ✅ Done | |
+| ✅ Done | Large lists and infinite scroll being optimized. |
 | ✅ Done | List-heavy screens are smooth and responsive on mobile. |
 
 **Started:** _fill when you begin_  

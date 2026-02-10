@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | In-app purchase/payment flows being implemented. |
+| ✅ Done | |
+| ⬜ In progress | |
 | ✅ Done | Users can confidently complete purchases or manage subscriptions on mobile. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 23 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. Purchase entry points
 
-- [ ] Add clear entry points for purchasing courses, subscriptions, or upgrades from relevant screens.
-- [ ] Display pricing, durations, and benefits clearly before users commit.
+- [x] Add clear entry points for purchasing courses, subscriptions, or upgrades from relevant screens.
+- [x] Display pricing, durations, and benefits clearly before users commit.
 
 ### 2. Payment / IAP integration
 
-- [ ] Integrate with your chosen mobile payment/IAP stack (e.g. Stripe in-app webview, native IAP SDK).
-- [ ] Handle purchase success, failure, and cancellation states gracefully.
+- [x] Integrate with your chosen mobile payment/IAP stack (e.g. Stripe in-app webview, native IAP SDK).
+- [x] Handle purchase success, failure, and cancellation states gracefully.
 
 ### 3. Receipts and restoration
 
-- [ ] Show purchase confirmation and, where relevant, link to billing history or receipts.
-- [ ] Implement “Restore purchases” or equivalent for subscriptions where needed.
+- [x] Show purchase confirmation and, where relevant, link to billing history or receipts.
+- [x] Implement “Restore purchases” or equivalent for subscriptions where needed.
 
 ### 4. Testing and compliance
 

@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Device-specific layout tuning underway. |
+| ✅ Done | |
+| ✅ Done | Device-specific layout tuning underway. |
 | ✅ Done | The app feels great on both phones and tablets. |
 
 **Started:** _fill when you begin_  

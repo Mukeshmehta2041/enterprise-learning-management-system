@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Admin/instructor mobile dashboards being enhanced. |
+| ✅ Done | |
+| ✅ Done | Admin/instructor mobile dashboards being enhanced. |
 | ✅ Done | Admins/instructors have clear at-a-glance views on mobile. |
 
 **Started:** _fill when you begin_  

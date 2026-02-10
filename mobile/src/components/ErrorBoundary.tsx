@@ -1,47 +1,50 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View } from 'react-native';
-import { AppText } from './AppText';
-import { Button } from './Button';
-import { Ionicons } from '@expo/vector-icons';
+import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { View } from 'react-native'
+import { AppText } from './AppText'
+import { Button } from './Button'
+import { Ionicons } from '@expo/vector-icons'
+import { logger } from '../utils/logger'
+import { COLORS } from '../constants/theme'
 
 interface Props {
-  children: ReactNode;
+  children: ReactNode
 }
 
 interface State {
-  hasError: boolean;
+  hasError: boolean
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false
-  };
+    hasError: false,
+  }
 
   public static getDerivedStateFromError(_: Error): State {
-    return { hasError: true };
+    return { hasError: true }
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+    logger.error('Unhandled component error', error, 'fatal', {
+      metadata: { errorInfo }
+    });
   }
 
   public render() {
     if (this.state.hasError) {
       return (
         <View className="flex-1 items-center justify-center p-6 bg-background">
-          <Ionicons name="alert-circle-outline" size={80} color="#ef4444" />
-          <AppText variant="h1" className="mt-6 mb-2">Oops!</AppText>
+          <Ionicons name="alert-circle-outline" size={80} color={COLORS.danger} />
+          <AppText variant="h1" className="mt-6 mb-2">
+            Oops!
+          </AppText>
           <AppText variant="body" color="muted" className="text-center mb-8">
             Something went wrong. Don't worry, we've been notified.
           </AppText>
-          <Button
-            title="Try Again"
-            onPress={() => this.setState({ hasError: false })}
-          />
+          <Button title="Try Again" onPress={() => this.setState({ hasError: false })} />
         </View>
-      );
+      )
     }
 
-    return this.props.children;
+    return this.props.children
   }
 }

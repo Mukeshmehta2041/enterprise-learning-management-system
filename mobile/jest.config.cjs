@@ -4,4 +4,3 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
 }
-

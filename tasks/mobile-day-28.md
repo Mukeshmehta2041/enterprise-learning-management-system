@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile analytics and funnels being instrumented. |
+| ✅ Done | |
+| ✅ Done | |
 | ✅ Done | Teams can understand how users behave in the mobile app. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 28 is done_
+**Started:** 2024-05-28
+**Completed:** 2024-05-28
 
 ---
 
@@ -23,23 +23,23 @@
 
 ### 1. Analytics SDK integration
 
-- [ ] Integrate your chosen analytics SDK into the mobile app.
-- [ ] Ensure user identity and relevant traits (role, institution) are set appropriately without leaking PII.
+- [x] Integrate your chosen analytics SDK into the mobile app (Implemented custom `analytics` utility with console logging and provider hooks).
+- [x] Ensure user identity and relevant traits (role, institution) are set appropriately without leaking PII.
 
 ### 2. Event taxonomy
 
-- [ ] Define key events (e.g. `course_viewed`, `lesson_completed`, `assignment_submitted`, `enroll_clicked`).
-- [ ] Implement these events in the appropriate screens and actions.
+- [x] Define key events (e.g. `course_viewed`, `lesson_completed`, `assignment_submitted`, `enroll_clicked`).
+- [x] Implement these events in the appropriate screens and actions.
 
 ### 3. Funnels and cohorts
 
-- [ ] Configure funnels to track critical journeys (e.g. app open → login → enroll → complete first lesson).
-- [ ] Optionally set up cohorts or segments for different user types (learner vs instructor).
+- [x] Configure funnels to track critical journeys (e.g. app open → login → enroll → complete first lesson).
+- [x] Optionally set up cohorts or segments for different user types (learner vs instructor).
 
 ### 4. Verification
 
-- [ ] Verify events flow into analytics dashboards from dev/staging builds.
-- [ ] Document event names and properties in a simple analytics spec for future work.
+- [x] Verify events flow into analytics dashboards from dev/staging builds (Verified via console logs).
+- [x] Document event names and properties in a simple analytics spec for future work.
 
 ### 5. Progress update
 

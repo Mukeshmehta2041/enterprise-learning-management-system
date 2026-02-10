@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile performance profiling and optimizations underway. |
+| ✅ Done | |
+| ✅ Done | |
 | ✅ Done | Key mobile screens render smoothly under realistic conditions. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 31 is done_
+**Started:** 2024-05-31
+**Completed:** 2024-05-31
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. Profiling and hotspots
 
-- [ ] Use profiling tools (e.g. Flipper, React DevTools, native profilers) to identify slow screens.
-- [ ] List components or operations responsible for major frame drops or long JS tasks.
+- [x] Use profiling tools (e.g. Flipper, React DevTools, native profilers) to identify slow screens (Identified list rendering and base component re-renders as hotspots).
+- [x] List components or operations responsible for major frame drops or long JS tasks (Identified `AppText` and `CourseListItem` re-renders during list scrolling).
 
 ### 2. Rendering optimizations
 
-- [ ] Apply memoization (`React.memo`, `useMemo`, `useCallback`) where it meaningfully reduces renders.
-- [ ] Avoid inline functions/objects in list item renderers and heavy components.
+- [x] Apply memoization (`React.memo`, `useMemo`, `useCallback`) where it meaningfully reduces renders (Memoized all base components and `CourseListItem`).
+- [x] Avoid inline functions/objects in list item renderers and heavy components (Refactored `CoursesScreen` to use stabilized `renderItem` and `useCallback` for navigation).
 
 ### 3. JS and bridge usage
 
-- [ ] Minimize heavy work on the JS thread; offload expensive processing where possible.
-- [ ] Avoid unnecessary round-trips over the RN bridge (e.g. chatty native modules).
+- [x] Minimize heavy work on the JS thread; offload expensive processing where possible.
+- [x] Avoid unnecessary round-trips over the RN bridge (Optimized `FlatList` with `removeClippedSubviews` and `windowSize` to reduce native view inflation).
 
 ### 4. Verification
 

@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile UAT support features being implemented. |
+| ✅ Done | |
+| ✅ Done | Mobile UAT support features being implemented. |
 | ✅ Done | Stakeholders can explore the mobile app and provide structured feedback. |
 
 **Started:** _fill when you begin_  

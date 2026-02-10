@@ -1,27 +1,34 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Modal, FlatList } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppText } from './AppText';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react'
+import { View, TouchableOpacity, Modal, FlatList } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { AppText } from './AppText'
+import { Ionicons } from '@expo/vector-icons'
 
 interface Option {
-  label: string;
-  value: string;
+  label: string
+  value: string
 }
 
 interface SelectProps {
-  label?: string;
-  value?: string;
-  onValueChange: (value: string) => void;
-  options: Option[];
-  placeholder?: string;
-  error?: string;
+  label?: string
+  value?: string
+  onValueChange: (value: string) => void
+  options: Option[]
+  placeholder?: string
+  error?: string
 }
 
-export function Select({ label, value, onValueChange, options, placeholder = 'Select an option', error }: SelectProps) {
-  const [isVisible, setIsVisible] = useState(false);
+export function Select({
+  label,
+  value,
+  onValueChange,
+  options,
+  placeholder = 'Select an option',
+  error,
+}: SelectProps) {
+  const [isVisible, setIsVisible] = useState(false)
 
-  const selectedOption = options.find(o => o.value === value);
+  const selectedOption = options.find((o) => o.value === value)
 
   return (
     <View className="mb-4">
@@ -63,17 +70,15 @@ export function Select({ label, value, onValueChange, options, placeholder = 'Se
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => {
-                    onValueChange(item.value);
-                    setIsVisible(false);
+                    onValueChange(item.value)
+                    setIsVisible(false)
                   }}
                   className={`p-4 border-b border-slate-50 flex-row justify-between items-center ${value === item.value ? 'bg-indigo-50' : ''}`}
                 >
                   <AppText className={value === item.value ? 'text-indigo-600 font-bold' : ''}>
                     {item.label}
                   </AppText>
-                  {value === item.value && (
-                    <Ionicons name="checkmark" size={20} color="#4f46e5" />
-                  )}
+                  {value === item.value && <Ionicons name="checkmark" size={20} color="#4f46e5" />}
                 </TouchableOpacity>
               )}
             />
@@ -81,5 +86,5 @@ export function Select({ label, value, onValueChange, options, placeholder = 'Se
         </View>
       </Modal>
     </View>
-  );
+  )
 }

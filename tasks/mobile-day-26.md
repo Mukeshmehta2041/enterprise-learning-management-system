@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Caching, background sync, and lifecycle handling being tuned. |
+| ✅ Done | |
+| ⬜ In progress | |
 | ✅ Done | The app behaves well across foreground/background and limited connectivity. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 26 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. App lifecycle awareness
 
-- [ ] Use React Native’s AppState (or equivalent) to track foreground/background transitions.
-- [ ] Pause or throttle certain network or polling behaviors when in background.
+- [x] Use React Native’s AppState (or equivalent) to track foreground/background transitions.
+- [x] Pause or throttle certain network or polling behaviors when in background.
 
 ### 2. Caching and refresh
 
-- [ ] Review existing caches to ensure they are persisted appropriately between app launches.
-- [ ] Configure background or on-focus refresh for key data (e.g. notifications, enrollments) without excessive requests.
+- [x] Review existing caches to ensure they are persisted appropriately between app launches.
+- [x] Configure background or on-focus refresh for key data (e.g. notifications, enrollments) without excessive requests.
 
 ### 3. Background tasks (if in scope)
 
-- [ ] Evaluate use of background fetch or scheduled sync for important lightweight updates.
-- [ ] Respect platform limitations and user battery/data considerations.
+- [x] Evaluate use of background fetch or scheduled sync for important lightweight updates.
+- [x] Respect platform limitations and user battery/data considerations.
 
 ### 4. Testing
 

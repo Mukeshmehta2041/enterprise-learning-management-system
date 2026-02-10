@@ -1,35 +1,37 @@
-import React from 'react';
-import { View, ScrollView, RefreshControl, TouchableOpacity, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { AppText } from '../../src/components/AppText';
-import { Card } from '../../src/components/Card';
-import { ProgressBar } from '../../src/components/ProgressBar';
-import { apiClient } from '../../src/api/client';
-import { useAuthStore } from '../../src/state/useAuthStore';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react'
+import { View, ScrollView, RefreshControl, TouchableOpacity } from 'react-native'
+import { useRouter } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
+import { AppText } from '../../src/components/AppText'
+import { Card } from '../../src/components/Card'
+import { ProgressBar } from '../../src/components/ProgressBar'
+import { apiClient } from '../../src/api/client'
+import { useAuthStore } from '../../src/state/useAuthStore'
+import { Ionicons } from '@expo/vector-icons'
 
 export default function HomeScreen() {
-  const router = useRouter();
-  const { user } = useAuthStore();
+  const router = useRouter()
+  const { user } = useAuthStore()
 
-  const { data: enrollments, isLoading, refetch } = useQuery({
+  const {
+    data: enrollments,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['enrollments', 'me'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/v1/enrollments');
-      return response.data.items || [];
+      const response = await apiClient.get('/api/v1/enrollments')
+      return response.data.items || []
     },
-  });
+  })
 
-  const activeEnrollments = enrollments?.filter((e: any) => e.status !== 'COMPLETED') || [];
-  const completedEnrollments = enrollments?.filter((e: any) => e.status === 'COMPLETED') || [];
+  const activeEnrollments = enrollments?.filter((e: any) => e.status !== 'COMPLETED') || []
+  const completedEnrollments = enrollments?.filter((e: any) => e.status === 'COMPLETED') || []
 
   return (
     <ScrollView
       className="flex-1 bg-background"
-      refreshControl={
-        <RefreshControl refreshing={isLoading} onRefresh={refetch} />
-      }
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
     >
       <View className="px-6 py-8">
         <View className="flex-row justify-between items-center mb-6">
@@ -41,13 +43,17 @@ export default function HomeScreen() {
             className="w-12 h-12 bg-primary/10 rounded-full items-center justify-center"
             onPress={() => router.push('/(tabs)/profile')}
           >
-            <AppText color="primary" weight="bold">{user?.fullName?.charAt(0) || 'U'}</AppText>
+            <AppText color="primary" weight="bold">
+              {user?.fullName?.charAt(0) || 'U'}
+            </AppText>
           </TouchableOpacity>
         </View>
 
         {activeEnrollments.length > 0 ? (
           <View className="mb-8">
-            <AppText variant="h3" className="mb-4">My Dashboard</AppText>
+            <AppText variant="h3" className="mb-4">
+              My Dashboard
+            </AppText>
             {activeEnrollments.map((enr: any) => (
               <TouchableOpacity
                 key={enr.id}
@@ -76,25 +82,31 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        ) : !isLoading && (
-          <View className="bg-white p-8 rounded-2xl items-center mb-8 border border-dashed border-slate-200">
-            <Ionicons name="school-outline" size={48} color="#94a3b8" />
-            <AppText className="mt-4 mb-2" weight="bold">No active courses</AppText>
-            <AppText color="muted" className="text-center mb-6">
-              Browse the catalog to find your next course!
-            </AppText>
-            <TouchableOpacity
-              className="bg-primary px-6 py-2.5 rounded-lg"
-              onPress={() => router.push('/(tabs)/courses')}
-            >
-              <AppText className="text-white font-bold">Explore Courses</AppText>
-            </TouchableOpacity>
-          </View>
+        ) : (
+          !isLoading && (
+            <View className="bg-white p-8 rounded-2xl items-center mb-8 border border-dashed border-slate-200">
+              <Ionicons name="school-outline" size={48} color="#94a3b8" />
+              <AppText className="mt-4 mb-2" weight="bold">
+                No active courses
+              </AppText>
+              <AppText color="muted" className="text-center mb-6">
+                Browse the catalog to find your next course!
+              </AppText>
+              <TouchableOpacity
+                className="bg-primary px-6 py-2.5 rounded-lg"
+                onPress={() => router.push('/(tabs)/courses')}
+              >
+                <AppText className="text-white font-bold">Explore Courses</AppText>
+              </TouchableOpacity>
+            </View>
+          )
         )}
 
         {completedEnrollments.length > 0 && (
           <View>
-            <AppText variant="h3" className="mb-4">Completed</AppText>
+            <AppText variant="h3" className="mb-4">
+              Completed
+            </AppText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
               {completedEnrollments.map((enr: any) => (
                 <TouchableOpacity
@@ -111,7 +123,9 @@ export default function HomeScreen() {
                     </AppText>
                     <View className="flex-row items-center mt-2">
                       <Ionicons name="checkmark-circle" size={14} color="#22c55e" />
-                      <AppText variant="small" className="ml-1 text-green-600 font-medium">Completed</AppText>
+                      <AppText variant="small" className="ml-1 text-green-600 font-medium">
+                        Completed
+                      </AppText>
                     </View>
                   </Card>
                 </TouchableOpacity>
@@ -121,5 +135,5 @@ export default function HomeScreen() {
         )}
       </View>
     </ScrollView>
-  );
+  )
 }

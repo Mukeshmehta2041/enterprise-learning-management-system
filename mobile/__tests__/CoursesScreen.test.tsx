@@ -1,21 +1,21 @@
-import React from 'react';
-import { render, waitFor } from './utils/test-utils';
-import CoursesScreen from '../app/(tabs)/courses';
-import { apiClient } from '../src/api/client';
+import React from 'react'
+import { render, waitFor } from './utils/test-utils'
+import CoursesScreen from '../app/(tabs)/courses'
+import { apiClient } from '../src/api/client'
 
 jest.mock('../src/api/client', () => ({
   apiClient: {
     get: jest.fn(),
   },
-}));
+}))
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn() }),
-}));
+}))
 
 describe('CoursesScreen', () => {
   it('loads and displays courses', async () => {
-    (apiClient.get as jest.Mock).mockResolvedValueOnce({
+    ;(apiClient.get as jest.Mock).mockResolvedValueOnce({
       data: {
         items: [
           {
@@ -28,25 +28,25 @@ describe('CoursesScreen', () => {
           },
         ],
       },
-    });
+    })
 
-    const { getByText } = render(<CoursesScreen />);
+    const { getByText } = render(<CoursesScreen />)
 
     await waitFor(() => {
-      expect(getByText('React Native for Beginners')).toBeTruthy();
-      expect(getByText('John Doe')).toBeTruthy();
-    });
-  });
+      expect(getByText('React Native for Beginners')).toBeTruthy()
+      expect(getByText('John Doe')).toBeTruthy()
+    })
+  })
 
   it('shows empty state when no courses are found', async () => {
-    (apiClient.get as jest.Mock).mockResolvedValueOnce({
+    ;(apiClient.get as jest.Mock).mockResolvedValueOnce({
       data: { items: [] },
-    });
+    })
 
-    const { getByText } = render(<CoursesScreen />);
+    const { getByText } = render(<CoursesScreen />)
 
     await waitFor(() => {
-      expect(getByText('No courses found')).toBeTruthy();
-    });
-  });
-});
+      expect(getByText('No courses found')).toBeTruthy()
+    })
+  })
+})

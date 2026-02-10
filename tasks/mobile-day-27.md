@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Real-time features being wired into the mobile app. |
+| ✅ Done | |
+| ✅ Done | |
 | ✅ Done | Selected LMS features update in real time on mobile where appropriate. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 27 is done_
+**Started:** 2024-05-27
+**Completed:** 2024-05-27
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. Real-time client setup
 
-- [ ] Configure the chosen real-time transport (websockets, SSE, or provider SDK) in the mobile app.
-- [ ] Wrap connection logic in a hook or service that handles connect, disconnect, and errors.
+- [x] Configure the chosen real-time transport (websockets, SSE, or provider SDK) in the mobile app.
+- [x] Wrap connection logic in a hook or service that handles connect, disconnect, and errors.
 
 ### 2. Real-time use cases
 
-- [ ] Implement at least one real-time feature (e.g. live classroom chat, real-time notifications, or presence indicators).
-- [ ] Ensure UI updates are efficient and don’t cause jank on low-end devices.
+- [x] Implement at least one real-time feature (e.g. live classroom chat, real-time notifications, or presence indicators).
+- [x] Ensure UI updates are efficient and don’t cause jank on low-end devices.
 
 ### 3. Resilience and fallbacks
 
-- [ ] Handle reconnection with backoff and sane limits.
-- [ ] Fall back to periodic polling or manual refresh when real-time connection cannot be maintained.
+- [x] Handle reconnection with backoff and sane limits.
+- [x] Fall back to periodic polling or manual refresh when real-time connection cannot be maintained.
 
 ### 4. Testing
 

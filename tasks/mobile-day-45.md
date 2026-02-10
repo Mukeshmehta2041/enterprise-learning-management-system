@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile micro-interactions and animations being applied. |
+| ✅ Done | |
+| ✅ Done | Mobile micro-interactions and animations being applied. |
 | ✅ Done | The app feels smooth and polished without sacrificing usability. |
 
 **Started:** _fill when you begin_  

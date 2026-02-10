@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Observability dashboards with mobile metrics being created. |
+| ✅ Done | |
+| ✅ Done | Observability dashboards with mobile metrics being created. |
 | ✅ Done | Teams can monitor mobile health and usage at a glance. |
 
 **Started:** _fill when you begin_  

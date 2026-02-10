@@ -1,39 +1,44 @@
-import React, { useState } from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { AppText } from '../../src/components/AppText';
-import { Input } from '../../src/components/Input';
-import { Button } from '../../src/components/Button';
-import { useAuthStore } from '../../src/state/useAuthStore';
-import { useNotificationStore } from '../../src/state/useNotificationStore';
-import { apiClient } from '../../src/api/client';
+import React, { useState } from 'react'
+import { View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { useRouter } from 'expo-router'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { AppText } from '../../src/components/AppText'
+import { Input } from '../../src/components/Input'
+import { Button } from '../../src/components/Button'
+import { useAuthStore } from '../../src/state/useAuthStore'
+import { useNotificationStore } from '../../src/state/useNotificationStore'
+import { apiClient } from '../../src/api/client'
+import { analytics } from '../../src/utils/analytics'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+})
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const { setAuth, redirectPath, setRedirectPath } = useAuthStore();
-  const showNotification = useNotificationStore((state) => state.showNotification);
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const { setAuth, redirectPath, setRedirectPath } = useAuthStore()
+  const showNotification = useNotificationStore((state) => state.showNotification)
+  const [loading, setLoading] = useState(false)
 
-  const { control, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
     },
-  });
+  })
 
   const onSubmit = async (data: LoginFormData) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const response = await apiClient.post('/api/v1/auth/login', data);
       const { access_token } = response.data;
@@ -57,24 +62,23 @@ export default function LoginScreen() {
       };
 
       await setAuth(user, access_token);
+      analytics.track('login_success', { userId: user.id, role: user.role })
 
       if (redirectPath) {
-        const target = redirectPath;
-        setRedirectPath(null);
-        router.replace(target as any);
+        const target = redirectPath
+        setRedirectPath(null)
+        router.replace(target as any)
       } else {
-        router.replace('/(tabs)');
+        router.replace('/(tabs)')
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      showNotification(
-        error.message || 'Something went wrong. Please try again.',
-        'error'
-      );
+      console.error('Login error:', error)
+      analytics.track('login_failed', { email: data.email, error: error.message })
+      showNotification(error.message || 'Something went wrong. Please try again.', 'error')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <KeyboardAvoidingView
@@ -84,8 +88,12 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="p-6">
         <View className="flex-1 justify-center">
           <View className="mb-10">
-            <AppText variant="h1" className="mb-2">Welcome Back</AppText>
-            <AppText variant="body" color="muted">Sign in to continue your learning journey.</AppText>
+            <AppText variant="h1" className="mb-2">
+              Welcome Back
+            </AppText>
+            <AppText variant="body" color="muted">
+              Sign in to continue your learning journey.
+            </AppText>
           </View>
 
           <Controller
@@ -129,7 +137,7 @@ export default function LoginScreen() {
           />
 
           <View className="flex-row justify-center mt-8">
-            <AppText color="muted">Don't have an account? </AppText>
+            <AppText color="muted">Don&apos;t have an account? </AppText>
             <Button
               title="Sign Up"
               variant="ghost"
@@ -142,5 +150,5 @@ export default function LoginScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  )
 }

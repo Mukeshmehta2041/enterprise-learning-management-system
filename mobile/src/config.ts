@@ -1,13 +1,14 @@
-import Constants from 'expo-constants';
+import Constants from 'expo-constants'
 
 interface AppConfig {
-  apiUrl: string;
-  environment: 'development' | 'staging' | 'production';
-  sentryDsn?: string;
-  version: string;
+  apiUrl: string
+  socketUrl: string
+  environment: 'development' | 'staging' | 'production'
+  sentryDsn?: string
+  version: string
 }
 
-const extra = Constants.expoConfig?.extra || {};
+const extra = Constants.expoConfig?.extra || {}
 
 const getApiUrl = () => {
   if (extra.apiUrl && !extra.apiUrl.includes('localhost')) {
@@ -28,11 +29,12 @@ const getApiUrl = () => {
 };
 
 export const Config: AppConfig = {
-  apiUrl: getApiUrl(),
+  apiUrl: extra.apiUrl || 'http://localhost:8080/api',
+  socketUrl: extra.socketUrl || 'http://localhost:8080',
   environment: extra.environment || 'development',
   sentryDsn: extra.sentryDsn,
   version: Constants.expoConfig?.version || '1.0.0',
-};
+}
 
-export const isDev = Config.environment === 'development';
-export const isProd = Config.environment === 'production';
+export const isDev = Config.environment === 'development'
+export const isProd = Config.environment === 'production'

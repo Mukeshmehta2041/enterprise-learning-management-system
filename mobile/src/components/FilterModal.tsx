@@ -1,34 +1,40 @@
-import React from 'react';
-import { View, Modal, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppText } from './AppText';
-import { Button } from './Button';
-import { Select } from './Select';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react'
+import { View, Modal, TouchableOpacity, ScrollView } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { AppText } from './AppText'
+import { Button } from './Button'
+import { Select } from './Select'
+import { Ionicons } from '@expo/vector-icons'
 
 export interface FilterState {
-  level: string;
-  category: string;
-  sortBy: string;
+  level: string
+  category: string
+  sortBy: string
 }
 
 interface FilterModalProps {
-  isVisible: boolean;
-  onClose: () => void;
-  filters: FilterState;
-  onApply: (filters: FilterState) => void;
-  onClear: () => void;
+  isVisible: boolean
+  onClose: () => void
+  filters: FilterState
+  onApply: (filters: FilterState) => void
+  onClear: () => void
 }
 
-export function FilterModal({ isVisible, onClose, filters: initialFilters, onApply, onClear }: FilterModalProps) {
-  const [filters, setFilters] = React.useState<FilterState>(initialFilters);
+export function FilterModal({
+  isVisible,
+  onClose,
+  filters: initialFilters,
+  onApply,
+  onClear,
+}: FilterModalProps) {
+  const [filters, setFilters] = React.useState<FilterState>(initialFilters)
 
   const levels = [
     { label: 'All Levels', value: '' },
     { label: 'Beginner', value: 'BEGINNER' },
     { label: 'Intermediate', value: 'INTERMEDIATE' },
     { label: 'Advanced', value: 'ADVANCED' },
-  ];
+  ]
 
   const categories = [
     { label: 'All Categories', value: '' },
@@ -36,7 +42,7 @@ export function FilterModal({ isVisible, onClose, filters: initialFilters, onApp
     { label: 'Design', value: 'DESIGN' },
     { label: 'Business', value: 'BUSINESS' },
     { label: 'Marketing', value: 'MARKETING' },
-  ];
+  ]
 
   const sortOptions = [
     { label: 'Newest', value: 'createdAt,desc' },
@@ -44,7 +50,7 @@ export function FilterModal({ isVisible, onClose, filters: initialFilters, onApp
     { label: 'Price: Low to High', value: 'price,asc' },
     { label: 'Price: High to Low', value: 'price,desc' },
     { label: 'Popularity', value: 'enrollmentCount,desc' },
-  ];
+  ]
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent>
@@ -86,21 +92,21 @@ export function FilterModal({ isVisible, onClose, filters: initialFilters, onApp
               variant="outline"
               className="flex-1"
               onPress={() => {
-                onClear();
-                onClose();
+                onClear()
+                onClose()
               }}
             />
             <Button
               title="Apply Filters"
               className="flex-2"
               onPress={() => {
-                onApply(filters);
-                onClose();
+                onApply(filters)
+                onClose()
               }}
             />
           </View>
         </SafeAreaView>
       </View>
     </Modal>
-  );
+  )
 }

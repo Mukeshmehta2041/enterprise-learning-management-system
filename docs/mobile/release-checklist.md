@@ -11,6 +11,10 @@ The app uses `expo-constants` for configuration. Before building, ensure the `ex
 
 ## 2. Store Assets Checklist
 
+See the detailed assets checklist: [docs/mobile/store-assets-checklist.md](docs/mobile/store-assets-checklist.md)
+
+Metadata template: [docs/mobile/store-metadata-template.md](docs/mobile/store-metadata-template.md)
+
 | Asset | Specs | Status |
 |-------|-------|--------|
 | App Icon | 1024x1024 png | [ ] |

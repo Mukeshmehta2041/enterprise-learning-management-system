@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | i18n and localization being introduced to the mobile app. |
+| ✅ Done | |
+| ✅ Done | i18n and localization being introduced to the mobile app. |
 | ✅ Done | Core mobile flows support translation and locale-aware formatting. |
 
 **Started:** _fill when you begin_  

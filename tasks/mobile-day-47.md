@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile DX improvements underway. |
+| ✅ Done | |
+| ✅ Done | Mobile DX improvements underway. |
 | ✅ Done | Common mobile workflows are faster and easier for developers. |
 
 **Started:** _fill when you begin_  

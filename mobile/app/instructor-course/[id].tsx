@@ -1,23 +1,23 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { AppText } from '../../src/components/AppText';
-import { useInstructorCourse } from '../../src/hooks/useInstructor';
-import { apiClient } from '../../src/api/client';
-import { useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react'
+import { View, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native'
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { AppText } from '../../src/components/AppText'
+import { useInstructorCourse } from '../../src/hooks/useInstructor'
+import { apiClient } from '../../src/api/client'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function InstructorCourseDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: course, isLoading } = useInstructorCourse(id!);
-  const [updating, setUpdating] = useState(false);
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const { data: course, isLoading } = useInstructorCourse(id!)
+  const [updating, setUpdating] = useState(false)
 
   const toggleStatus = async () => {
-    if (!course) return;
+    if (!course) return
 
-    const newStatus = course.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+    const newStatus = course.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED'
 
     Alert.alert(
       'Confirm Change',
@@ -28,50 +28,58 @@ export default function InstructorCourseDetail() {
           text: 'Confirm',
           onPress: async () => {
             try {
-              setUpdating(true);
-              await apiClient.patch(`/api/v1/courses/${id}/status`, { status: newStatus });
-              queryClient.invalidateQueries({ queryKey: ['instructor', 'course', id] });
-              queryClient.invalidateQueries({ queryKey: ['instructor', 'courses'] });
-            } catch (error) {
-              Alert.alert('Error', 'Failed to update course status');
+              setUpdating(true)
+              await apiClient.patch(`/api/v1/courses/${id}/status`, { status: newStatus })
+              queryClient.invalidateQueries({ queryKey: ['instructor', 'course', id] })
+              queryClient.invalidateQueries({ queryKey: ['instructor', 'courses'] })
+            } catch {
+              Alert.alert('Error', 'Failed to update course status')
             } finally {
-              setUpdating(false);
+              setUpdating(false)
             }
-          }
-        }
-      ]
-    );
-  };
+          },
+        },
+      ],
+    )
+  }
 
   if (isLoading || !course) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
         <AppText>Loading...</AppText>
       </View>
-    );
+    )
   }
 
   return (
     <View className="flex-1 bg-slate-50">
-      <Stack.Screen options={{
-        title: 'Manage Course',
-        headerRight: () => (
-          <TouchableOpacity onPress={() => router.push(`/instructor-course/${id}/edit`)}>
-            <AppText className="text-indigo-600 font-bold mr-4">Edit</AppText>
-          </TouchableOpacity>
-        )
-      }} />
+      <Stack.Screen
+        options={{
+          title: 'Manage Course',
+          headerRight: () => (
+            <TouchableOpacity onPress={() => router.push(`/instructor-course/${id}/edit`)}>
+              <AppText className="text-indigo-600 font-bold mr-4">Edit</AppText>
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       <ScrollView className="flex-1">
         <View className="bg-white p-6 border-b border-slate-100 mb-4">
           <AppText className="text-2xl font-bold text-slate-900 mb-2">{course.title}</AppText>
           <View className="flex-row items-center mb-6">
-            <View className={`px-2 py-1 rounded-md ${course.status === 'PUBLISHED' ? 'bg-emerald-100' : 'bg-slate-100'} mr-3`}>
-              <AppText className={`text-xs font-bold ${course.status === 'PUBLISHED' ? 'text-emerald-700' : 'text-slate-600'}`}>
+            <View
+              className={`px-2 py-1 rounded-md ${course.status === 'PUBLISHED' ? 'bg-emerald-100' : 'bg-slate-100'} mr-3`}
+            >
+              <AppText
+                className={`text-xs font-bold ${course.status === 'PUBLISHED' ? 'text-emerald-700' : 'text-slate-600'}`}
+              >
                 {course.status}
               </AppText>
             </View>
-            <AppText className="text-slate-500 text-sm">{course.enrollmentCount} Active Students</AppText>
+            <AppText className="text-slate-500 text-sm">
+              {course.enrollmentCount} Active Students
+            </AppText>
           </View>
 
           <View className="flex-row items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -99,7 +107,10 @@ export default function InstructorCourseDetail() {
           </View>
 
           {course.modules?.map((module, index) => (
-            <View key={module.id} className="bg-white rounded-xl border border-slate-100 mb-3 overflow-hidden">
+            <View
+              key={module.id}
+              className="bg-white rounded-xl border border-slate-100 mb-3 overflow-hidden"
+            >
               <TouchableOpacity className="flex-row items-center p-4">
                 <View className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center mr-3">
                   <AppText className="text-slate-600 font-bold text-xs">{index + 1}</AppText>
@@ -120,7 +131,9 @@ export default function InstructorCourseDetail() {
                       color="#64748b"
                       style={{ marginRight: 8, marginLeft: 36 }}
                     />
-                    <AppText className="flex-1 text-slate-700 text-sm" numberOfLines={1}>{lesson.title}</AppText>
+                    <AppText className="flex-1 text-slate-700 text-sm" numberOfLines={1}>
+                      {lesson.title}
+                    </AppText>
                     <Ionicons name="ellipsis-vertical" size={16} color="#cbd5e1" />
                   </TouchableOpacity>
                 ))}
@@ -149,5 +162,5 @@ export default function InstructorCourseDetail() {
         </TouchableOpacity>
       </View>
     </View>
-  );
+  )
 }

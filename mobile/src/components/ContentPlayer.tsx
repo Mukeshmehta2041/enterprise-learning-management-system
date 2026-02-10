@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
-import Markdown from 'react-native-markdown-display';
-import { AppText } from './AppText';
+import React from 'react'
+import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native'
+import { Video, ResizeMode } from 'expo-av'
+import Markdown from 'react-native-markdown-display'
+import { AppText } from './AppText'
 
 interface ContentPlayerProps {
-  type: 'VIDEO' | 'READING' | 'QUIZ';
-  content?: string; // URL for video, Markdown for reading
-  isLoading?: boolean;
+  type: 'VIDEO' | 'READING' | 'QUIZ'
+  content?: string // URL for video, Markdown for reading
+  isLoading?: boolean
 }
 
 export function ContentPlayer({ type, content, isLoading }: ContentPlayerProps) {
@@ -16,7 +16,7 @@ export function ContentPlayer({ type, content, isLoading }: ContentPlayerProps) 
       <View className="h-60 items-center justify-center bg-slate-100 rounded-xl">
         <ActivityIndicator color="#4f46e5" />
       </View>
-    );
+    )
   }
 
   if (!content) {
@@ -24,7 +24,7 @@ export function ContentPlayer({ type, content, isLoading }: ContentPlayerProps) 
       <View className="h-60 items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
         <AppText color="muted">No content available</AppText>
       </View>
-    );
+    )
   }
 
   if (type === 'VIDEO') {
@@ -38,7 +38,7 @@ export function ContentPlayer({ type, content, isLoading }: ContentPlayerProps) 
           style={StyleSheet.absoluteFill}
         />
       </View>
-    );
+    )
   }
 
   if (type === 'READING') {
@@ -54,12 +54,12 @@ export function ContentPlayer({ type, content, isLoading }: ContentPlayerProps) 
           {content}
         </Markdown>
       </ScrollView>
-    );
+    )
   }
 
   return (
     <View className="p-8 items-center justify-center">
       <AppText>Quiz content coming soon...</AppText>
     </View>
-  );
+  )
 }

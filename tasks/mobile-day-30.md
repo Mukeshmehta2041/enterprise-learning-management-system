@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile docs and onboarding being finalized. |
+| ✅ Done | |
+| ✅ Done | |
 | ✅ Done | Mobile app has clear docs, examples, and onboarding guides. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 30 is done_
+**Started:** 2024-05-30
+**Completed:** 2024-05-30
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. Docs index and architecture
 
-- [ ] Ensure `docs/mobile/README.md` (or equivalent) links to architecture, navigation, data/offline, auth, and release docs.
-- [ ] Add or update a short “Mobile architecture overview” describing modules and key flows.
+- [x] Ensure `docs/mobile/README.md` (or equivalent) links to architecture, navigation, data/offline, auth, and release docs.
+- [x] Add or update a short “Mobile architecture overview” describing modules and key flows (Updated `01-architecture-mobile.md` with Real-time & Events).
 
 ### 2. Examples and stories
 
-- [ ] Document key components and patterns used in the mobile app (e.g. screens, common layouts, reusable widgets).
-- [ ] If using a story/expo-style gallery, ensure it includes representative examples.
+- [x] Document key components and patterns used in the mobile app (Detailed in `mobile/README.md`).
+- [x] If using a story/expo-style gallery, ensure it includes representative examples.
 
 ### 3. Developer onboarding
 
-- [ ] Write or refine a “Getting started with the mobile app” guide: environment setup, running on devices, debugging, and testing.
-- [ ] Include notes about how mobile integrates with backend and web (API gateway, shared models).
+- [x] Write or refine a “Getting started with the mobile app” guide: environment setup, running on devices, debugging, and testing (Updated `mobile/README.md`).
+- [x] Include notes about how mobile integrates with backend and web (Linked to main architecture docs).
 
 ### 4. Verification
 

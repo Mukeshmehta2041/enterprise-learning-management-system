@@ -1,32 +1,40 @@
-import { View, TextInput, TextInputProps } from "react-native";
-import { AppText } from "./AppText";
+import { View, TextInput, TextInputProps } from 'react-native'
+import { AppText } from './AppText'
 
 interface InputProps extends TextInputProps {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  containerClassName?: string;
-  inputClassName?: string;
+  label?: string
+  error?: string
+  helperText?: string
+  containerClassName?: string
+  inputClassName?: string
 }
 
 export function Input({
   label,
   error,
   helperText,
-  containerClassName = "",
-  inputClassName = "",
+  containerClassName = '',
+  inputClassName = '',
   ...props
 }: InputProps) {
+  const accessibilityHint = error || helperText || props.placeholder
+
   return (
-    <View className={`w-full mb-4 ${containerClassName}`}>
+    <View
+      className={`w-full mb-4 ${containerClassName}`}
+      accessibilityLabel={label}
+      accessibilityRole="none"
+    >
       {label && (
         <AppText variant="caption" weight="medium" className="mb-1.5 ml-1">
           {label}
         </AppText>
       )}
       <TextInput
-        className={`w-full bg-white border ${error ? "border-red-500" : "border-slate-200"} px-4 py-3 rounded-xl text-foreground text-base ${inputClassName}`}
+        className={`w-full bg-white border ${error ? 'border-red-500' : 'border-slate-200'} px-4 py-3 rounded-xl text-foreground text-base ${inputClassName}`}
         placeholderTextColor="#94a3b8"
+        accessibilityLabel={props.accessibilityLabel || label}
+        accessibilityHint={accessibilityHint}
         {...props}
       />
       {error ? (
@@ -39,5 +47,5 @@ export function Input({
         </AppText>
       ) : null}
     </View>
-  );
+  )
 }

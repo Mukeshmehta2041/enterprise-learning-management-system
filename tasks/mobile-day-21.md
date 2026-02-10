@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile privacy and consent UI being implemented. |
+| ✅ Done | |
+| ⬜ In progress | |
 | ✅ Done | Users can review and manage privacy and data settings from the mobile app. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 21 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,23 +23,23 @@
 
 ### 1. Privacy & settings screen
 
-- [ ] Add a “Privacy & Settings” or equivalent screen accessible from profile/account.
-- [ ] Explain clearly what settings are controlled here (notifications, analytics, data requests).
+- [x] Add a “Privacy & Settings” or equivalent screen accessible from profile/account.
+- [x] Explain clearly what settings are controlled here (notifications, analytics, data requests).
 
 ### 2. Communication preferences
 
-- [ ] Provide toggles for marketing emails, announcements, and push notification categories as supported by backend.
-- [ ] Persist these preferences via appropriate APIs and reflect current state in the UI.
+- [x] Provide toggles for marketing emails, announcements, and push notification categories as supported by backend.
+- [x] Persist these preferences via appropriate APIs and reflect current state in the UI.
 
 ### 3. Data and tracking controls
 
-- [ ] Surface options to opt in/out of analytics/tracking where required.
-- [ ] Provide links to privacy policy and terms of use from within the app (e.g. settings or login).
+- [x] Surface options to opt in/out of analytics/tracking where required.
+- [x] Provide links to privacy policy and terms of use from within the app (e.g. settings or login).
 
 ### 4. Data subject requests (UI hooks)
 
-- [ ] Add actions for requesting data export or account deletion, wired to backend workflows or at least stubs.
-- [ ] Show clear confirmations and expected timelines for processing these requests.
+- [x] Add actions for requesting data export or account deletion, wired to backend workflows or at least stubs.
+- [x] Show clear confirmations and expected timelines for processing these requests.
 
 ### 5. Progress update
 

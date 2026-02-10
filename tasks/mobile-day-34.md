@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile caching and background refresh strategies being tuned. |
+| ✅ Done | |
+| ✅ Done | Mobile caching and background refresh strategies being tuned. |
 | ✅ Done | Key data remains reasonably fresh without overloading devices or network. |
 
 **Started:** _fill when you begin_  

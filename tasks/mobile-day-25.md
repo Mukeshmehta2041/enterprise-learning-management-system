@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Offline-first patterns and optimistic UI being added on mobile. |
+| ✅ Done | |
+| ⬜ In progress | |
 | ✅ Done | Critical actions feel fast and degrade gracefully when offline. |
 
-**Started:** _fill when you begin_  
-**Completed:** _fill when Mobile Day 25 is done_
+**Started:** 2026-02-09  
+**Completed:** 2026-02-09  
 
 ---
 
@@ -23,18 +23,18 @@
 
 ### 1. Connectivity awareness
 
-- [ ] Detect online/offline status in the app and expose it via a hook or context.
-- [ ] Show subtle indicators when offline and when reconnecting.
+- [x] Detect online/offline status in the app and expose it via a hook or context.
+- [x] Show subtle indicators when offline and when reconnecting.
 
 ### 2. Optimistic updates
 
-- [ ] Implement optimistic updates for at least one key action (e.g. mark lesson complete, submit progress).
-- [ ] Provide clear feedback when optimistic updates fail and roll back gracefully.
+- [x] Implement optimistic updates for at least one key action (e.g. mark lesson complete, submit progress).
+- [x] Provide clear feedback when optimistic updates fail and roll back gracefully.
 
 ### 3. Local storage and sync
 
-- [ ] Cache important data locally (e.g. enrolled courses, last-viewed lessons) for offline read access.
-- [ ] Design a simple sync strategy for queued actions when connectivity returns.
+- [x] Cache important data locally (e.g. enrolled courses, last-viewed lessons) for offline read access.
+- [x] Design a simple sync strategy for queued actions when connectivity returns.
 
 ### 4. Testing
 

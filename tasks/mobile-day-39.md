@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile E2E tests being implemented. |
+| ✅ Done | |
+| ✅ Done | Mobile E2E tests being implemented. |
 | ✅ Done | Critical LMS mobile flows are covered by automated device/emulator tests. |
 
 **Started:** _fill when you begin_  

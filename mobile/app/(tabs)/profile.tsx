@@ -1,18 +1,18 @@
-import { View, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { AppText } from '../../src/components/AppText';
-import { Button } from '../../src/components/Button';
-import { ListItem } from '../../src/components/ListItem';
-import { useAuthStore } from '../../src/state/useAuthStore';
+import { View, ScrollView } from 'react-native'
+import { useRouter } from 'expo-router'
+import { AppText } from '../../src/components/AppText'
+import { Button } from '../../src/components/Button'
+import { ListItem } from '../../src/components/ListItem'
+import { useAuthStore } from '../../src/state/useAuthStore'
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
-  const router = useRouter();
+  const { user, logout } = useAuthStore()
+  const router = useRouter()
 
   const handleLogout = async () => {
-    await logout();
-    router.replace('/(auth)/login');
-  };
+    await logout()
+    router.replace('/(auth)/login')
+  }
 
   return (
     <ScrollView className="flex-1 bg-background">
@@ -35,28 +35,62 @@ export default function ProfileScreen() {
         <AppText variant="caption" weight="semibold" color="muted" className="px-6 mb-2">
           ACCOUNT SETTINGS
         </AppText>
-        <ListItem title="Upgrade Plan" leftIcon="card-outline" onPress={() => router.push('/plans')} />
+        <ListItem
+          title="Upgrade Plan"
+          leftIcon="card-outline"
+          onPress={() => router.push('/plans')}
+        />
+        <ListItem
+          title="Billing History"
+          leftIcon="receipt-outline"
+          onPress={() => router.push('/settings/billing')}
+        />
         <ListItem title="Edit Profile" leftIcon="person-outline" onPress={() => { }} />
         <ListItem title="Change Password" leftIcon="lock-closed-outline" onPress={() => { }} />
-        <ListItem title="Notifications" leftIcon="notifications-outline" onPress={() => router.push('/notifications')} />
+        <ListItem
+          title="Notifications"
+          leftIcon="notifications-outline"
+          onPress={() => router.push('/notifications')}
+        />
+        <ListItem
+          title="Appearance"
+          leftIcon="color-palette-outline"
+          onPress={() => router.push('/settings/appearance')}
+        />
+        <ListItem
+          title="Privacy & Data"
+          leftIcon="shield-checkmark-outline"
+          onPress={() => router.push('/settings/privacy')}
+        />
       </View>
 
       <View className="mt-6">
         <AppText variant="caption" weight="semibold" color="muted" className="px-6 mb-2">
           ABOUT
         </AppText>
-        <ListItem title="Support" leftIcon="help-circle-outline" onPress={() => { }} />
-        <ListItem title="Privacy Policy" leftIcon="document-text-outline" onPress={() => { }} />
-        <ListItem title="Terms of Service" leftIcon="information-circle-outline" onPress={() => { }} />
+        <ListItem
+          title="Support & Feedback"
+          leftIcon="help-circle-outline"
+          onPress={() => router.push('/support')}
+        />
+        <ListItem
+          title="Privacy Policy"
+          leftIcon="document-text-outline"
+          onPress={() => router.push('/privacy-policy')}
+        />
+        <ListItem
+          title="Terms of Service"
+          leftIcon="information-circle-outline"
+          onPress={() => router.push('/terms')}
+        />
+        <AppText variant="caption" color="muted" className="px-6 mt-4 opacity-50">
+          Version 1.0.0 (Build 38)
+        </AppText>
       </View>
 
       <View className="p-6 mt-4">
-        <Button
-          title="Log Out"
-          variant="danger"
-          onPress={handleLogout}
-        />
+        <Button title="Log Out" variant="danger" onPress={handleLogout} />
       </View>
     </ScrollView>
-  );
+  )
 }

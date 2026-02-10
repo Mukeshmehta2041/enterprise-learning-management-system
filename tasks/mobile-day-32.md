@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Bundle and asset optimizations in progress. |
+| ✅ Done | |
+| ✅ Done | Bundle and asset optimizations in progress. |
 | ✅ Done | Mobile app bundle is leaner with optimized assets. |
 
 **Started:** _fill when you begin_  

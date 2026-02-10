@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Advanced mobile navigation patterns being refined. |
+| ✅ Done | |
+| ✅ Done | Advanced mobile navigation patterns being refined. |
 | ✅ Done | Complex mobile flows feel natural and predictable to users. |
 
 **Started:** _fill when you begin_  

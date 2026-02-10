@@ -1,60 +1,66 @@
-import React from 'react';
-import {
-  View,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react'
+import { View, ScrollView, Image, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 
-import { AppText } from '../../src/components/AppText';
-import { Button } from '../../src/components/Button';
-import { Badge } from '../../src/components/Badge';
-import { Card } from '../../src/components/Card';
+import { AppText } from '../../src/components/AppText'
+import { Button } from '../../src/components/Button'
+import { Badge } from '../../src/components/Badge'
+import { Card } from '../../src/components/Card'
 
-import { useCourse } from '../../src/hooks/useCourses';
-import { useEnrollments, useEnrollMutation } from '../../src/hooks/useEnrollments';
-import { useRole } from '../../src/hooks/useRole';
-import { useAuthStore } from '../../src/state/useAuthStore';
-import { useNotificationStore } from '../../src/state/useNotificationStore';
+import { useCourse } from '../../src/hooks/useCourses'
+import { useEnrollments, useEnrollMutation } from '../../src/hooks/useEnrollments'
+import { useRole } from '../../src/hooks/useRole'
+import { useAuthStore } from '../../src/state/useAuthStore'
+import { useNotificationStore } from '../../src/state/useNotificationStore'
+import { analytics } from '../../src/utils/analytics'
 
 export default function CourseDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const router = useRouter()
 
-  const showNotification = useNotificationStore(
-    (state) => state.showNotification
-  );
-  const currentUser = useAuthStore((state) => state.user);
-  const { isAdmin } = useRole();
+  const showNotification = useNotificationStore((state) => state.showNotification)
+  const currentUser = useAuthStore((state) => state.user)
+  const { isAdmin } = useRole()
 
-  const { data: course, isLoading, error } = useCourse(id);
-  const { data: enrollments } = useEnrollments();
+  const { data: course, isLoading, error } = useCourse(id)
+  const { data: enrollments } = useEnrollments()
 
-  const isEnrolled = enrollments?.some((e) => e.courseId === id);
-  const isAuthor = course?.instructorId === currentUser?.id;
+  const isEnrolled = enrollments?.some((e) => e.courseId === id)
+  const isAuthor = course?.instructorId === currentUser?.id
 
-  const enrollMutation = useEnrollMutation();
+  const enrollMutation = useEnrollMutation()
+
+  React.useEffect(() => {
+    if (course) {
+      analytics.track('course_viewed', {
+        courseId: course.id,
+        title: course.title,
+        price: course.price,
+        isEnrolled,
+      })
+    }
+  }, [course, isEnrolled])
 
   const handleEnroll = () => {
+    analytics.track('enroll_clicked', { courseId: id, courseTitle: course?.title })
     enrollMutation.mutate(id, {
       onSuccess: () => {
-        showNotification('You have been enrolled in this course!', 'success');
+        showNotification('You have been enrolled in this course!', 'success')
+        analytics.track('enrollment_success', { courseId: id, courseTitle: course?.title })
       },
       onError: (err: any) => {
-        showNotification(err?.message || 'Failed to enroll', 'error');
+        showNotification(err?.message || 'Failed to enroll', 'error')
       },
-    });
-  };
+    })
+  }
 
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" color="#4f46e5" />
       </View>
-    );
+    )
   }
 
   if (error || !course) {
@@ -66,7 +72,7 @@ export default function CourseDetailScreen() {
         </AppText>
         <Button title="Go Back" onPress={() => router.back()} className="mt-6" />
       </View>
-    );
+    )
   }
 
   return (
@@ -145,16 +151,10 @@ export default function CourseDetailScreen() {
                 <TouchableOpacity
                   key={lesson.id}
                   className="flex-row items-center py-3 border-t border-slate-50"
-                  onPress={() =>
-                    router.push(`/course/${id}/lesson/${lesson.id}`)
-                  }
+                  onPress={() => router.push(`/course/${id}/lesson/${lesson.id}`)}
                 >
                   <Ionicons
-                    name={
-                      lesson.type === 'VIDEO'
-                        ? 'play-circle-outline'
-                        : 'document-text-outline'
-                    }
+                    name={lesson.type === 'VIDEO' ? 'play-circle-outline' : 'document-text-outline'}
                     size={20}
                     color="#4f46e5"
                   />
@@ -191,5 +191,5 @@ export default function CourseDetailScreen() {
         )}
       </View>
     </View>
-  );
+  )
 }

@@ -11,18 +11,20 @@ import { useAuthStore } from '../../src/state/useAuthStore';
 import { useNotificationStore } from '../../src/state/useNotificationStore';
 import { apiClient } from '../../src/api/client';
 
-const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name is too short'),
-  lastName: z.string().min(2, 'Last name is too short'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const registerSchema = z
+  .object({
+    firstName: z.string().min(2, 'First name is too short'),
+    lastName: z.string().min(2, 'Last name is too short'),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = z.infer<typeof registerSchema>
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -30,7 +32,11 @@ export default function RegisterScreen() {
   const showNotification = useNotificationStore((state) => state.showNotification);
   const [loading, setLoading] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       firstName: '',
@@ -39,10 +45,10 @@ export default function RegisterScreen() {
       password: '',
       confirmPassword: '',
     },
-  });
+  })
 
   const onSubmit = async (data: RegisterFormData) => {
-    setLoading(true);
+    setLoading(true)
     try {
       // Step 1: Register
       await apiClient.post('/api/v1/users', {
@@ -56,7 +62,7 @@ export default function RegisterScreen() {
       const loginResponse = await apiClient.post('/api/v1/auth/login', {
         email: data.email,
         password: data.password,
-      });
+      })
 
       const { access_token } = loginResponse.data;
 
@@ -86,9 +92,9 @@ export default function RegisterScreen() {
         'error'
       );
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <KeyboardAvoidingView
@@ -98,8 +104,12 @@ export default function RegisterScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="p-6">
         <View className="flex-1 justify-center">
           <View className="mb-10">
-            <AppText variant="h1" className="mb-2">Create Account</AppText>
-            <AppText variant="body" color="muted">Join our community of learners.</AppText>
+            <AppText variant="h1" className="mb-2">
+              Create Account
+            </AppText>
+            <AppText variant="body" color="muted">
+              Join our community of learners.
+            </AppText>
           </View>
 
           <View className="flex-row gap-4">
@@ -207,5 +217,5 @@ export default function RegisterScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  )
 }

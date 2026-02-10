@@ -1,33 +1,42 @@
-import React from 'react';
-import { View, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { AppText } from '../../src/components/AppText';
-import { Card } from '../../src/components/Card';
-import { Badge } from '../../src/components/Badge';
-import { apiClient } from '../../src/api/client';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react'
+import { View, FlatList, RefreshControl, TouchableOpacity } from 'react-native'
+import { useRouter } from 'expo-router'
+import { useQuery } from '@tanstack/react-query'
+import { AppText } from '../../src/components/AppText'
+import { Card } from '../../src/components/Card'
+import { Badge } from '../../src/components/Badge'
+import { apiClient } from '../../src/api/client'
+import { Ionicons } from '@expo/vector-icons'
 
 export default function AssignmentsScreen() {
-  const router = useRouter();
+  const router = useRouter()
 
-  const { data: assignments, isLoading, refetch } = useQuery({
+  const {
+    data: assignments,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['assignments', 'list'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/v1/assignments');
-      return response.data.items || [];
+      const response = await apiClient.get('/api/v1/assignments')
+      return response.data.items || []
     },
-  });
+  })
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'SUBMITTED': return 'primary';
-      case 'GRADED': return 'success';
-      case 'OVERDUE': return 'danger';
-      case 'PENDING': return 'warning';
-      default: return 'neutral';
+      case 'SUBMITTED':
+        return 'primary'
+      case 'GRADED':
+        return 'success'
+      case 'OVERDUE':
+        return 'danger'
+      case 'PENDING':
+        return 'warning'
+      default:
+        return 'neutral'
     }
-  };
+  }
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -37,7 +46,9 @@ export default function AssignmentsScreen() {
     >
       <Card className="p-4">
         <View className="flex-row justify-between items-start mb-2">
-          <AppText variant="h3" className="flex-1 mr-2" numberOfLines={1}>{item.title}</AppText>
+          <AppText variant="h3" className="flex-1 mr-2" numberOfLines={1}>
+            {item.title}
+          </AppText>
           <Badge label={item.status} variant={getStatusVariant(item.status)} />
         </View>
         <AppText variant="small" color="muted" className="mb-4" numberOfLines={2}>
@@ -58,7 +69,7 @@ export default function AssignmentsScreen() {
         </View>
       </Card>
     </TouchableOpacity>
-  );
+  )
 
   return (
     <View className="flex-1 bg-background">
@@ -72,19 +83,21 @@ export default function AssignmentsScreen() {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingVertical: 20 }}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
-        }
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
         ListEmptyComponent={
           !isLoading ? (
             <View className="items-center justify-center p-12">
               <Ionicons name="clipboard-outline" size={64} color="#cbd5e1" />
-              <AppText variant="h3" color="muted" className="mt-4">All clear!</AppText>
-              <AppText color="muted" className="text-center mt-2">No pending assignments found.</AppText>
+              <AppText variant="h3" color="muted" className="mt-4">
+                All clear!
+              </AppText>
+              <AppText color="muted" className="text-center mt-2">
+                No pending assignments found.
+              </AppText>
             </View>
           ) : null
         }
       />
     </View>
-  );
+  )
 }

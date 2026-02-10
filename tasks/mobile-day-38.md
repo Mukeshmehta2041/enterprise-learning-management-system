@@ -10,8 +10,8 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | Mobile error observability and crash reporting being enhanced. |
+| ✅ Done | |
+| ✅ Done | Mobile error observability and crash reporting being enhanced. |
 | ✅ Done | Crashes and key errors from the mobile app are visible and actionable. |
 
 **Started:** _fill when you begin_  
