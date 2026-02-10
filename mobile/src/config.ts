@@ -9,8 +9,26 @@ interface AppConfig {
 
 const extra = Constants.expoConfig?.extra || {};
 
+const getApiUrl = () => {
+  if (extra.apiUrl && !extra.apiUrl.includes('localhost')) {
+    return extra.apiUrl;
+  }
+
+  // If we're in development and using localhost, try to use the host's IP address
+  // This allows the app to work on physical devices and simulators
+  if (__DEV__) {
+    const debuggerHost = Constants.expoConfig?.hostUri;
+    if (debuggerHost) {
+      const ip = debuggerHost.split(':')[0];
+      return `http://${ip}:8080`;
+    }
+  }
+
+  return extra.apiUrl || 'http://localhost:8080';
+};
+
 export const Config: AppConfig = {
-  apiUrl: extra.apiUrl || 'http://localhost:8080',
+  apiUrl: getApiUrl(),
   environment: extra.environment || 'development',
   sentryDsn: extra.sentryDsn,
   version: Constants.expoConfig?.version || '1.0.0',

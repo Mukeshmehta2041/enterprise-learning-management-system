@@ -7,7 +7,7 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   redirectPath: string | null;
-  setAuth: (user: User, token: string) => Promise<void>;
+  setAuth: (user: User | null, token: string) => Promise<void>;
   logout: () => Promise<void>;
   initialize: () => Promise<void>;
   setRedirectPath: (path: string | null) => void;
@@ -30,7 +30,28 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const token = await SecureStore.getItemAsync("auth_token");
       if (token) {
-        set({ token, isLoading: false });
+        // Since we have a token, try to fetch the user profile
+        // Import apiClient dynamically or use it if available
+        const { apiClient } = await import("../api/client");
+        try {
+          const userResponse = await apiClient.get("/api/v1/users/me");
+          const userData = userResponse.data;
+          const user = {
+            id: userData.id,
+            email: userData.email,
+            fullName: userData.displayName || userData.fullName || userData.email,
+            role: Array.isArray(userData.roles) ? userData.roles[0] : userData.role,
+            avatarUrl: userData.avatarUrl,
+            bio: userData.bio,
+            createdAt: userData.createdAt,
+          };
+          set({ token, user, isLoading: false });
+        } catch (err) {
+          console.error("Failed to fetch user during initialization", err);
+          // If token is invalid/expired, logout
+          await SecureStore.deleteItemAsync("auth_token");
+          set({ token: null, user: null, isLoading: false });
+        }
       } else {
         set({ isLoading: false });
       }

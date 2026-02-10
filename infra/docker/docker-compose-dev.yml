@@ -6,6 +6,8 @@ services:
   postgres:
     image: postgres:16
     container_name: lms-postgres
+    mem_limit: 768m
+    cpus: "0.75"
     restart: unless-stopped
     ports:
       - "5432:5432"
@@ -27,6 +29,8 @@ services:
     container_name: lms-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
+    mem_limit: 384m
+    cpus: "0.50"
     ports:
       - "6379:6379"
     healthcheck:
@@ -41,6 +45,8 @@ services:
     image: apache/kafka-native:latest
     container_name: lms-kafka
     restart: unless-stopped
+    mem_limit: 1024m
+    cpus: "1.00"
     ports:
       - "9092:9092"
     environment:
@@ -70,6 +76,8 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     container_name: lms-elasticsearch
+    mem_limit: 1536m
+    cpus: "1.00"
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -86,6 +94,8 @@ services:
     image: jaegertracing/all-in-one:1.60
     container_name: lms-jaeger
     restart: unless-stopped
+    mem_limit: 512m
+    cpus: "0.50"
     ports:
       - "16686:16686"
       - "4317:4317"
@@ -97,6 +107,8 @@ services:
     image: prom/prometheus:latest
     container_name: lms-prometheus
     restart: unless-stopped
+    mem_limit: 512m
+    cpus: "0.50"
     ports:
       - "9090:9090"
     volumes:
@@ -107,6 +119,8 @@ services:
     image: grafana/grafana:latest
     container_name: lms-grafana
     restart: unless-stopped
+    mem_limit: 512m
+    cpus: "0.50"
     ports:
       - "3001:3000"
     environment:
@@ -118,9 +132,12 @@ services:
     build:
       context: ../../lms-gateway
     container_name: lms-gateway
+    mem_limit: 768m
+    cpus: "0.75"
     ports:
       - "8080:8080"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
       - REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET}
@@ -162,7 +179,10 @@ services:
     build:
       context: ../../services/lms-user-service
     container_name: lms-user-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -186,9 +206,13 @@ services:
     build:
       context: ../../services/lms-auth-service
     container_name: lms-auth-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_REDIS_HOST=redis
       - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
       - JWT_SECRET=${JWT_SECRET}
       - USER_SERVICE_URL=http://lms-user-service:8081
     healthcheck:
@@ -202,12 +226,17 @@ services:
         condition: service_healthy
       lms-user-service:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
   lms-course-service:
     build:
       context: ../../services/lms-course-service
     container_name: lms-course-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -232,7 +261,10 @@ services:
     build:
       context: ../../services/lms-enrollment-service
     container_name: lms-enrollment-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -260,7 +292,10 @@ services:
       context: ../../services/lms-content-service
     container_name: lms-content-service
     restart: unless-stopped
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -284,7 +319,10 @@ services:
     build:
       context: ../../services/lms-assignment-service
     container_name: lms-assignment-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -308,7 +346,10 @@ services:
     build:
       context: ../../services/lms-search-service
     container_name: lms-search-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
       - SPRING_DATA_REDIS_HOST=redis
@@ -330,7 +371,10 @@ services:
     build:
       context: ../../services/lms-notification-service
     container_name: lms-notification-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -358,7 +402,10 @@ services:
     build:
       context: ../../services/lms-payment-service
     container_name: lms-payment-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -382,7 +429,10 @@ services:
     build:
       context: ../../services/lms-analytics-service
     container_name: lms-analytics-service
+    mem_limit: 768m
+    cpus: "0.75"
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms

@@ -8,6 +8,7 @@ import { AppText } from '../../src/components/AppText';
 import { Input } from '../../src/components/Input';
 import { Button } from '../../src/components/Button';
 import { useAuthStore } from '../../src/state/useAuthStore';
+import { useNotificationStore } from '../../src/state/useNotificationStore';
 import { apiClient } from '../../src/api/client';
 
 const registerSchema = z.object({
@@ -26,6 +27,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export default function RegisterScreen() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const showNotification = useNotificationStore((state) => state.showNotification);
   const [loading, setLoading] = useState(false);
 
   const { control, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
@@ -43,27 +45,45 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       // Step 1: Register
-      await apiClient.post('/auth/register', {
-        firstName: data.firstName,
-        lastName: data.lastName,
+      await apiClient.post('/api/v1/users', {
+        displayName: `${data.firstName} ${data.lastName}`,
         email: data.email,
         password: data.password,
+        role: 'STUDENT'
       });
 
       // Step 2: Login
-      const loginResponse = await apiClient.post('/auth/login', {
+      const loginResponse = await apiClient.post('/api/v1/auth/login', {
         email: data.email,
         password: data.password,
       });
 
-      const { user, token } = loginResponse.data;
-      await setAuth(user, token);
+      const { access_token } = loginResponse.data;
+
+      // Set the token first
+      await setAuth(null, access_token);
+
+      // Fetch the full user profile
+      const userResponse = await apiClient.get('/api/v1/users/me');
+      const userData = userResponse.data;
+
+      const user = {
+        id: userData.id,
+        email: userData.email,
+        fullName: userData.displayName || userData.fullName || userData.email,
+        role: Array.isArray(userData.roles) ? userData.roles[0] : userData.role,
+        avatarUrl: userData.avatarUrl,
+        bio: userData.bio,
+        createdAt: userData.createdAt,
+      };
+
+      await setAuth(user, access_token);
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error('Registration error:', error);
-      Alert.alert(
-        'Registration Failed',
-        error.response?.data?.message || 'Something went wrong. Please try again.'
+      showNotification(
+        error.message || 'Something went wrong. Please try again.',
+        'error'
       );
     } finally {
       setLoading(false);

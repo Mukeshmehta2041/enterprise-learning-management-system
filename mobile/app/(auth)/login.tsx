@@ -35,9 +35,28 @@ export default function LoginScreen() {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
-      const response = await apiClient.post('/auth/login', data);
-      const { user, token } = response.data;
-      await setAuth(user, token);
+      const response = await apiClient.post('/api/v1/auth/login', data);
+      const { access_token } = response.data;
+
+      // Set the token first so subsequent requests are authenticated
+      await setAuth(null, access_token);
+
+      // Fetch the full user profile
+      const userResponse = await apiClient.get('/api/v1/users/me');
+      const userData = userResponse.data;
+
+      // Map API response to User type if needed
+      const user = {
+        id: userData.id,
+        email: userData.email,
+        fullName: userData.displayName || userData.fullName || userData.email,
+        role: Array.isArray(userData.roles) ? userData.roles[0] : userData.role,
+        avatarUrl: userData.avatarUrl,
+        bio: userData.bio,
+        createdAt: userData.createdAt,
+      };
+
+      await setAuth(user, access_token);
 
       if (redirectPath) {
         const target = redirectPath;
