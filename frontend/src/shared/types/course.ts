@@ -75,3 +75,26 @@ export const CourseFiltersSchema = z.object({
 })
 
 export type CourseFilters = z.infer<typeof CourseFiltersSchema>
+
+// Form input types (before transformation)
+export type LessonInput = {
+  id?: string
+  title?: string
+  description?: string
+  contentUrl?: string
+  type?: 'VIDEO' | 'DOCUMENT' | 'QUIZ'
+  contentType?: 'VIDEO' | 'DOCUMENT' | 'QUIZ'
+  durationMinutes?: number | null
+  duration?: string
+  sortOrder?: number
+  order?: number
+}
+
+export type ModuleInput = {
+  id?: string
+  title?: string
+  description?: string
+  sortOrder?: number
+  order?: number
+  lessons?: LessonInput[]
+}

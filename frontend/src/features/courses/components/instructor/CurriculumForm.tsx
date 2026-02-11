@@ -1,13 +1,13 @@
 import { useForm, useFieldArray, type Control, type UseFormRegister } from 'react-hook-form'
 import { Card, Button, Input, IconButton, Select } from '@/shared/ui'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
-import type { Module } from '@/shared/types/course'
+import type { ModuleInput } from '@/shared/types/course'
 
 interface CurriculumFormProps {
-  initialModules?: Partial<Module>[]
-  initialData?: { modules?: Partial<Module>[] } // For compatibility with wizard
-  onSave?: (modules: Partial<Module>[]) => void
-  onNext?: (data: { modules: Partial<Module>[] }) => void // For compatibility with wizard
+  initialModules?: ModuleInput[]
+  initialData?: { modules?: ModuleInput[] } // For compatibility with wizard
+  onSave?: (modules: ModuleInput[]) => void
+  onNext?: (data: { modules: ModuleInput[] }) => void // For compatibility with wizard
   onBack?: () => void
 }
 
@@ -20,7 +20,7 @@ export function CurriculumForm({
 }: CurriculumFormProps) {
   const modules = initialModules || initialData?.modules || []
 
-  const { register, control, handleSubmit } = useForm<{ modules: Partial<Module>[] }>({
+  const { register, control, handleSubmit } = useForm<{ modules: ModuleInput[] }>({
     defaultValues: {
       modules:
         modules.length > 0
@@ -38,7 +38,7 @@ export function CurriculumForm({
     name: 'modules',
   })
 
-  const onSubmit = (data: { modules: Partial<Module>[] }) => {
+  const onSubmit = (data: { modules: ModuleInput[] }) => {
     if (onSave) onSave(data.modules)
     if (onNext) onNext(data)
   }
@@ -105,8 +105,8 @@ function LessonsList({
   register
 }: {
   moduleIndex: number,
-  control: Control<{ modules: Partial<Module>[] }>,
-  register: UseFormRegister<{ modules: Partial<Module>[] }>
+  control: Control<{ modules: ModuleInput[] }>,
+  register: UseFormRegister<{ modules: ModuleInput[] }>
 }) {
   const {
     fields: lessonFields,
@@ -153,7 +153,7 @@ function LessonsList({
       <button
         type="button"
         className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center gap-1 ml-3"
-        onClick={() => appendLesson({ title: '', type: 'VIDEO' } as any)}
+        onClick={() => appendLesson({ title: '', type: 'VIDEO' })}
       >
         <Plus size={16} />
         Add Lesson
