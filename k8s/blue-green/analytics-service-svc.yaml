@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lms-analytics-service
+  namespace: lms
+spec:
+  ports:
+  - port: 8090
+    targetPort: 8090
+  selector:
+    app: lms-analytics-service
+    version: blue

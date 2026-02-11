@@ -1,40 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: lms-user-service-blue
+  name: lms-search-service-blue
   namespace: lms
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: lms-user-service
+      app: lms-search-service
       version: blue
   template:
     metadata:
       labels:
-        app: lms-user-service
+        app: lms-search-service
         version: blue
     spec:
       containers:
-      - name: lms-user-service
-        image: lms-user-service:latest
+      - name: lms-search-service
+        image: lms-search-service:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8086
         env:
         - name: DEPLOY_COLOR
           value: "blue"
-        - name: SPRING_DATASOURCE_URL
-          value: "jdbc:postgresql://$(POSTGRES_HOST):$(POSTGRES_PORT)/lms"
-        - name: SPRING_DATASOURCE_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: lms-secrets
-              key: POSTGRES_USER
-        - name: SPRING_DATASOURCE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: lms-secrets
-              key: POSTGRES_PASSWORD
         envFrom:
         - configMapRef:
             name: lms-shared-config
@@ -50,10 +38,10 @@ spec:
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8081
+            port: 8086
           initialDelaySeconds: 40
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8081
+            port: 8086
           initialDelaySeconds: 40

@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: lms-user-service-blue
+  name: lms-analytics-service-blue
   namespace: lms
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: lms-user-service
+      app: lms-analytics-service
       version: blue
   template:
     metadata:
       labels:
-        app: lms-user-service
+        app: lms-analytics-service
         version: blue
     spec:
       containers:
-      - name: lms-user-service
-        image: lms-user-service:latest
+      - name: lms-analytics-service
+        image: lms-analytics-service:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8090
         env:
         - name: DEPLOY_COLOR
           value: "blue"
@@ -50,10 +50,10 @@ spec:
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8081
+            port: 8090
           initialDelaySeconds: 40
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8081
+            port: 8090
           initialDelaySeconds: 40

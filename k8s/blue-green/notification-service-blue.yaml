@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: lms-user-service-blue
+  name: lms-notification-service-blue
   namespace: lms
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: lms-user-service
+      app: lms-notification-service
       version: blue
   template:
     metadata:
       labels:
-        app: lms-user-service
+        app: lms-notification-service
         version: blue
     spec:
       containers:
-      - name: lms-user-service
-        image: lms-user-service:latest
+      - name: lms-notification-service
+        image: lms-notification-service:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8088
         env:
         - name: DEPLOY_COLOR
           value: "blue"
@@ -35,6 +35,16 @@ spec:
             secretKeyRef:
               name: lms-secrets
               key: POSTGRES_PASSWORD
+        - name: MAIL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: lms-secrets
+              key: MAIL_USERNAME
+        - name: MAIL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: lms-secrets
+              key: MAIL_PASSWORD
         envFrom:
         - configMapRef:
             name: lms-shared-config
@@ -50,10 +60,10 @@ spec:
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8081
+            port: 8088
           initialDelaySeconds: 40
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8081
+            port: 8088
           initialDelaySeconds: 40

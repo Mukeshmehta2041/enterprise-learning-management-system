@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: lms-user-service-blue
+  name: lms-course-service-blue
   namespace: lms
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: lms-user-service
+      app: lms-course-service
       version: blue
   template:
     metadata:
       labels:
-        app: lms-user-service
+        app: lms-course-service
         version: blue
     spec:
       containers:
-      - name: lms-user-service
-        image: lms-user-service:latest
+      - name: lms-course-service
+        image: lms-course-service:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8083
         env:
         - name: DEPLOY_COLOR
           value: "blue"
@@ -42,18 +42,18 @@ spec:
             name: lms-secrets
         resources:
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "600m"
+            memory: "768Mi"
           requests:
-            cpu: "250m"
-            memory: "384Mi"
+            cpu: "300m"
+            memory: "512Mi"
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8081
+            port: 8083
           initialDelaySeconds: 40
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8081
+            port: 8083
           initialDelaySeconds: 40

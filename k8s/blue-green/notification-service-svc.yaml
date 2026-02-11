@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: lms-notification-service
+  namespace: lms
+spec:
+  ports:
+  - port: 8088
+    targetPort: 8088
+  selector:
+    app: lms-notification-service
+    version: blue

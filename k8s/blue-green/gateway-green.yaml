@@ -1,45 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: lms-user-service-green
+  name: lms-gateway-green
   namespace: lms
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: lms-user-service
+      app: lms-gateway
       version: green
   template:
     metadata:
       labels:
-        app: lms-user-service
+        app: lms-gateway
         version: green
     spec:
       containers:
-      - name: lms-user-service
-        image: lms-user-service:latest
+      - name: lms-gateway
+        image: lms-gateway:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8080
         env:
         - name: DEPLOY_COLOR
           value: "green"
-        - name: SPRING_DATASOURCE_URL
-          value: "jdbc:postgresql://$(POSTGRES_HOST):$(POSTGRES_PORT)/lms"
-        - name: SPRING_DATASOURCE_USERNAME
+        - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               name: lms-secrets
-              key: POSTGRES_USER
-        - name: SPRING_DATASOURCE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: lms-secrets
-              key: POSTGRES_PASSWORD
+              key: JWT_SECRET
         envFrom:
         - configMapRef:
             name: lms-shared-config
-        - secretRef:
-            name: lms-secrets
         resources:
           limits:
             cpu: "500m"
@@ -50,10 +41,11 @@ spec:
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8081
-          initialDelaySeconds: 40
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8081
-          initialDelaySeconds: 40
+            port: 8080
+          initialDelaySeconds: 30

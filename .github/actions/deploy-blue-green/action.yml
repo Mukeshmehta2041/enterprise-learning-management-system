@@ -1,0 +1,37 @@
+name: 'Deploy Blue-Green to Kubernetes'
+description: 'Deploys LMS services using blue-green strategy to Kubernetes'
+
+inputs:
+  services:
+    description: 'JSON array of service names to deploy (e.g. ["lms-user-service"])'
+    required: true
+  image_tag:
+    description: 'Docker image tag to deploy'
+    required: true
+    default: 'latest'
+  ecr_registry:
+    description: 'ECR registry URL (e.g. 123456789.dkr.ecr.us-east-1.amazonaws.com)'
+    required: false
+    default: ''
+  namespace:
+    description: 'Kubernetes namespace'
+    required: false
+    default: 'lms'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Deploy to Kubernetes (blue-green)
+      shell: bash
+      env:
+        SERVICES_JSON: ${{ inputs.services }}
+        IMAGE_TAG: ${{ inputs.image_tag }}
+        ECR_REGISTRY: ${{ inputs.ecr_registry }}
+        NAMESPACE: ${{ inputs.namespace }}
+      run: |
+        chmod +x scripts/deploy-blue-green.sh
+        ./scripts/deploy-blue-green.sh \
+          "${SERVICES_JSON:-[]}" \
+          "${IMAGE_TAG:-latest}" \
+          "${ECR_REGISTRY}" \
+          "${NAMESPACE:-lms}"
