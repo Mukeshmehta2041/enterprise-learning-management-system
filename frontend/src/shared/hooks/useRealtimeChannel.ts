@@ -21,7 +21,7 @@ export function useRealtimeChannel<T = unknown>({
   const { token } = useAuth()
   const [isConnected, setIsConnected] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
-  const reconnectTimeoutRef = useRef<any>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isConnectedRef = useRef(false)
   const connectRef = useRef<(() => void) | null>(null)
 

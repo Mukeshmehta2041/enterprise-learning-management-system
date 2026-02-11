@@ -153,7 +153,7 @@ function LessonsList({
       <button
         type="button"
         className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center gap-1 ml-3"
-        onClick={() => appendLesson({ title: '', type: 'VIDEO' } as any)}
+        onClick={() => appendLesson({ title: '', type: 'VIDEO' })}
       >
         <Plus size={16} />
         Add Lesson
