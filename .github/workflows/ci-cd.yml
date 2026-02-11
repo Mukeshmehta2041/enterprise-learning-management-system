@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       (needs.detect-changes.result == 'success') &&
-      (needs.detect-changes.outputs.common == 'true' || fromJSON(needs.detect-changes.outputs.services_json || '[]') | length > 0)
+      (needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.services_json != '[]')
     steps:
       - uses: actions/checkout@v4
 
@@ -237,7 +237,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      (needs.detect-changes.outputs.common == 'true' || fromJSON(needs.detect-changes.outputs.services_json || '[]') | length > 0)
+      (needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.services_json != '[]')
     strategy:
       fail-fast: false
       matrix:
@@ -319,7 +319,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      (needs.detect-changes.outputs.common == 'true' || fromJSON(needs.detect-changes.outputs.services_json || '[]') | length > 0)
+      (needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.services_json != '[]')
     steps:
       - uses: actions/checkout@v4
 
@@ -352,8 +352,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.detect-changes.outputs.frontend == 'true' &&
-      (secrets.AWS_ACCESS_KEY_ID != '' && secrets.S3_BUCKET != '')
+      needs.detect-changes.outputs.frontend == 'true'
     steps:
       - name: Download frontend build
         uses: actions/download-artifact@v4
