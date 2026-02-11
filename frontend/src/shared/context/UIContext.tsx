@@ -41,6 +41,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useUI() {
   const context = useContext(UIContext)
   if (context === undefined) {

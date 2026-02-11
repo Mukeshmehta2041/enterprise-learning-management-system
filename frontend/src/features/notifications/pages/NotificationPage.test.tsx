@@ -11,6 +11,9 @@ vi.mock('../api/notificationHooks', () => ({
   useMarkAsRead: vi.fn(),
 }));
 
+const mockedUseNotifications = vi.mocked(useNotifications);
+const mockedUseMarkAsRead = vi.mocked(useMarkAsRead);
+
 const queryClient = new QueryClient();
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -40,14 +43,14 @@ describe('NotificationPage', () => {
   ];
 
   it('renders notifications correctly', () => {
-    (useNotifications as any).mockReturnValue({
+    mockedUseNotifications.mockReturnValue({
       data: mockNotifications,
       isLoading: false,
-    });
-    (useMarkAsRead as any).mockReturnValue({
+    } as any);
+    mockedUseMarkAsRead.mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
-    });
+    } as any);
 
     render(<NotificationPage />, { wrapper });
 
@@ -57,10 +60,10 @@ describe('NotificationPage', () => {
   });
 
   it('filters notifications by unread', () => {
-    (useNotifications as any).mockReturnValue({
+    mockedUseNotifications.mockReturnValue({
       data: mockNotifications,
       isLoading: false,
-    });
+    } as any);
 
     render(<NotificationPage />, { wrapper });
 
@@ -72,10 +75,10 @@ describe('NotificationPage', () => {
   });
 
   it('shows empty state when no results match', () => {
-    (useNotifications as any).mockReturnValue({
+    mockedUseNotifications.mockReturnValue({
       data: mockNotifications,
       isLoading: false,
-    });
+    } as any);
 
     render(<NotificationPage />, { wrapper });
 

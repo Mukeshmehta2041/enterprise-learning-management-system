@@ -1,5 +1,5 @@
 import { screen, waitFor, fireEvent } from '@testing-library/react'
-import { vi, describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { renderWithProviders } from '../testUtils'
 import { AppRoutes } from '@/app/router'
 import { server } from '../mocks/server'

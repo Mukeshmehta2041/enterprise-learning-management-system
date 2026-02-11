@@ -31,6 +31,7 @@ jobs:
       service_payment: ${{ steps.filter.outputs.service_payment }}
       service_analytics: ${{ steps.filter.outputs.service_analytics }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
       k8s_base: ${{ steps.filter.outputs.k8s_base }}
       k8s_manifests: ${{ steps.filter.outputs.k8s_manifests }}
       backend_any: ${{ steps.filter.outputs.backend_any }}
@@ -72,6 +73,8 @@ jobs:
               - 'services/lms-analytics-service/**'
             frontend:
               - 'frontend/**'
+            mobile:
+              - 'mobile/**'
             k8s_base:
               - 'k8s/00-base.yaml'
             k8s_manifests:
@@ -228,6 +231,81 @@ jobs:
           name: frontend-build
           path: frontend/dist
           retention-days: 1
+
+  # --- Mobile build and validation (when mobile changes) ---
+  mobile-build:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.mobile == 'true'
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test -- --passWithNoTests
+
+  # --- EAS Build for mobile (CD only, when mobile changes on main) ---
+  # Requires EXPO_TOKEN secret. Create via: eas login, then eas credentials
+  mobile-eas-build:
+    needs: [detect-changes, mobile-build]
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.mobile == 'true'
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check EAS token
+        id: eas
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -n "$EXPO_TOKEN" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::warning::EXPO_TOKEN secret not set, skipping EAS build"
+          fi
+
+      - name: Setup EAS
+        if: steps.eas.outputs.configured == 'true'
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build (staging)
+        if: steps.eas.outputs.configured == 'true'
+        run: eas build --profile staging --platform all --non-interactive
 
   # --- Docker build and push to ECR (CD only, push to main) ---
   docker-build-push:

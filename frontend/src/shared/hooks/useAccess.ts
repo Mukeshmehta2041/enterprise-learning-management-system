@@ -1,5 +1,5 @@
 import { useAuth } from '@/shared/context/AuthContext'
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 
 export type Role = 'LEARNER' | 'INSTRUCTOR' | 'ADMIN'
 
@@ -9,15 +9,15 @@ export type Resource = 'course' | 'assignment' | 'enrollment' | 'user' | 'analyt
 export function useAccess() {
   const { user, isAuthenticated } = useAuth()
 
-  const hasRole = (roles: Role | Role[]) => {
+  const hasRole = useCallback((roles: Role | Role[]) => {
     if (!user || !isAuthenticated) return false
     const requiredRoles = Array.isArray(roles) ? roles : [roles]
     return requiredRoles.some((role) => user.roles.includes(role))
-  }
+  }, [user, isAuthenticated])
 
-  const isLearner = useMemo(() => hasRole('LEARNER'), [user, isAuthenticated])
-  const isInstructor = useMemo(() => hasRole('INSTRUCTOR'), [user, isAuthenticated])
-  const isAdmin = useMemo(() => hasRole('ADMIN'), [user, isAuthenticated])
+  const isLearner = useMemo(() => hasRole('LEARNER'), [hasRole])
+  const isInstructor = useMemo(() => hasRole('INSTRUCTOR'), [hasRole])
+  const isAdmin = useMemo(() => hasRole('ADMIN'), [hasRole])
 
   /**
    * Simple policy-based check. 

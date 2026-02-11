@@ -87,8 +87,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const selectedTenant = mockTenants[slug] || mockTenants['default'];
       setTenant(selectedTenant);
       applyColors(selectedTenant.branding);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load tenant configuration');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load tenant configuration');
       applyColors(DEFAULT_BRANDING);
     } finally {
       setIsLoading(false);

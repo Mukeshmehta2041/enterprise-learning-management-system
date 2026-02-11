@@ -37,8 +37,8 @@ export function useSubmission(assignmentId: string) {
       try {
         const { data } = await apiClient.get<Submission>(`/submissions/assignment/${assignmentId}`)
         return SubmissionSchema.parse(data)
-      } catch (err: any) {
-        if (err.status === 404) return null
+      } catch (err) {
+        if (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 404) return null
         throw err
       }
     },

@@ -10,7 +10,7 @@ interface RealtimeOptions<T> {
   reconnectInterval?: number
 }
 
-export function useRealtimeChannel<T = any>({
+export function useRealtimeChannel<T = unknown>({
   url,
   onMessage,
   onError,
@@ -22,6 +22,8 @@ export function useRealtimeChannel<T = any>({
   const [isConnected, setIsConnected] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<any>(null)
+  const isConnectedRef = useRef(false)
+  const connectRef = useRef<(() => void) | null>(null)
 
   const connect = useCallback(() => {
     if (!token || eventSourceRef.current) return
@@ -37,19 +39,23 @@ export function useRealtimeChannel<T = any>({
     es.onopen = () => {
       console.log(`Real-time channel opened: ${url}`)
       setIsConnected(true)
+      isConnectedRef.current = true
       onOpen?.()
     }
 
     es.onerror = (e) => {
       console.error(`Real-time channel error: ${url}`, e)
       setIsConnected(false)
+      isConnectedRef.current = false
       onError?.(e)
 
       es.close()
       eventSourceRef.current = null
 
       if (autoReconnect) {
-        reconnectTimeoutRef.current = setTimeout(connect, reconnectInterval)
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectRef.current?.()
+        }, reconnectInterval)
       }
     }
 
@@ -65,6 +71,10 @@ export function useRealtimeChannel<T = any>({
 
     eventSourceRef.current = es
   }, [url, token, onMessage, onError, onOpen, autoReconnect, reconnectInterval])
+
+  useEffect(() => {
+    connectRef.current = connect
+  }, [connect])
 
   const subscribe = useCallback((eventName: string, handler: (data: T) => void) => {
     if (!eventSourceRef.current) return

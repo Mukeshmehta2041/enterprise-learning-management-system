@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePlans, useCreatePayment } from '../api/paymentHooks';
 import { Card, Container } from '@/shared/ui/Layout';
 import { Button } from '@/shared/ui';
@@ -7,6 +8,7 @@ import { Heading4, TextMuted, TextSmall } from '@/shared/ui/Typography';
 import { cn } from '@/shared/utils/cn';
 
 export function PricingPage() {
+  const navigate = useNavigate();
   const { data: plans, isLoading } = usePlans();
   const createPayment = useCreatePayment();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export function PricingPage() {
       const intent = await createPayment.mutateAsync({ planId });
       // In a real app, you'd redirect to Stripe checkout or open a modal
       console.log('Payment intent created:', intent);
-      window.location.href = `/payments/checkout/${intent.id}`;
+      navigate(`/payments/checkout/${intent.id}`);
     } catch (error) {
       console.error('Failed to create payment intent:', error);
     }

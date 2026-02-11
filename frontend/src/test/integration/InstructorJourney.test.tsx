@@ -1,4 +1,4 @@
-import { screen, waitFor, fireEvent } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderWithProviders } from '../testUtils'
 import { AppRoutes } from '@/app/router'

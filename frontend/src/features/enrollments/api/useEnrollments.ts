@@ -25,8 +25,8 @@ export function useEnrollment(courseId: string) {
       try {
         const { data } = await apiClient.get<Enrollment>(`/enrollments/course/${courseId}`)
         return EnrollmentSchema.parse(data)
-      } catch (err: any) {
-        if (err.status === 404) return null
+      } catch (err) {
+        if (err && typeof err === 'object' && 'status' in err && (err as { status: number }).status === 404) return null
         throw err
       }
     },

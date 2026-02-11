@@ -34,6 +34,7 @@ jobs:
       service_payment: ${{ steps.filter.outputs.service_payment }}
       service_analytics: ${{ steps.filter.outputs.service_analytics }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
       services_json: ${{ steps.backend.outputs.services_json }}
     steps:
       - uses: actions/checkout@v4
@@ -72,6 +73,8 @@ jobs:
               - 'services/lms-analytics-service/**'
             frontend:
               - 'frontend/**'
+            mobile:
+              - 'mobile/**'
 
       - name: Compute backend services to build
         id: backend
@@ -201,3 +204,32 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.lms-example.com' }}
         run: npm run build
+
+  mobile-build:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.mobile == 'true'
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test -- --passWithNoTests

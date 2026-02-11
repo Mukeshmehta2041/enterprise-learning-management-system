@@ -30,8 +30,14 @@ export function usePWA() {
     }
 
     // Check if app is already in standalone mode
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
-      setIsStandalone(true)
+    if (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone: boolean }).standalone
+    ) {
+      // Use requestAnimationFrame to avoid synchronous state update in effect
+      requestAnimationFrame(() => {
+        setIsStandalone(true)
+      })
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)

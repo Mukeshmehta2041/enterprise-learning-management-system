@@ -23,6 +23,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 let toastNotify: ToastContextType | null = null;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const toast = {
   success: (msg: string, dur?: number) => toastNotify?.success(msg, dur),
   error: (msg: string, dur?: number) => toastNotify?.error(msg, dur),
@@ -54,8 +55,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     warning: (msg: string, dur?: number) => showToast(msg, 'warning', dur),
   }), [showToast]);
 
-  // Set the global notifier
-  toastNotify = api;
+  // Set the global notifier in an effect to avoid render side-effects
+  React.useEffect(() => {
+    toastNotify = api;
+    return () => {
+      toastNotify = null;
+    };
+  }, [api]);
 
   return (
     <ToastContext.Provider value={api}>
@@ -105,6 +111,7 @@ const ToastItem: React.FC<{ toast: Toast; onClose: () => void }> = ({ toast, onC
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) {

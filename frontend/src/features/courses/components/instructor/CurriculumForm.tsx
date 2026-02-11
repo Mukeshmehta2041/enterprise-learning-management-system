@@ -1,12 +1,13 @@
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, type Control, type UseFormRegister } from 'react-hook-form'
 import { Card, Button, Input, IconButton, Select } from '@/shared/ui'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
+import type { Module } from '@/shared/types/course'
 
 interface CurriculumFormProps {
-  initialModules?: any[]
-  initialData?: any // For compatibility with wizard
-  onSave?: (modules: any) => void
-  onNext?: (data: any) => void // For compatibility with wizard
+  initialModules?: Partial<Module>[]
+  initialData?: { modules?: Partial<Module>[] } // For compatibility with wizard
+  onSave?: (modules: Partial<Module>[]) => void
+  onNext?: (data: { modules: Partial<Module>[] }) => void // For compatibility with wizard
   onBack?: () => void
 }
 
@@ -19,7 +20,7 @@ export function CurriculumForm({
 }: CurriculumFormProps) {
   const modules = initialModules || initialData?.modules || []
 
-  const { register, control, handleSubmit } = useForm({
+  const { register, control, handleSubmit } = useForm<{ modules: Partial<Module>[] }>({
     defaultValues: {
       modules:
         modules.length > 0
@@ -37,7 +38,7 @@ export function CurriculumForm({
     name: 'modules',
   })
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: { modules: Partial<Module>[] }) => {
     if (onSave) onSave(data.modules)
     if (onNext) onNext(data)
   }
@@ -98,7 +99,15 @@ export function CurriculumForm({
   )
 }
 
-function LessonsList({ moduleIndex, control, register }: any) {
+function LessonsList({
+  moduleIndex,
+  control,
+  register
+}: {
+  moduleIndex: number,
+  control: Control<{ modules: Partial<Module>[] }>,
+  register: UseFormRegister<{ modules: Partial<Module>[] }>
+}) {
   const {
     fields: lessonFields,
     append: appendLesson,
@@ -118,7 +127,6 @@ function LessonsList({ moduleIndex, control, register }: any) {
           <div className="flex-shrink-0">
             <Select
               {...register(`modules.${moduleIndex}.lessons.${lessonIndex}.type` as const)}
-              variant="ghost"
               className="w-auto border-none bg-transparent"
               options={[
                 { label: 'Video', value: 'VIDEO' },
@@ -126,12 +134,10 @@ function LessonsList({ moduleIndex, control, register }: any) {
                 { label: 'Quiz', value: 'QUIZ' },
               ]}
               aria-label="Content type"
-              hideLabel
             />
           </div>
           <Input
             placeholder={`Lesson ${lessonIndex + 1} Title`}
-            variant="ghost"
             className="bg-transparent border-transparent focus:bg-white flex-1"
             {...register(`modules.${moduleIndex}.lessons.${lessonIndex}.title` as const)}
           />
@@ -147,7 +153,7 @@ function LessonsList({ moduleIndex, control, register }: any) {
       <button
         type="button"
         className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center gap-1 ml-3"
-        onClick={() => appendLesson({ title: '', type: 'VIDEO' })}
+        onClick={() => appendLesson({ title: '', type: 'VIDEO' } as any)}
       >
         <Plus size={16} />
         Add Lesson

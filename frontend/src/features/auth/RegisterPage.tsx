@@ -23,11 +23,6 @@ export function RegisterPage() {
   const { isAuthenticated } = useAuth()
   const { tenant } = useTenant()
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />
-  }
-
   const {
     register,
     handleSubmit,
@@ -48,6 +43,11 @@ export function RegisterPage() {
       setError('root', { message: error.message || 'Registration failed. Try again.' })
     },
   })
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
 
   const onSubmit = (values: RegisterFormValues) => {
     registerMutation.mutate(values)

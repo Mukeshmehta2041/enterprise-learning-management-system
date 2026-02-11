@@ -3,7 +3,7 @@ import { http, HttpResponse } from 'msw'
 const API_URL = 'http://localhost:3000/api/v1' // This should match what's used in tests
 
 export const handlers = [
-  http.post(`${API_URL}/auth/token`, async ({ request }) => {
+  http.post(`${API_URL}/auth/token`, async () => {
     return HttpResponse.json({
       access_token: 'mock-token',
       token_type: 'Bearer',

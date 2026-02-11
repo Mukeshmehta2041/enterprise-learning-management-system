@@ -9,14 +9,15 @@ import {
   CreditCard,
   X,
   LogOut,
-  GraduationCap
+  GraduationCap,
+  type LucideIcon
 } from 'lucide-react'
 import { IconButton } from '@/shared/ui'
 import { useAuth } from '@/shared/context/AuthContext'
 import { useAccess, type Role } from '@/shared/hooks/useAccess'
 import { useTenant } from '@/shared/context/TenantContext'
 
-const navItems: Array<{ name: string; href: string; icon: any; roles?: Role[] }> = [
+const navItems: Array<{ name: string; href: string; icon: LucideIcon; roles?: Role[] }> = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Courses', href: '/courses', icon: BookOpen },
   { name: 'Assignments', href: '/assignments', icon: ClipboardList },

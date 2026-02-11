@@ -25,6 +25,7 @@ Uses [dorny/paths-filter](https://github.com/dorny/paths-filter) to detect chang
 - `lms-gateway/**` → Gateway only
 - `services/lms-{service}/**` → That service only
 - `frontend/**` → Frontend only
+- `mobile/**` → Mobile (Expo/React Native) app
 - `k8s/**` → Deployment manifests
 
 ## Required Secrets
@@ -40,6 +41,7 @@ Configure in **Settings → Secrets and variables → Actions**:
 | `S3_BUCKET` | For frontend deploy | S3 bucket name for static assets |
 | `CLOUDFRONT_DISTRIBUTION_ID` | Optional | For cache invalidation after frontend deploy |
 | `STAGING_URL` | Optional | URL for smoke tests after deploy |
+| `EXPO_TOKEN` | For mobile EAS | Expo access token for EAS Build (`eas login` then create token) |
 | `AWS_REGION` | Optional | Default: `us-east-1` |
 
 ## Optional Variables
@@ -79,6 +81,12 @@ Deploy logic ([`scripts/deploy-blue-green.sh`](../scripts/deploy-blue-green.sh))
 ./scripts/deploy-blue-green.sh '["lms-user-service"]' latest "" lms
 ```
 
+## Mobile (Expo/React Native)
+
+- **PR CI** ([pr-ci.yml](../.github/workflows/pr-ci.yml)): When `mobile/**` changes, runs lint, typecheck, and Jest tests.
+- **CD** (ci-cd.yml): When `mobile/**` changes on push to main, runs validation then **EAS Build** (staging profile, iOS + Android). Requires `EXPO_TOKEN` secret.
+- To get `EXPO_TOKEN`: Run `eas login`, then create an access token from [expo.dev/settings/access-tokens](https://expo.dev/settings/access-tokens).
+
 ## Deprecation Notice
 
-The legacy [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) remains for backward compatibility but is superseded by `ci-cd.yml`, which provides selective builds and full deployment. Consider disabling or removing `ci.yml` to avoid duplicate runs.
+The legacy [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) remains for backward compatibility but is superseded by `ci-cd.yml` and `pr-ci.yml`. Consider disabling or removing `ci.yml` to avoid duplicate runs.

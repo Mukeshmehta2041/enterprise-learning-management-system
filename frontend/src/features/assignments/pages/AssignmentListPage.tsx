@@ -6,6 +6,7 @@ import { Button } from '@/shared/ui/Button'
 import { Link } from 'react-router-dom'
 import { FileText, Calendar, ChevronRight, AlertCircle } from 'lucide-react'
 import { useUI } from '@/shared/context/UIContext'
+import type { AppError } from '@/shared/types/error'
 
 export function AssignmentListPage() {
   const { data: assignments, isLoading, isError, error, refetch } = useAssignments()
@@ -32,7 +33,7 @@ export function AssignmentListPage() {
         <Card className="p-8 text-center border-dashed border-red-200 bg-red-50">
           <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
           <Heading3 className="text-red-900">Failed to load assignments</Heading3>
-          <TextMuted className="mb-6">{(error as any)?.response?.data?.message || 'Please check your connection'}</TextMuted>
+          <TextMuted className="mb-6">{(error as AppError)?.message || 'Please check your connection'}</TextMuted>
           <Button onClick={() => refetch()}>Try Again</Button>
         </Card>
       )}

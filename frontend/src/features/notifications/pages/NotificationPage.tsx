@@ -112,7 +112,7 @@ export function NotificationPage() {
           <FilterGroup
             options={filterOptions}
             selected={filter}
-            onSelect={(val: any) => setFilter(val)}
+            onSelect={(val) => setFilter(val as any)}
           />
         </div>
       </div>

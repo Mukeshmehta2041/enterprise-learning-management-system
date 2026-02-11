@@ -17,9 +17,9 @@ export function useUrlFilters<T extends Record<string, string | number | undefin
         // Handle conversion based on initial value type
         const initialValue = initialFilters[key]
         if (typeof initialValue === 'number') {
-          (currentFilters as any)[key] = Number(value)
+          (currentFilters as Record<string, unknown>)[key] = Number(value)
         } else {
-          (currentFilters as any)[key] = value
+          (currentFilters as Record<string, unknown>)[key] = value
         }
       }
     })

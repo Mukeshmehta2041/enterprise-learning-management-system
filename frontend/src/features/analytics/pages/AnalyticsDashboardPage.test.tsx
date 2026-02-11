@@ -3,7 +3,7 @@ import { AnalyticsDashboardPage } from './AnalyticsDashboardPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AuthContext } from '@/shared/context/AuthContext';
+import { AuthContext, type AuthContextType } from '@/shared/context/AuthContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,13 +13,18 @@ const queryClient = new QueryClient({
   },
 });
 
-const mockAuthContext = {
-  user: { id: '1', name: 'Instructor', email: 'instructor@example.com', role: 'INSTRUCTOR' },
+const mockAuthContext: AuthContextType = {
+  user: {
+    id: '1',
+    email: 'instructor@example.com',
+    displayName: 'Instructor',
+    roles: ['INSTRUCTOR']
+  },
   token: 'mock-token',
   isAuthenticated: true,
+  isLoading: false,
   login: async () => { },
   logout: () => { },
-  register: async () => { },
 };
 
 describe('AnalyticsDashboardPage', () => {
@@ -30,7 +35,7 @@ describe('AnalyticsDashboardPage', () => {
   const renderPage = () => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={mockAuthContext as any}>
+        <AuthContext.Provider value={mockAuthContext}>
           <MemoryRouter>
             <AnalyticsDashboardPage />
           </MemoryRouter>

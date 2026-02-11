@@ -36,10 +36,9 @@ export function InstructorCourseListPage() {
   // that automatically filters by instructorId on the backend.
   const { data, isLoading } = useCourses(filters)
 
-  const handleFilterChange = (key: keyof CourseFilters, value: any) => {
-    const patch: Partial<CourseFilters> = { [key]: value }
+  const handleFilterChange = (key: keyof CourseFilters, value: unknown) => {
+    const patch: Partial<CourseFilters> = { [key]: value as CourseFilters[keyof CourseFilters] }
     if (key !== 'page') patch.page = 1
-    // @ts-ignore
     setFilters(patch)
   }
 
@@ -82,8 +81,7 @@ export function InstructorCourseListPage() {
             value={`${filters.sort}-${filters.order}`}
             onChange={(e) => {
               const [sort, order] = e.target.value.split('-')
-              // @ts-ignore
-              setFilters({ sort, order, page: 1 })
+              setFilters({ sort, order: order as 'asc' | 'desc', page: 1 })
             }}
             options={[
               { label: 'Newest First', value: 'createdAt-desc' },

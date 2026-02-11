@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { useCreateCourse } from '../../api/useCreateCourse'
 import { useUI } from '@/shared/context/UIContext'
+import type { CourseDetail } from '@/shared/types/course'
 
 const steps = [
   { title: 'Information', description: 'Basic course details' },
@@ -17,11 +18,11 @@ const steps = [
 export function CourseCreatePage() {
   const [currentStep, setCurrentStep] = useState(1)
   const { setBreadcrumbs } = useUI()
-  const [courseData, setCourseData] = useState<any>({
+  const [courseData, setCourseData] = useState<Partial<CourseDetail>>({
     title: '',
     description: '',
     category: '',
-    level: '',
+    level: 'BEGINNER',
     price: 0,
     modules: []
   })
@@ -39,7 +40,7 @@ export function CourseCreatePage() {
   const createCourse = useCreateCourse()
 
   const handleNext = (data: any) => {
-    setCourseData((prev: any) => ({ ...prev, ...data }))
+    setCourseData((prev) => ({ ...prev, ...data }))
     setCurrentStep((prev) => Math.min(prev + 1, steps.length))
   }
 
@@ -92,11 +93,11 @@ export function CourseCreatePage() {
               </div>
             )}
             <CourseReview
-              data={courseData}
+              data={courseData as any}
               onBack={handleBack}
               isSubmitting={createCourse.isPending}
               onSubmit={() => {
-                createCourse.mutate(courseData)
+                createCourse.mutate(courseData as any)
               }}
             />
           </div>

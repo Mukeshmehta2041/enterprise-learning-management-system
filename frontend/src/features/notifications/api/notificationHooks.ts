@@ -25,7 +25,7 @@ export const useRealtimeNotifications = () => {
   const queryClient = useQueryClient();
   const { success } = useToast();
 
-  const { subscribe, isConnected } = useRealtimeChannel({
+  const { subscribe, isConnected } = useRealtimeChannel<Notification>({
     url: '/api/v1/notifications/stream'
   });
 

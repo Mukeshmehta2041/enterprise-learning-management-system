@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { UserSchema, type User } from '@/shared/types/user'
 import { apiClient } from '@/shared/api/client'
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null
   token: string | null
   isAuthenticated: boolean

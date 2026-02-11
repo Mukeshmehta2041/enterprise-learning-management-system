@@ -20,6 +20,7 @@ import type { CourseFilters } from '@/shared/types/course'
 import { useUrlFilters } from '@/shared/hooks/useUrlFilters'
 import { useAccess } from '@/shared/hooks/useAccess'
 import { useNavigate } from 'react-router-dom'
+import type { AppError } from '@/shared/types/error'
 
 const INITIAL_FILTERS: CourseFilters = {
   page: 1,
@@ -60,11 +61,10 @@ export function CourseListPage() {
 
   const { data, isLoading, isError, error, refetch } = useCourses(filters)
 
-  const handleFilterChange = (key: keyof CourseFilters, value: any) => {
+  const handleFilterChange = (key: keyof CourseFilters, value: unknown) => {
     // Reset page to 1 on any filter change except page itself
-    const patch: Partial<CourseFilters> = { [key]: value }
+    const patch: Partial<CourseFilters> = { [key]: value as CourseFilters[keyof CourseFilters] }
     if (key !== 'page') patch.page = 1
-    // @ts-ignore - setFilters type handling
     setFilters(patch)
   }
 
@@ -126,7 +126,6 @@ export function CourseListPage() {
             value={`${filters.sort}-${filters.order}`}
             onChange={(e) => {
               const [sort, order] = e.target.value.split('-')
-              // @ts-ignore
               setFilters({ sort, order: order as 'asc' | 'desc', page: 1 })
             }}
             options={[
@@ -153,7 +152,6 @@ export function CourseListPage() {
         filters={activeFilters}
         onRemove={(key) => handleFilterChange(key as keyof CourseFilters, '')}
         onClearAll={() => {
-          // @ts-ignore
           setFilters({
             category: '',
             level: '',
@@ -186,7 +184,7 @@ export function CourseListPage() {
           <AlertCircle size={48} className="mb-4" />
           <Heading4>Failed to load courses</Heading4>
           <TextMuted className="mb-6">
-            {(error as any)?.response?.data?.message ||
+            {(error as AppError)?.message ||
               'An unexpected error occurred'}
           </TextMuted>
           <Button onClick={() => refetch()}>Try Again</Button>
@@ -211,7 +209,6 @@ export function CourseListPage() {
                   icon={AlertCircle}
                   actionLabel="Reset Filters"
                   onAction={() => {
-                    // @ts-ignore
                     setFilters(INITIAL_FILTERS)
                   }}
                 />

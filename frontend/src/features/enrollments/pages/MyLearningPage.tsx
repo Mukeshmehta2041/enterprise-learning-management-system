@@ -5,6 +5,7 @@ import { Container, Heading1, TextMuted, Heading4, Button, EmptyState } from '@/
 import { useNavigate } from 'react-router-dom'
 import { GraduationCap, AlertCircle } from 'lucide-react'
 import { useUI } from '@/shared/context/UIContext'
+import type { AppError } from '@/shared/types/error'
 
 export function MyLearningPage() {
   const { data: enrollments, isLoading, isError, error, refetch } = useEnrollments()
@@ -29,7 +30,7 @@ export function MyLearningPage() {
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-slate-200 rounded-xl">
           <AlertCircle size={48} className="text-red-500 mb-4" />
           <Heading4>Failed to load enrollments</Heading4>
-          <TextMuted className="mb-6">{(error as any)?.response?.data?.message || 'Please check your connection and try again'}</TextMuted>
+          <TextMuted className="mb-6">{(error as AppError)?.message || 'Please check your connection and try again'}</TextMuted>
           <Button onClick={() => refetch()}>Try Again</Button>
         </div>
       )}

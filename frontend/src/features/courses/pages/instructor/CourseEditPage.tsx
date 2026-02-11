@@ -13,6 +13,7 @@ import {
 import { useCourse, useUpdateCourse, usePublishCourse, useSaveAsDraft } from '../../api/useCourses'
 import { useUI } from '@/shared/context/UIContext'
 import { BasicInfoForm } from '../../components/instructor/BasicInfoForm'
+import type { CourseDetail } from '@/shared/types/course'
 import { CurriculumForm } from '../../components/instructor/CurriculumForm'
 import { Save, Rocket, Settings, List, Info, DollarSign } from 'lucide-react'
 import { useToast } from '@/shared/context/ToastContext'
@@ -43,7 +44,7 @@ export function CourseEditPage() {
     try {
       await publishCourseMutation.mutateAsync(courseId!)
       success('Course published successfully')
-    } catch (error) {
+    } catch {
       showError('Failed to publish course')
     }
   }
@@ -52,19 +53,19 @@ export function CourseEditPage() {
     try {
       await saveAsDraftMutation.mutateAsync(courseId!)
       success('Course saved as draft')
-    } catch (error) {
+    } catch {
       showError('Failed to save draft')
     }
   }
 
-  const handleUpdateInfo = async (data: any) => {
+  const handleUpdateInfo = async (data: unknown) => {
     try {
       await updateCourseMutation.mutateAsync({
         id: courseId!,
-        data,
+        data: data as Partial<CourseDetail>,
       })
       success('Course information updated')
-    } catch (error) {
+    } catch {
       showError('Failed to update course information')
     }
   }

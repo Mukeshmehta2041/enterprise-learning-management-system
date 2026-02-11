@@ -62,7 +62,7 @@ export function FilterChips({
 interface FilterGroupProps {
   options: { label: string; value: string }[]
   selected: string
-  onSelect: (value: any) => void
+  onSelect: (value: string) => void
   className?: string
 }
 

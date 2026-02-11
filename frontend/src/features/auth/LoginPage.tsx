@@ -24,11 +24,6 @@ export function LoginPage() {
   const { login, isAuthenticated } = useAuth()
   const { tenant } = useTenant()
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />
-  }
-
   const {
     register,
     handleSubmit,
@@ -50,13 +45,18 @@ export function LoginPage() {
     onSuccess: async (data) => {
       await login(data.access_token)
       // Redirect will be handled by logic or default to root which branches
-      const from = (location.state as any)?.from?.pathname || '/'
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
       navigate(from, { replace: true })
     },
     onError: (error: AppError) => {
       setError('root', { message: error.message || 'Invalid email or password' })
     },
   })
+
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />
+  }
 
   const onSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values)
