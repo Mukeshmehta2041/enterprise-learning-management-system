@@ -7,7 +7,16 @@ import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 import { useCreateCourse } from '../../api/useCreateCourse'
 import { useUI } from '@/shared/context/UIContext'
-import type { CourseDetail } from '@/shared/types/course'
+import type { ModuleInput } from '@/shared/types/course'
+
+type CourseFormData = {
+  title?: string
+  description?: string
+  category?: string
+  level?: string
+  price?: number
+  modules?: ModuleInput[]
+}
 
 const steps = [
   { title: 'Information', description: 'Basic course details' },
@@ -18,7 +27,7 @@ const steps = [
 export function CourseCreatePage() {
   const [currentStep, setCurrentStep] = useState(1)
   const { setBreadcrumbs } = useUI()
-  const [courseData, setCourseData] = useState<Partial<CourseDetail>>({
+  const [courseData, setCourseData] = useState<CourseFormData>({
     title: '',
     description: '',
     category: '',
@@ -39,7 +48,7 @@ export function CourseCreatePage() {
   const navigate = useNavigate()
   const createCourse = useCreateCourse()
 
-  const handleNext = (data: any) => {
+  const handleNext = (data: Partial<CourseFormData>) => {
     setCourseData((prev) => ({ ...prev, ...data }))
     setCurrentStep((prev) => Math.min(prev + 1, steps.length))
   }
@@ -93,11 +102,29 @@ export function CourseCreatePage() {
               </div>
             )}
             <CourseReview
-              data={courseData as any}
+              data={courseData}
               onBack={handleBack}
               isSubmitting={createCourse.isPending}
               onSubmit={() => {
-                createCourse.mutate(courseData as any)
+                // Ensure all required fields are present before submitting
+                if (courseData.title && courseData.description && courseData.category && 
+                    courseData.level && courseData.price !== undefined && courseData.modules) {
+                  const submitData = {
+                    title: courseData.title,
+                    description: courseData.description,
+                    category: courseData.category,
+                    level: courseData.level,
+                    price: courseData.price,
+                    modules: courseData.modules.map(m => ({
+                      title: m.title || '',
+                      lessons: (m.lessons || []).map(l => ({
+                        title: l.title || '',
+                        type: l.type || 'VIDEO'
+                      }))
+                    }))
+                  }
+                  createCourse.mutate(submitData)
+                }
               }}
             />
           </div>
