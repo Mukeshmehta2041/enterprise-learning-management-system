@@ -21,7 +21,7 @@ export default function HomeScreen() {
     queryKey: ['enrollments', 'me'],
     queryFn: async () => {
       const response = await apiClient.get('/api/v1/enrollments')
-      return response.data.items || []
+      return response.data.items || response.data.content || []
     },
   })
 

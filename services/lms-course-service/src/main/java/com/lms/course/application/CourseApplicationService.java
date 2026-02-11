@@ -3,10 +3,12 @@ package com.lms.course.application;
 import com.lms.course.api.*;
 import com.lms.course.domain.*;
 import com.lms.course.infrastructure.CourseEventPublisher;
+import com.lms.common.exception.BadRequestException;
 import com.lms.common.exception.ForbiddenException;
 import com.lms.common.exception.ResourceNotFoundException;
 import com.lms.common.audit.AuditLogger;
 import com.lms.common.features.FeatureFlagService;
+import com.lms.course.infrastructure.EnrollmentServiceClient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +46,7 @@ public class CourseApplicationService {
   private final CourseEventPublisher courseEventPublisher;
   private final AuditLogger auditLogger;
   private final FeatureFlagService featureFlagService;
+  private final EnrollmentServiceClient enrollmentServiceClient;
 
   @Value("${lms.course.max-total:100}")
   private int maxTotalCourses;
@@ -55,7 +58,8 @@ public class CourseApplicationService {
       CourseCacheService courseCacheService,
       CourseEventPublisher courseEventPublisher,
       AuditLogger auditLogger,
-      FeatureFlagService featureFlagService) {
+      FeatureFlagService featureFlagService,
+      EnrollmentServiceClient enrollmentServiceClient) {
     this.courseRepository = courseRepository;
     this.moduleRepository = moduleRepository;
     this.lessonRepository = lessonRepository;
@@ -64,6 +68,7 @@ public class CourseApplicationService {
     this.courseEventPublisher = courseEventPublisher;
     this.auditLogger = auditLogger;
     this.featureFlagService = featureFlagService;
+    this.enrollmentServiceClient = enrollmentServiceClient;
   }
 
   public void cleanupUserData(UUID userId) {
@@ -82,7 +87,7 @@ public class CourseApplicationService {
       Set<String> roles) {
 
     int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
-    int pageNumber = (page != null) ? page : 1;
+    int pageNumber = (page != null && page > 0) ? page : 1;
 
     Specification<Course> spec = (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
@@ -148,7 +153,7 @@ public class CourseApplicationService {
   @Transactional(readOnly = true)
   public CourseListResponse listMyCourses(String cursor, Integer limit, Integer page, UUID currentUserId) {
     int pageSize = limit != null ? Math.min(limit, MAX_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
-    int pageNumber = (page != null) ? page : 1;
+    int pageNumber = (page != null && page > 0) ? page : 1;
     Instant cursorTime = (cursor != null && !cursor.isBlank())
         ? Instant.parse(cursor)
         : Instant.now().plusSeconds(60);
@@ -173,13 +178,19 @@ public class CourseApplicationService {
 
   @Transactional(readOnly = true)
   public CourseDetailResponse getCourseById(UUID courseId, UUID currentUserId, Set<String> roles) {
-    CourseDetailResponse course = courseCacheService.getCourseDetail(courseId);
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
 
     if (!canViewCourse(course, currentUserId, roles)) {
       throw new ForbiddenException("No access to this course");
     }
 
-    return course;
+    boolean hasAccess = roles.contains("ADMIN") || courseRepository.isUserInstructor(courseId, currentUserId);
+    if (!hasAccess && currentUserId != null) {
+      hasAccess = enrollmentServiceClient.isUserEnrolled(currentUserId, courseId);
+    }
+
+    return mapToCourseDetailResponse(course, hasAccess);
   }
 
   public CourseDetailResponse createCourse(CreateCourseRequest request, UUID currentUserId, Set<String> roles) {
@@ -253,7 +264,7 @@ public class CourseApplicationService {
     log.info("Course created: {} by user: {}", courseId, currentUserId);
     auditLogger.logSuccess("COURSE_CREATE", "COURSE", courseId.toString(), Map.of("title", saved.getTitle()));
 
-    return courseCacheService.mapToCourseDetailResponse(saved);
+    return mapToCourseDetailResponse(saved, true);
   }
 
   public CourseDetailResponse updateCourse(UUID courseId, UpdateCourseRequest request,
@@ -292,7 +303,7 @@ public class CourseApplicationService {
     auditLogger.logSuccess("COURSE_UPDATE", "COURSE", courseId.toString(),
         Map.of("status", updated.getStatus().name()));
 
-    return courseCacheService.mapToCourseDetailResponse(updated);
+    return mapToCourseDetailResponse(updated, true);
   }
 
   public CourseDetailResponse publishCourse(UUID courseId, UUID currentUserId, Set<String> roles) {
@@ -309,7 +320,7 @@ public class CourseApplicationService {
     courseCacheService.evictCourse(courseId);
     auditLogger.logSuccess("COURSE_PUBLISH", "COURSE", courseId.toString());
 
-    return courseCacheService.mapToCourseDetailResponse(updated);
+    return mapToCourseDetailResponse(updated, true);
   }
 
   public CourseDetailResponse saveAsDraft(UUID courseId, UUID currentUserId, Set<String> roles) {
@@ -326,7 +337,7 @@ public class CourseApplicationService {
     courseCacheService.evictCourse(courseId);
     auditLogger.logSuccess("COURSE_SAVE_DRAFT", "COURSE", courseId.toString());
 
-    return courseCacheService.mapToCourseDetailResponse(updated);
+    return mapToCourseDetailResponse(updated, true);
   }
 
   @Transactional
@@ -342,7 +353,7 @@ public class CourseApplicationService {
     auditLogger.logSuccess("COURSE_STATUS_MODERATE", "COURSE", courseId.toString(),
         Map.of("oldStatus", oldStatus, "newStatus", status));
 
-    return courseCacheService.mapToCourseDetailResponse(updated);
+    return mapToCourseDetailResponse(updated, true);
   }
 
   public void deleteCourse(UUID courseId, UUID currentUserId, Set<String> roles) {
@@ -375,7 +386,7 @@ public class CourseApplicationService {
     CourseModule saved = moduleRepository.save(module);
     log.info("Module created: {} in course: {}", moduleId, courseId);
 
-    return mapToModuleResponse(saved);
+    return mapToModuleResponse(saved, true);
   }
 
   public ModuleResponse updateModule(UUID courseId, UUID moduleId, UpdateModuleRequest request,
@@ -400,7 +411,7 @@ public class CourseApplicationService {
     CourseModule updated = moduleRepository.save(module);
     log.info("Module updated: {}", moduleId);
 
-    return mapToModuleResponse(updated);
+    return mapToModuleResponse(updated, true);
   }
 
   public LessonResponse createLesson(UUID courseId, UUID moduleId, CreateLessonRequest request,
@@ -422,7 +433,7 @@ public class CourseApplicationService {
     Lesson saved = lessonRepository.save(lesson);
     log.info("Lesson created: {} in module: {}", lessonId, moduleId);
 
-    return mapToLessonResponse(saved);
+    return mapToLessonResponse(saved, true);
   }
 
   public LessonResponse updateLesson(UUID courseId, UUID moduleId, UUID lessonId,
@@ -449,21 +460,64 @@ public class CourseApplicationService {
     if (request.sortOrder() != null) {
       lesson.setSortOrder(request.sortOrder());
     }
+    if (request.isPreview() != null) {
+      lesson.setPreview(request.isPreview());
+    }
+    if (request.status() != null) {
+      lesson.setStatus(request.status());
+    }
 
     Lesson updated = lessonRepository.save(lesson);
     log.info("Lesson updated: {}", lessonId);
 
-    return mapToLessonResponse(updated);
+    return mapToLessonResponse(updated, true);
+  }
+
+  @Transactional
+  public void reorderLessons(UUID courseId, UUID moduleId, BulkReorderRequest request,
+      UUID currentUserId, Set<String> roles) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    if (!canModifyCourse(course, currentUserId, roles)) {
+      throw new ForbiddenException("Not authorized to modify this course");
+    }
+
+    for (BulkReorderRequest.ReorderItem item : request.items()) {
+      Lesson lesson = lessonRepository.findById(item.id())
+          .orElseThrow(() -> new ResourceNotFoundException("Lesson not found: " + item.id()));
+      if (!lesson.getModule().getId().equals(moduleId)) {
+        throw new BadRequestException("Lesson " + item.id() + " does not belong to module " + moduleId);
+      }
+      lesson.setSortOrder(item.sortOrder());
+      lessonRepository.save(lesson);
+    }
+    log.info("Lessons reordered in module: {}", moduleId);
+  }
+
+  @Transactional
+  public void deleteLesson(UUID courseId, UUID moduleId, UUID lessonId, UUID currentUserId, Set<String> roles) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    if (!canModifyCourse(course, currentUserId, roles)) {
+      throw new ForbiddenException("Not authorized to modify this course");
+    }
+
+    Lesson lesson = lessonRepository.findById(lessonId)
+        .orElseThrow(() -> new ResourceNotFoundException("Lesson not found: " + lessonId));
+
+    if (!lesson.getModule().getId().equals(moduleId)) {
+      throw new BadRequestException("Lesson does not belong to module");
+    }
+
+    lessonRepository.delete(lesson);
+    log.info("Lesson deleted: {}", lessonId);
   }
 
   @Transactional(readOnly = true)
   public List<ModuleResponse> getModulesByCourse(UUID courseId, UUID currentUserId, Set<String> roles) {
-    CourseDetailResponse course = courseCacheService.getCourseDetail(courseId);
-
-    if (!canViewCourse(course, currentUserId, roles)) {
-      throw new ForbiddenException("No access to this course");
-    }
-
+    CourseDetailResponse course = getCourseById(courseId, currentUserId, roles);
     return course.modules();
   }
 
@@ -529,13 +583,13 @@ public class CourseApplicationService {
         course.getUpdatedAt());
   }
 
-  private CourseDetailResponse mapToCourseDetailResponse(Course course) {
+  private CourseDetailResponse mapToCourseDetailResponse(Course course, boolean hasAccess) {
     List<UUID> instructorIds = course.getInstructors().stream()
         .map(CourseInstructor::getUserId)
         .collect(Collectors.toList());
 
     List<ModuleResponse> modules = course.getModules().stream()
-        .map(this::mapToModuleResponse)
+        .map(m -> mapToModuleResponse(m, hasAccess))
         .collect(Collectors.toList());
 
     return new CourseDetailResponse(
@@ -553,11 +607,11 @@ public class CourseApplicationService {
         course.getUpdatedAt());
   }
 
-  private ModuleResponse mapToModuleResponse(CourseModule module) {
+  private ModuleResponse mapToModuleResponse(CourseModule module, boolean hasAccess) {
     if (module == null)
       return null;
     List<LessonResponse> lessons = module.getLessons() != null ? module.getLessons().stream()
-        .map(this::mapToLessonResponse)
+        .map(l -> mapToLessonResponse(l, hasAccess))
         .collect(Collectors.toList()) : List.of();
 
     return new ModuleResponse(
@@ -569,7 +623,7 @@ public class CourseApplicationService {
         module.getUpdatedAt());
   }
 
-  private LessonResponse mapToLessonResponse(Lesson lesson) {
+  private LessonResponse mapToLessonResponse(Lesson lesson, boolean hasAccess) {
     if (lesson == null)
       return null;
     return new LessonResponse(
@@ -578,6 +632,9 @@ public class CourseApplicationService {
         lesson.getType() != null ? lesson.getType().name() : "VIDEO",
         lesson.getDurationMinutes(),
         lesson.getSortOrder(),
+        lesson.isPreview(),
+        lesson.isPreview() || hasAccess,
+        lesson.getStatus(),
         lesson.getCreatedAt(),
         lesson.getUpdatedAt());
   }

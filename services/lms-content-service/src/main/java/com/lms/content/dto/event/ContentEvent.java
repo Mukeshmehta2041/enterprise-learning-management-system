@@ -13,11 +13,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContentEvent {
-    private UUID eventId;
-    private String eventType; // ContentPublished, ContentUpdated, itc.
-    private UUID contentItemId;
-    private UUID courseId;
-    private String title;
-    private String contentType;
-    private OffsetDateTime timestamp;
+  private UUID eventId;
+  private String eventType; // ContentPublished, ContentUpdated, itc.
+  private UUID contentItemId;
+  private UUID courseId;
+  private String title;
+  private String contentType;
+  private String storagePath;
+  private OffsetDateTime timestamp;
 }

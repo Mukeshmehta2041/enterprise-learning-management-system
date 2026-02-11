@@ -9,7 +9,7 @@ export function useCourses(params?: { search?: string; status?: string; level?: 
       const response = await apiClient.get<PageResponse<Course>>('/api/v1/courses', {
         params: { ...params },
       })
-      return response.data.items || []
+      return response.data.items || response.data.content || []
     },
   })
 }
@@ -19,7 +19,7 @@ export function useInfiniteCourses(
 ) {
   return useInfiniteQuery({
     queryKey: ['courses', 'infinite', params],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = 1 }) => {
       const response = await apiClient.get<PageResponse<Course>>('/api/v1/courses', {
         params: {
           ...params,
@@ -29,9 +29,11 @@ export function useInfiniteCourses(
       })
       return response.data
     },
-    initialPageParam: 0,
+    initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      return lastPage.number < lastPage.totalPages - 1 ? lastPage.number + 1 : undefined
+      const currentPage = lastPage.number
+      const totalPages = lastPage.totalPages
+      return currentPage < totalPages ? currentPage + 1 : undefined
     },
   })
 }

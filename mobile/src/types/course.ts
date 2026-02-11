@@ -1,16 +1,21 @@
 export interface Course {
   id: string
   title: string
+  slug: string
   description: string
   thumbnailUrl?: string
-  instructorId: string
-  instructorName: string
+  instructorId?: string
+  instructorIds?: string[]
+  instructorName?: string
   price: number
   level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-  averageRating: number
-  enrollmentCount: number
-  tags: string[]
+  averageRating?: number
+  rating?: number
+  enrollmentCount?: number
+  tags?: string[]
+  createdAt: string
+  updatedAt: string
   modules?: Module[]
 }
 

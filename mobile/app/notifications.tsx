@@ -18,7 +18,7 @@ export default function NotificationsScreen() {
     queryKey: ['notifications', 'list'],
     queryFn: async () => {
       const response = await apiClient.get('/api/v1/notifications')
-      return response.data.items || []
+      return response.data.items || response.data.content || []
     },
   })
 
@@ -38,34 +38,37 @@ export default function NotificationsScreen() {
     },
   })
 
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      className={`px-6 py-4 border-b border-slate-50 flex-row items-center ${item.read ? 'bg-white' : 'bg-blue-50/30'}`}
-      onPress={() => !item.read && markReadMutation.mutate(item.id)}
-    >
-      <View
-        className={`w-10 h-10 rounded-full items-center justify-center mr-4 ${item.read ? 'bg-slate-100' : 'bg-primary/20'}`}
+  const renderItem = ({ item }: { item: any }) => {
+    if (!item) return null
+    return (
+      <TouchableOpacity
+        className={`px-6 py-4 border-b border-slate-50 flex-row items-center ${item.read ? 'bg-white' : 'bg-blue-50/30'}`}
+        onPress={() => !item.read && markReadMutation.mutate(item.id)}
       >
-        <Ionicons
-          name={item.type === 'COURSE_UPDATE' ? 'book' : 'notifications'}
-          size={20}
-          color={item.read ? '#64748b' : '#4f46e5'}
-        />
-      </View>
-      <View className="flex-1">
-        <AppText variant="body" weight={item.read ? 'normal' : 'semibold'}>
-          {item.title}
-        </AppText>
-        <AppText variant="small" color="muted" numberOfLines={2}>
-          {item.message}
-        </AppText>
-        <AppText variant="small" color="muted" className="mt-1 text-[10px]">
-          {new Date(item.createdAt).toLocaleString()}
-        </AppText>
-      </View>
-      {!item.read && <View className="w-2 h-2 bg-primary rounded-full ml-2" />}
-    </TouchableOpacity>
-  )
+        <View
+          className={`w-10 h-10 rounded-full items-center justify-center mr-4 ${item.read ? 'bg-slate-100' : 'bg-primary/20'}`}
+        >
+          <Ionicons
+            name={item.type === 'COURSE_UPDATE' ? 'book' : 'notifications'}
+            size={20}
+            color={item.read ? '#64748b' : '#4f46e5'}
+          />
+        </View>
+        <View className="flex-1">
+          <AppText variant="body" weight={item.read ? 'normal' : 'semibold'}>
+            {item.title}
+          </AppText>
+          <AppText variant="small" color="muted" numberOfLines={2}>
+            {item.message}
+          </AppText>
+          <AppText variant="small" color="muted" className="mt-1 text-[10px]">
+            {new Date(item.createdAt).toLocaleString()}
+          </AppText>
+        </View>
+        {!item.read && <View className="w-2 h-2 bg-primary rounded-full ml-2" />}
+      </TouchableOpacity>
+    )
+  }
 
   return (
     <View className="flex-1 bg-white">
@@ -73,7 +76,7 @@ export default function NotificationsScreen() {
       <FlatList
         data={notifications}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || index.toString()}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
         ListEmptyComponent={
           !isLoading ? (

@@ -47,6 +47,9 @@
 | `course:create` | No | Yes | Yes |
 | `course:update` | No | Own | Any |
 | `course:delete` | No | Own | Any |
+| `content:read` | Enrolled | Own + published | All |
+| `content:write` | No | Own | Any |
+| `content:playback` | Enrolled | Own + published | All |
 | `enrollment:create` | Yes | Yes | Yes |
 | `enrollment:read` | Own | Own + course students | All |
 | `assignment:create` | No | Own course | Any |

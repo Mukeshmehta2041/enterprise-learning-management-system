@@ -28,7 +28,7 @@ export default function CoursesScreen() {
     })
 
   const courses = useMemo(() => {
-    return data?.pages.flatMap((page) => page.items) || []
+    return data?.pages.flatMap((page) => page.items || page.content || []).filter(Boolean) || []
   }, [data])
 
   const activeFiltersCount = Object.values(filters).filter(
@@ -39,11 +39,14 @@ export default function CoursesScreen() {
     router.push(`/course/${id}`)
   }, [router])
 
-  const renderItem = useCallback(({ item }: { item: any }) => (
-    <View className="px-6">
-      <CourseListItem course={item} onPress={() => handleCoursePress(item.id)} />
-    </View>
-  ), [handleCoursePress])
+  const renderItem = useCallback(({ item }: { item: any }) => {
+    if (!item) return null
+    return (
+      <View className="px-6">
+        <CourseListItem course={item} onPress={() => handleCoursePress(item.id)} />
+      </View>
+    )
+  }, [handleCoursePress])
 
   const renderFooter = useCallback(() => {
     if (!isFetchingNextPage) return <View className="h-10" />
@@ -108,7 +111,7 @@ export default function CoursesScreen() {
       ) : (
         <FlatList
           data={courses}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => item?.id || index.toString()}
           renderItem={renderItem}
           ListEmptyComponent={renderEmpty}
           ListFooterComponent={renderFooter}

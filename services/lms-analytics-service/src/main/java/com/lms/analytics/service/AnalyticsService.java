@@ -3,6 +3,7 @@ package com.lms.analytics.service;
 import com.lms.analytics.dto.CourseAnalyticsDTO;
 import com.lms.analytics.dto.EnrollmentTrendDTO;
 import com.lms.analytics.dto.GlobalStatsDTO;
+import com.lms.analytics.dto.PlaybackTelemetryRequest;
 import com.lms.analytics.model.EnrollmentAggregate;
 import com.lms.analytics.repository.EnrollmentAggregateRepository;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,6 +26,20 @@ public class AnalyticsService {
 
   @Autowired
   private MeterRegistry meterRegistry;
+
+  public void recordPlaybackEvent(PlaybackTelemetryRequest request) {
+    log.info("Recording playback event: {} for user: {} on lesson: {}",
+        request.getEventType(), request.getUserId(), request.getLessonId());
+
+    meterRegistry.counter("lms.playback.events",
+        "type", request.getEventType().name(),
+        "courseId", request.getCourseId() != null ? request.getCourseId().toString() : "unknown"
+    ).increment();
+
+    // If it's a HEARTBEAT or PAUSE, we might want to update the 'resume' position.
+    // However, the resume position is technically 'progress', so it belongs in the Enrollment Service.
+    // The Analytics Service could forward this event to Kafka for the Enrollment Service to consume.
+  }
 
   @Transactional
   public void handleEvent(Map<String, Object> event) {

@@ -32,6 +32,12 @@ public class Lesson {
   @Column(name = "sort_order", nullable = false)
   private Integer sortOrder = 0;
 
+  @Column(name = "is_preview", nullable = false)
+  private boolean isPreview = false;
+
+  @Column(name = "status", nullable = false, length = 50)
+  private String status = "PUBLISHED";
+
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -95,6 +101,22 @@ public class Lesson {
 
   public void setSortOrder(Integer sortOrder) {
     this.sortOrder = sortOrder;
+  }
+
+  public boolean isPreview() {
+    return isPreview;
+  }
+
+  public void setPreview(boolean preview) {
+    isPreview = preview;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
   }
 
   public Instant getCreatedAt() {

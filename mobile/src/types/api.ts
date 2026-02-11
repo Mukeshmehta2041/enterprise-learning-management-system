@@ -1,9 +1,11 @@
 export interface PageResponse<T> {
-  items: T[]
+  items?: T[]
+  content?: T[]
   totalElements: number
   totalPages: number
   size: number
   number: number
+  nextCursor?: string | null
 }
 
 export interface ApiError {

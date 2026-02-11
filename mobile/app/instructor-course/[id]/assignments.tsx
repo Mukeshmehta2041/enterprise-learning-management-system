@@ -85,7 +85,7 @@ export default function InstructorAssignmentsScreen() {
       <FlatList
         data={assignments}
         renderItem={renderAssignmentItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || index.toString()}
         contentContainerStyle={{ paddingTop: 16, paddingBottom: 24 }}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
         ListEmptyComponent={() =>

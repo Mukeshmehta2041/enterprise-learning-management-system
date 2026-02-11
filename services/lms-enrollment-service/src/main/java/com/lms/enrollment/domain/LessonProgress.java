@@ -28,6 +28,9 @@ public class LessonProgress {
   @Column(name = "completed_at")
   private Instant completedAt;
 
+  @Column(name = "last_position_secs")
+  private Double lastPositionSecs = 0.0;
+
   @LastModifiedDate
   @Column(name = "last_accessed_at", nullable = false)
   private Instant lastAccessedAt;
@@ -71,5 +74,9 @@ public class LessonProgress {
       this.completed = true;
       this.completedAt = Instant.now();
     }
+  }
+
+  public void setLastPositionSecs(Double lastPositionSecs) {
+    this.lastPositionSecs = lastPositionSecs;
   }
 }

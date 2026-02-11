@@ -105,7 +105,7 @@ export default function ChatScreen() {
         ref={flatListRef}
         data={messages}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || index.toString()}
         contentContainerStyle={{ padding: 16 }}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-20">

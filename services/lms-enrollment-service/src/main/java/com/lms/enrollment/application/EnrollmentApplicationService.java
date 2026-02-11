@@ -220,6 +220,10 @@ public class EnrollmentApplicationService {
       progress.markCompleted();
     }
 
+    if (request.positionSecs() != null) {
+      progress.setLastPositionSecs(request.positionSecs());
+    }
+
     lessonProgressRepository.save(progress);
 
     // Update aggregate progress
@@ -247,6 +251,10 @@ public class EnrollmentApplicationService {
         enrollment.getEnrolledAt(),
         enrollment.getCompletedAt(),
         enrollment.getUpdatedAt());
+  }
+
+  public boolean isUserEnrolled(UUID userId, UUID courseId) {
+    return enrollmentRepository.existsByUserIdAndCourseId(userId, courseId);
   }
 
   public static class ConflictException extends RuntimeException {

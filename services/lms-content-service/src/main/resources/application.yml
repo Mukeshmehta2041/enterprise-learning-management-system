@@ -58,6 +58,12 @@ springdoc:
 lms:
   course-service:
     url: ${LMS_COURSE_SERVICE_URL:http://lms-course-service:8083}
+  storage:
+    bucket: ${LMS_STORAGE_BUCKET:lms-media}
+    endpoint: ${LMS_STORAGE_ENDPOINT:http://minio:9000}
+    region: ${LMS_STORAGE_REGION:us-east-1}
+    access-key: ${LMS_STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${LMS_STORAGE_SECRET_KEY:minioadmin}
 
 management:
   endpoints:

@@ -9,6 +9,9 @@ public record LessonResponse(
     String type,
     Integer durationMinutes,
     Integer sortOrder,
+    Boolean isPreview,
+    Boolean canWatch,
+    String status,
     Instant createdAt,
     Instant updatedAt) {
 }

@@ -80,6 +80,14 @@ public class EnrollmentController {
     return ResponseEntity.ok(response);
   }
 
+  @GetMapping("/validate")
+  public ResponseEntity<Boolean> validateEnrollment(
+      @RequestParam UUID userId,
+      @RequestParam UUID courseId) {
+    boolean isEnrolled = enrollmentService.isUserEnrolled(userId, courseId);
+    return ResponseEntity.ok(isEnrolled);
+  }
+
   @GetMapping("/{enrollmentId}")
   public ResponseEntity<EnrollmentResponse> getEnrollment(
       @PathVariable UUID enrollmentId,

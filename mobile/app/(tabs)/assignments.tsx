@@ -19,7 +19,7 @@ export default function AssignmentsScreen() {
     queryKey: ['assignments', 'list'],
     queryFn: async () => {
       const response = await apiClient.get('/api/v1/assignments')
-      return response.data.items || []
+      return (response.data.items || response.data.content || []).filter(Boolean)
     },
   })
 
@@ -38,38 +38,41 @@ export default function AssignmentsScreen() {
     }
   }
 
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      onPress={() => router.push(`/assignment/${item.id}`)}
-      activeOpacity={0.8}
-      className="px-6 mb-4"
-    >
-      <Card className="p-4">
-        <View className="flex-row justify-between items-start mb-2">
-          <AppText variant="h3" className="flex-1 mr-2" numberOfLines={1}>
-            {item.title}
-          </AppText>
-          <Badge label={item.status} variant={getStatusVariant(item.status)} />
-        </View>
-        <AppText variant="small" color="muted" className="mb-4" numberOfLines={2}>
-          {item.courseTitle || 'Course Title'}
-        </AppText>
-        <View className="flex-row justify-between items-center bg-slate-50 p-2 rounded-lg">
-          <View className="flex-row items-center">
-            <Ionicons name="calendar-outline" size={14} color="#64748b" />
-            <AppText variant="small" color="muted" className="ml-1">
-              Due: {new Date(item.dueDate).toLocaleDateString()}
+  const renderItem = ({ item }: { item: any }) => {
+    if (!item) return null
+    return (
+      <TouchableOpacity
+        onPress={() => router.push(`/assignment/${item.id}`)}
+        activeOpacity={0.8}
+        className="px-6 mb-4"
+      >
+        <Card className="p-4">
+          <View className="flex-row justify-between items-start mb-2">
+            <AppText variant="h3" className="flex-1 mr-2" numberOfLines={1}>
+              {item.title}
             </AppText>
+            <Badge label={item.status} variant={getStatusVariant(item.status)} />
           </View>
-          {item.grade && (
-            <AppText variant="small" weight="bold" color="primary">
-              Grade: {item.grade}/100
-            </AppText>
-          )}
-        </View>
-      </Card>
-    </TouchableOpacity>
-  )
+          <AppText variant="small" color="muted" className="mb-4" numberOfLines={2}>
+            {item.courseTitle || 'Course Title'}
+          </AppText>
+          <View className="flex-row justify-between items-center bg-slate-50 p-2 rounded-lg">
+            <View className="flex-row items-center">
+              <Ionicons name="calendar-outline" size={14} color="#64748b" />
+              <AppText variant="small" color="muted" className="ml-1">
+                Due: {new Date(item.dueDate).toLocaleDateString()}
+              </AppText>
+            </View>
+            {item.grade && (
+              <AppText variant="small" weight="bold" color="primary">
+                Grade: {item.grade}/100
+              </AppText>
+            )}
+          </View>
+        </Card>
+      </TouchableOpacity>
+    )
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -81,7 +84,7 @@ export default function AssignmentsScreen() {
       <FlatList
         data={assignments}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || index.toString()}
         contentContainerStyle={{ paddingVertical: 20 }}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
         ListEmptyComponent={

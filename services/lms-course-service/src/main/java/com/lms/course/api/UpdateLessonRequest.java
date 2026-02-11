@@ -6,5 +6,7 @@ public record UpdateLessonRequest(
     String title,
     LessonType type,
     Integer durationMinutes,
-    Integer sortOrder) {
+    Integer sortOrder,
+    Boolean isPreview,
+    String status) {
 }

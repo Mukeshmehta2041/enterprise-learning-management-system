@@ -47,6 +47,7 @@ public class CourseController {
       @RequestParam(required = false, defaultValue = "desc") String order,
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit,
+      @RequestParam(required = false) Integer size,
       @RequestParam(required = false, defaultValue = "1") Integer page,
       @RequestParam(required = false) String fields,
       @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
@@ -64,8 +65,9 @@ public class CourseController {
       }
     }
 
+    Integer effectiveLimit = limit != null ? limit : size;
     CourseListResponse response = courseService.listCourses(
-        courseStatus, category, level, search, sort, order, cursor, limit, page, userId, roles);
+        courseStatus, category, level, search, sort, order, cursor, effectiveLimit, page, userId, roles);
 
     MappingJacksonValue filteredResponse = SparseFieldFilter.filter(response, fields);
 
@@ -86,11 +88,13 @@ public class CourseController {
   public ResponseEntity<CourseListResponse> listMyCourses(
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) Integer limit,
+      @RequestParam(required = false) Integer size,
       @RequestParam(required = false, defaultValue = "1") Integer page,
       @RequestHeader(value = HEADER_USER_ID) String currentUserId) {
 
     UUID userId = UUID.fromString(currentUserId);
-    CourseListResponse response = courseService.listMyCourses(cursor, limit, page, userId);
+    Integer effectiveLimit = limit != null ? limit : size;
+    CourseListResponse response = courseService.listMyCourses(cursor, effectiveLimit, page, userId);
     return ResponseEntity.ok(response);
   }
 
@@ -302,6 +306,44 @@ public class CourseController {
 
     LessonResponse response = courseService.updateLesson(courseId, moduleId, lessonId, request, userId, roles);
     return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/{courseId}/modules/{moduleId}/lessons/reorder")
+  public ResponseEntity<Void> reorderLessons(
+      @PathVariable UUID courseId,
+      @PathVariable UUID moduleId,
+      @Valid @RequestBody BulkReorderRequest request,
+      @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
+
+    if (currentUserId == null || currentUserId.isBlank()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Set<String> roles = parseRoles(currentRolesHeader);
+    UUID userId = UUID.fromString(currentUserId);
+
+    courseService.reorderLessons(courseId, moduleId, request, userId, roles);
+    return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/{courseId}/modules/{moduleId}/lessons/{lessonId}")
+  public ResponseEntity<Void> deleteLesson(
+      @PathVariable UUID courseId,
+      @PathVariable UUID moduleId,
+      @PathVariable UUID lessonId,
+      @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
+
+    if (currentUserId == null || currentUserId.isBlank()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    Set<String> roles = parseRoles(currentRolesHeader);
+    UUID userId = UUID.fromString(currentUserId);
+
+    courseService.deleteLesson(courseId, moduleId, lessonId, userId, roles);
+    return ResponseEntity.noContent().build();
   }
 
   private Set<String> parseRoles(String rolesHeader) {

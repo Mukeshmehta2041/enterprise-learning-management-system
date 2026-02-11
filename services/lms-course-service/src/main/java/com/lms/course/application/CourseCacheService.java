@@ -30,7 +30,7 @@ public class CourseCacheService {
   public CourseDetailResponse getCourseDetail(UUID courseId) {
     Course course = courseRepository.findById(courseId)
         .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
-    return mapToCourseDetailResponse(course);
+    return mapToCourseDetailResponse(course, false);
   }
 
   @CacheEvict(value = "courses", key = "#courseId")
@@ -38,13 +38,13 @@ public class CourseCacheService {
     // Just evicts
   }
 
-  public CourseDetailResponse mapToCourseDetailResponse(Course course) {
+  public CourseDetailResponse mapToCourseDetailResponse(Course course, boolean hasAccess) {
     List<UUID> instructorIds = course.getInstructors().stream()
         .map(CourseInstructor::getUserId)
         .collect(Collectors.toList());
 
     List<ModuleResponse> modules = course.getModules().stream()
-        .map(this::mapToModuleResponse)
+        .map(m -> mapToModuleResponse(m, hasAccess))
         .collect(Collectors.toList());
 
     return new CourseDetailResponse(
@@ -62,11 +62,11 @@ public class CourseCacheService {
         course.getUpdatedAt());
   }
 
-  private ModuleResponse mapToModuleResponse(CourseModule module) {
+  private ModuleResponse mapToModuleResponse(CourseModule module, boolean hasAccess) {
     if (module == null)
       return null;
     List<LessonResponse> lessons = module.getLessons() != null ? module.getLessons().stream()
-        .map(this::mapToLessonResponse)
+        .map(l -> mapToLessonResponse(l, hasAccess))
         .collect(Collectors.toList()) : List.of();
 
     return new ModuleResponse(
@@ -78,7 +78,7 @@ public class CourseCacheService {
         module.getUpdatedAt());
   }
 
-  private LessonResponse mapToLessonResponse(Lesson lesson) {
+  private LessonResponse mapToLessonResponse(Lesson lesson, boolean hasAccess) {
     if (lesson == null)
       return null;
     return new LessonResponse(
@@ -87,6 +87,9 @@ public class CourseCacheService {
         lesson.getType() != null ? lesson.getType().name() : "VIDEO",
         lesson.getDurationMinutes(),
         lesson.getSortOrder(),
+        lesson.isPreview(),
+        lesson.isPreview() || hasAccess,
+        lesson.getStatus(),
         lesson.getCreatedAt(),
         lesson.getUpdatedAt());
   }

@@ -28,9 +28,13 @@ const getApiUrl = () => {
   return extra.apiUrl || 'http://localhost:8080';
 };
 
+const apiUrl = getApiUrl();
+
 export const Config: AppConfig = {
-  apiUrl: extra.apiUrl || 'http://localhost:8080/api',
-  socketUrl: extra.socketUrl || 'http://localhost:8080',
+  // Root API URL (no trailing /api). Individual calls should include the /api prefix,
+  // e.g. apiClient.get('/api/v1/users/me')
+  apiUrl,
+  socketUrl: extra.socketUrl || apiUrl,
   environment: extra.environment || 'development',
   sentryDsn: extra.sentryDsn,
   version: Constants.expoConfig?.version || '1.0.0',

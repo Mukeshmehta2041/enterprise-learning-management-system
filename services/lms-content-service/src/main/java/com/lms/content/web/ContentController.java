@@ -1,19 +1,20 @@
 package com.lms.content.web;
 
-import com.lms.content.domain.ContentItem;
-import com.lms.content.domain.ContentType;
-import com.lms.content.domain.ContentVersion;
-import com.lms.content.domain.QuizQuestion;
+import com.lms.content.domain.*;
+import com.lms.content.dto.ContentResponseDTO;
+import com.lms.content.dto.PlaybackTokenResponse;
 import com.lms.content.service.ContentApplicationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/content")
@@ -24,8 +25,18 @@ public class ContentController {
   private static final String HEADER_USER_ID = "X-User-Id";
   private static final String HEADER_ROLES = "X-Roles";
 
+  @GetMapping("/{contentId}/playback-token")
+  public ResponseEntity<PlaybackTokenResponse> getPlaybackToken(
+      @PathVariable UUID contentId,
+      @RequestHeader(HEADER_USER_ID) UUID userId,
+      @RequestHeader(HEADER_ROLES) String rolesHeader) {
+    Set<String> roles = parseRoles(rolesHeader);
+    PlaybackTokenResponse response = contentApplicationService.getPlaybackToken(contentId, userId, roles);
+    return ResponseEntity.ok(response);
+  }
+
   @PostMapping
-  public ResponseEntity<ContentItem> createContent(
+  public ResponseEntity<ContentResponseDTO> createContent(
       @RequestBody CreateContentRequest request,
       @RequestHeader(HEADER_USER_ID) UUID userId,
       @RequestHeader(HEADER_ROLES) String rolesHeader) {
@@ -37,7 +48,34 @@ public class ContentController {
         request.getTitle(),
         userId,
         roles);
-    return ResponseEntity.ok(content);
+    return ResponseEntity.ok(mapToDTO(content));
+  }
+
+  @PostMapping("/{contentId}/upload-url")
+  public ResponseEntity<Map<String, String>> getUploadUrl(
+      @PathVariable UUID contentId,
+      @RequestBody UploadUrlRequest request,
+      @RequestHeader(HEADER_USER_ID) UUID userId,
+      @RequestHeader(HEADER_ROLES) String rolesHeader) {
+    Set<String> roles = parseRoles(rolesHeader);
+    URL url = contentApplicationService.getUploadUrl(
+        contentId,
+        request.getFileName(),
+        request.getContentType(),
+        userId,
+        roles);
+    return ResponseEntity.ok(Map.of("uploadUrl", url.toString()));
+  }
+
+  @PostMapping("/{contentId}/complete-upload")
+  public ResponseEntity<Void> completeUpload(
+      @PathVariable UUID contentId,
+      @RequestBody CompleteUploadRequest request,
+      @RequestHeader(HEADER_USER_ID) UUID userId,
+      @RequestHeader(HEADER_ROLES) String rolesHeader) {
+    Set<String> roles = parseRoles(rolesHeader);
+    contentApplicationService.completeUpload(contentId, request.getStoragePath(), userId, roles);
+    return ResponseEntity.ok().build();
   }
 
   @PostMapping("/{contentItemId}/versions")
@@ -76,18 +114,43 @@ public class ContentController {
   }
 
   @GetMapping("/course/{courseId}")
-  public ResponseEntity<List<ContentItem>> getByCourse(@PathVariable UUID courseId) {
-    return ResponseEntity.ok(contentApplicationService.getByCourse(courseId));
+  public ResponseEntity<List<ContentResponseDTO>> getByCourse(@PathVariable UUID courseId) {
+    return ResponseEntity.ok(contentApplicationService.getByCourse(courseId).stream()
+        .map(this::mapToDTO)
+        .collect(Collectors.toList()));
   }
 
   @GetMapping("/lesson/{lessonId}")
-  public ResponseEntity<List<ContentItem>> getByLesson(@PathVariable UUID lessonId) {
-    return ResponseEntity.ok(contentApplicationService.getByLesson(lessonId));
+  public ResponseEntity<List<ContentResponseDTO>> getByLesson(@PathVariable UUID lessonId) {
+    return ResponseEntity.ok(contentApplicationService.getByLesson(lessonId).stream()
+        .map(this::mapToDTO)
+        .collect(Collectors.toList()));
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<ContentItem> getById(@PathVariable UUID id) {
-    return ResponseEntity.ok(contentApplicationService.getById(id));
+  public ResponseEntity<ContentResponseDTO> getById(@PathVariable UUID id) {
+    return ResponseEntity.ok(mapToDTO(contentApplicationService.getById(id)));
+  }
+
+  private ContentResponseDTO mapToDTO(ContentItem item) {
+    ContentResponseDTO.MetadataDTO metadataDTO = null;
+    if (item.getMetadata() != null) {
+      metadataDTO = ContentResponseDTO.MetadataDTO.builder()
+          .durationSecs(item.getMetadata().getDurationSecs())
+          .sizeBytes(item.getMetadata().getSizeBytes())
+          .mimeType(item.getMetadata().getMimeType())
+          .build();
+    }
+
+    return ContentResponseDTO.builder()
+        .id(item.getId())
+        .courseId(item.getCourseId())
+        .lessonId(item.getLessonId())
+        .type(item.getType())
+        .title(item.getTitle())
+        .status(item.getStatus())
+        .metadata(metadataDTO)
+        .build();
   }
 
   private Set<String> parseRoles(String rolesHeader) {
@@ -105,6 +168,17 @@ public class ContentController {
     private UUID lessonId;
     private ContentType type;
     private String title;
+  }
+
+  @Data
+  public static class UploadUrlRequest {
+    private String fileName;
+    private String contentType;
+  }
+
+  @Data
+  public static class CompleteUploadRequest {
+    private String storagePath;
   }
 
   @Data

@@ -127,7 +127,7 @@ export default function TeachingScreen() {
       <FlatList
         data={courses?.slice(0, 5)}
         renderItem={renderCourseItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || index.toString()}
         ListHeaderComponent={renderHeader}
         refreshControl={
           <RefreshControl refreshing={coursesLoading || statsLoading} onRefresh={onRefresh} />

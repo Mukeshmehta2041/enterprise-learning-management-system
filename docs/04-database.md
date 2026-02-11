@@ -28,7 +28,7 @@
 |-------|----------------|-------------|
 | `courses` | id (PK), title, slug (unique), description, status, created_at, updated_at | — |
 | `modules` | id (PK), course_id (FK), title, sort_order | — |
-| `lessons` | id (PK), module_id (FK), title, type, duration_minutes, sort_order | — |
+| `lessons` | id (PK), module_id (FK), title, type (VIDEO/READING/QUIZ), duration_minutes, sort_order, is_preview (bool), status | — |
 | `course_instructors` | course_id (FK), user_id (FK), role | PK (course_id, user_id) |
 
 **Indexes:** `courses(status)`, `courses(slug)`, `courses(created_at)`, `modules(course_id)`, `lessons(module_id)`.
@@ -50,12 +50,28 @@
 
 | Table | Columns (main) | Constraints |
 |-------|----------------|-------------|
-| `content_items` | id (PK), course_id, lesson_id, type (video/pdf/quiz), title, created_at, updated_at | — |
-| `content_versions` | id (PK), content_item_id (FK), version, storage_path, checksum, published_at | — |
+| `content_items` | id (PK), course_id, lesson_id, type (video/pdf/quiz), title, status (DRAFT, UPLOADING, PROCESSING, READY, FAILED, ARCHIVED), created_at, updated_at | — |
+| `content_versions` | id (PK), content_item_id (FK), version, storage_path, checksum, status, published_at | — |
 | `quiz_questions` | id (PK), content_item_id (FK), question_text, options (JSONB), correct_option_id, sort_order | — |
-| `content_metadata` | content_item_id (PK, FK), duration_secs, size_bytes, mime_type, etc. | — |
+| `content_metadata` | content_item_id (PK, FK), duration_secs, size_bytes, mime_type, resolution, bitrate | — |
 
-**Indexes:** `content_items(course_id)`, `content_items(lesson_id)`, `content_items(type)`, `content_versions(content_item_id)`, `quiz_questions(content_item_id)`.
+**Indexes:** `content_items(course_id)`, `content_items(lesson_id)`, `content_items(type)`, `content_items(status)`, `content_versions(content_item_id)`, `quiz_questions(content_item_id)`.
+
+---
+
+## Storage Strategy (Media & Files)
+
+### Backend: MinIO / S3
+- **Bucket:** `lms-media`
+- **Path structure:** `content/{courseId}/{lessonId}/{contentId}/v{version}/{filename}`
+- **Addressing:** Use `storage_path` in `content_versions` table. E.g., `content/123/456/789/v1/lecture.mp4`.
+- **Presigned URLs:** 
+  - **Upload:** Content Service generates PUT/POST presigned URLs for instructors.
+  - **Playback:** Content Service generates GET presigned URLs with short TTL (e.g., 1 hour) for students.
+
+### Lifecycle & Cleanup
+- When a new version is published, keep old versions for a grace period.
+- When a content item is `ARCHIVED`, mark storage objects for deletion after 30 days.
 
 ---
 

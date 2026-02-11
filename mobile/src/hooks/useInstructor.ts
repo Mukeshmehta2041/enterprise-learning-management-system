@@ -14,9 +14,8 @@ export function useInstructorCourses() {
   return useQuery<Course[]>({
     queryKey: ['instructor', 'courses'],
     queryFn: async () => {
-      // Mocked endpoint - in real app would be /api/v1/instructor/courses
-      const response = await apiClient.get<Course[]>('/api/v1/courses/my-teaching')
-      return response.data
+      const response = await apiClient.get<any>('/api/v1/courses/me')
+      return response.data.items || response.data.content || response.data || []
     },
   })
 }

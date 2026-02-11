@@ -5,5 +5,6 @@ import java.util.UUID;
 
 public record UpdateProgressRequest(
     @NotNull(message = "Lesson ID is required") UUID lessonId,
-    @NotNull(message = "Completed status is required") Boolean completed) {
+    @NotNull(message = "Completed status is required") Boolean completed,
+    Double positionSecs) {
 }

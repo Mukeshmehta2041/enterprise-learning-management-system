@@ -4,19 +4,18 @@ import com.lms.common.security.RBACEnforcer;
 import com.lms.analytics.dto.CourseAnalyticsDTO;
 import com.lms.analytics.dto.EnrollmentTrendDTO;
 import com.lms.analytics.dto.GlobalStatsDTO;
+import com.lms.analytics.dto.PlaybackTelemetryRequest;
 import com.lms.analytics.model.EnrollmentAggregate;
 import com.lms.analytics.service.AnalyticsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -28,6 +27,22 @@ public class AnalyticsController {
 
   @Autowired(required = false)
   private RBACEnforcer rbacEnforcer;
+
+  private static final String HEADER_USER_ID = "X-User-Id";
+
+  @PostMapping("/playback")
+  public ResponseEntity<Void> recordPlaybackEvent(
+      @RequestBody PlaybackTelemetryRequest request,
+      @RequestHeader(value = HEADER_USER_ID, required = false) String userIdHeader) {
+
+    if (userIdHeader != null) {
+      request.setUserId(UUID.fromString(userIdHeader));
+    }
+
+    log.debug("Received playback telemetry: {} for lesson {}", request.getEventType(), request.getLessonId());
+    analyticsService.recordPlaybackEvent(request);
+    return ResponseEntity.accepted().build();
+  }
 
   @GetMapping("/enrollments")
   public ResponseEntity<EnrollmentAggregate> getEnrollmentStats(

@@ -22,7 +22,8 @@ interface CourseListItemProps {
 }
 
 export const CourseListItem = memo(({ course, onPress }: CourseListItemProps) => {
-  const accessibilityLabel = `Course: ${course.title} by ${course.instructorName}, Level: ${course.level || 'all levels'}, Rated ${course.rating || 4.5} out of 5. View Details.`
+  const instructorName = course.instructorName || 'Multiple Instructors'
+  const accessibilityLabel = `Course: ${course.title} by ${instructorName}, Level: ${course.level || 'all levels'}, Rated ${course.rating || 4.5} out of 5. View Details.`
 
   return (
     <Animated.View entering={FadeInDown.duration(400).springify()}>
@@ -60,7 +61,7 @@ export const CourseListItem = memo(({ course, onPress }: CourseListItemProps) =>
             {course.title}
           </AppText>
           <AppText variant="caption" color="muted" className="mb-3">
-            by {course.instructorName}
+            by {instructorName}
           </AppText>
           <View className="flex-row items-center justify-between mt-auto">
             {course.level && (

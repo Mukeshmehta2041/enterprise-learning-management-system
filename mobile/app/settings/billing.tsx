@@ -47,7 +47,7 @@ export default function BillingHistoryScreen() {
       <Stack.Screen options={{ title: 'Billing History', headerShown: true }} />
       <FlatList
         data={bills}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id || index.toString()}
         renderItem={({ item }) => (
           <ListItem
             title={item.description}
