@@ -112,7 +112,7 @@ export function NotificationPage() {
           <FilterGroup
             options={filterOptions}
             selected={filter}
-            onSelect={(val) => setFilter(val as any)}
+            onSelect={(val) => setFilter(val as 'all' | 'unread' | 'system' | 'course')}
           />
         </div>
       </div>
