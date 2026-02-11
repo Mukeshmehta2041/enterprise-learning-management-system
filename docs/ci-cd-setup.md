@@ -13,9 +13,9 @@ The pipeline ([`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml)) p
 
 ## Triggers
 
-- **Push** to `main` or `develop`: Full pipeline (build, test, deploy on main)
-- **Pull request** to `main` or `develop`: Build and test only (no deploy)
-- **Manual**: `workflow_dispatch` for on-demand runs
+- **Push** to `main`: Full CD pipeline (build, Docker push to ECR, K8s deploy, frontend S3/CloudFront)
+- **Pull request** to `main`: See [pr-ci.yml](../.github/workflows/pr-ci.yml) for build and test only (change-tracked, no deploy)
+- **Manual**: `workflow_dispatch` on ci-cd.yml for on-demand deploys
 
 ## Change Detection
 

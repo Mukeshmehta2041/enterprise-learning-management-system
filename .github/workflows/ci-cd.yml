@@ -1,13 +1,11 @@
-# Comprehensive CI/CD pipeline with change detection, selective builds, ECR push, K8s blue-green, and frontend S3/CloudFront
-# CI: build + test on PR/push; CD: deploy on push to main
+# CD pipeline: deploy to ECR, K8s (blue-green), and frontend S3/CloudFront
+# Triggers: push to main only. For PR validation, see pr-ci.yml
 
-name: LMS CI/CD
+name: LMS CD (Deploy)
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 env:

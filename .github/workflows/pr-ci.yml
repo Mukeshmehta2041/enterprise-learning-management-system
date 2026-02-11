@@ -1,0 +1,203 @@
+# PR CI: Build and test only, with change tracking
+# Runs on pull requests targeting main - builds and tests only changed services
+
+name: LMS PR CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+
+env:
+  JAVA_VERSION: '17'
+  NODE_VERSION: '20'
+  MAVEN_OPTS: -Xmx1024m
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      common: ${{ steps.filter.outputs.common }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      service_user: ${{ steps.filter.outputs.service_user }}
+      service_auth: ${{ steps.filter.outputs.service_auth }}
+      service_course: ${{ steps.filter.outputs.service_course }}
+      service_enrollment: ${{ steps.filter.outputs.service_enrollment }}
+      service_content: ${{ steps.filter.outputs.service_content }}
+      service_assignment: ${{ steps.filter.outputs.service_assignment }}
+      service_search: ${{ steps.filter.outputs.service_search }}
+      service_notification: ${{ steps.filter.outputs.service_notification }}
+      service_payment: ${{ steps.filter.outputs.service_payment }}
+      service_analytics: ${{ steps.filter.outputs.service_analytics }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      services_json: ${{ steps.backend.outputs.services_json }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            common:
+              - 'lms-common/**'
+              - 'pom.xml'
+            gateway:
+              - 'lms-gateway/**'
+            service_user:
+              - 'services/lms-user-service/**'
+            service_auth:
+              - 'services/lms-auth-service/**'
+            service_course:
+              - 'services/lms-course-service/**'
+            service_enrollment:
+              - 'services/lms-enrollment-service/**'
+            service_content:
+              - 'services/lms-content-service/**'
+            service_assignment:
+              - 'services/lms-assignment-service/**'
+            service_search:
+              - 'services/lms-search-service/**'
+            service_notification:
+              - 'services/lms-notification-service/**'
+            service_payment:
+              - 'services/lms-payment-service/**'
+            service_analytics:
+              - 'services/lms-analytics-service/**'
+            frontend:
+              - 'frontend/**'
+
+      - name: Compute backend services to build
+        id: backend
+        run: |
+          COMMON="${{ steps.filter.outputs.common }}"
+          if [ "$COMMON" == "true" ]; then
+            echo '["lms-gateway","lms-auth-service","lms-user-service","lms-course-service","lms-enrollment-service","lms-content-service","lms-assignment-service","lms-search-service","lms-notification-service","lms-payment-service","lms-analytics-service"]' > services.json
+          else
+            SERVICES='[]'
+            [ "${{ steps.filter.outputs.gateway }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-gateway"]')
+            [ "${{ steps.filter.outputs.service_auth }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-auth-service"]')
+            [ "${{ steps.filter.outputs.service_user }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-user-service"]')
+            [ "${{ steps.filter.outputs.service_course }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-course-service"]')
+            [ "${{ steps.filter.outputs.service_enrollment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-enrollment-service"]')
+            [ "${{ steps.filter.outputs.service_content }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-content-service"]')
+            [ "${{ steps.filter.outputs.service_assignment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-assignment-service"]')
+            [ "${{ steps.filter.outputs.service_search }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-search-service"]')
+            [ "${{ steps.filter.outputs.service_notification }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-notification-service"]')
+            [ "${{ steps.filter.outputs.service_payment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-payment-service"]')
+            [ "${{ steps.filter.outputs.service_analytics }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-analytics-service"]')
+            echo "$SERVICES" > services.json
+          fi
+          echo "services_json<<EOF" >> $GITHUB_OUTPUT
+          cat services.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  backend-build:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: |
+      (needs.detect-changes.result == 'success') &&
+      (needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.services_json != '[]')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+
+      - name: Compute Maven project list
+        id: maven
+        run: |
+          SERVICES='${{ needs.detect-changes.outputs.services_json }}'
+          BUILD_ALL='${{ needs.detect-changes.outputs.common }}'
+          if [ "$BUILD_ALL" == "true" ] || [ "$SERVICES" == "[]" ] || [ -z "$SERVICES" ]; then
+            echo "projects=" >> $GITHUB_OUTPUT
+            echo "args=-B clean install" >> $GITHUB_OUTPUT
+          else
+            PROJS=""
+            for s in $(echo "$SERVICES" | jq -r '.[]'); do
+              case $s in
+                lms-gateway) PROJS="$PROJS,lms-gateway" ;;
+                *) PROJS="$PROJS,services/$s" ;;
+              esac
+            done
+            PROJS=$(echo "$PROJS" | sed 's/^,//')
+            echo "projects=$PROJS" >> $GITHUB_OUTPUT
+            echo "args=-B install -pl $PROJS -am" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build with Maven
+        run: |
+          ARGS='${{ steps.maven.outputs.args }}'
+          if [ -z "$ARGS" ]; then
+            mvn -B clean install
+          else
+            mvn $ARGS
+          fi
+
+      - name: Run tests
+        run: |
+          ARGS='${{ steps.maven.outputs.args }}'
+          if [ -z "$ARGS" ] || [ "$ARGS" == "-B clean install" ]; then
+            mvn -B test
+          else
+            PROJS='${{ steps.maven.outputs.projects }}'
+            mvn -B test -pl $PROJS -am
+          fi
+
+  frontend-build:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: needs.detect-changes.outputs.frontend == 'true'
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test -- --run
+
+      - name: Build production
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.lms-example.com' }}
+        run: npm run build
