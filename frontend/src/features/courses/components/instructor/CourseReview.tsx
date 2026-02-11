@@ -1,9 +1,16 @@
 import { Card, Button, Heading2, Heading3, Heading4, TextMuted, Muted } from '@/shared/ui'
 import { CheckCircle, Tag } from 'lucide-react'
-import type { CourseDetail, Module } from '@/shared/types/course'
+import type { ModuleInput } from '@/shared/types/course'
 
 interface CourseReviewProps {
-  data: Partial<CourseDetail> & { modules: Partial<Module>[] } // modules might be Partial
+  data: {
+    title?: string
+    description?: string
+    category?: string
+    level?: string
+    price?: number
+    modules?: ModuleInput[]
+  }
   onBack: () => void
   onSubmit: () => void
   isSubmitting?: boolean
@@ -31,11 +38,11 @@ export function CourseReview({ data, onBack, onSubmit, isSubmitting }: CourseRev
         <section className="space-y-6">
           <Heading3 className="border-b pb-2">Curriculum Overview</Heading3>
           <div className="space-y-4">
-            {data.modules.map((module: { title: string; lessons: { title: string }[] }, idx: number) => (
+            {data.modules?.map((module: { title?: string; lessons?: { title?: string }[] }, idx: number) => (
               <div key={idx} className="bg-slate-50 rounded-lg p-4">
                 <Heading4 className="mb-2 break-words">Module {idx + 1}: {module.title}</Heading4>
                 <ul className="ml-4 space-y-1">
-                  {module.lessons.map((lesson: { title: string }, lIdx: number) => (
+                  {module.lessons?.map((lesson: { title?: string }, lIdx: number) => (
                     <li key={lIdx} className="text-slate-600 flex items-center gap-2 text-sm italic">
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
                       <span className="break-words">{lesson.title}</span>
