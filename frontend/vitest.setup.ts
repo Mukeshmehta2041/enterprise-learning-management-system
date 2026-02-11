@@ -20,35 +20,37 @@ if (typeof window !== 'undefined') {
 global.matchMedia = mockMatchMedia
 
 // Mock EventSource
+type SSECallback = (event: Event) => void
+
 class MockEventSource {
   url: string
-  onopen: any
-  onmessage: any
-  onerror: any
+  onopen: SSECallback | null = null
+  onmessage: SSECallback | null = null
+  onerror: SSECallback | null = null
   readyState: number = 0
-  listeners: Record<string, Function[]> = {}
+  listeners: Record<string, SSECallback[]> = {}
 
   constructor(url: string) {
     this.url = url
     setTimeout(() => {
       if (this.onopen) {
         console.log('Real-time channel opened:', url)
-        this.onopen({} as any)
+        this.onopen(new Event('open'))
       }
     }, 0)
   }
 
-  addEventListener(type: string, listener: Function) {
+  addEventListener(type: string, listener: SSECallback) {
     if (!this.listeners[type]) this.listeners[type] = []
     this.listeners[type].push(listener)
   }
 
-  removeEventListener(type: string, listener: Function) {
+  removeEventListener(type: string, listener: SSECallback) {
     if (!this.listeners[type]) return
     this.listeners[type] = this.listeners[type].filter(l => l !== listener)
   }
 
-  dispatchEvent(event: any): boolean {
+  dispatchEvent(event: Event): boolean {
     const type = event.type
     if (this.listeners[type]) {
       this.listeners[type].forEach(l => l(event))
@@ -59,10 +61,6 @@ class MockEventSource {
   close() { }
 }
 
-if (typeof window !== 'undefined') {
-  (window as any).EventSource = MockEventSource;
-}
-(global as any).EventSource = MockEventSource;
 vi.stubGlobal('EventSource', MockEventSource);
 vi.stubGlobal('matchMedia', mockMatchMedia);
 

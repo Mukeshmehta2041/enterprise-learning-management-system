@@ -12,6 +12,16 @@ describe('AnalyticsDashboardPage', () => {
     return renderWithProviders(<AnalyticsDashboardPage />, { withAuth: true });
   };
 
+  it('renders metric cards', async () => {
+    renderPage();
+
+    // Use findBy to wait for loading to finish and elements to appear
+    expect(await screen.findByText('Total Students')).toBeInTheDocument();
+    expect(await screen.findByText(/1,250/)).toBeInTheDocument();
+    expect(await screen.findByText('Total Revenue')).toBeInTheDocument();
+    expect(await screen.findByText(/\$125,000/)).toBeInTheDocument();
+  });
+
   it('renders charts', async () => {
     renderPage();
 
