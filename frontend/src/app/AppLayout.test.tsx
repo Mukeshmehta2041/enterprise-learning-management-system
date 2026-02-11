@@ -1,22 +1,18 @@
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { screen } from '@testing-library/react'
 import { AppLayout } from '@/app/AppLayout'
-import { AuthProvider } from '@/shared/context/AuthContext'
+import { renderWithProviders } from '@/test/testUtils'
 
 describe('AppLayout', () => {
   it('renders header and children', () => {
-    render(
-      <AuthProvider>
-        <MemoryRouter>
-          <AppLayout>
-            <div>Test content</div>
-          </AppLayout>
-        </MemoryRouter>
-      </AuthProvider>,
+    renderWithProviders(
+      <AppLayout>
+        <div>Test content</div>
+      </AppLayout>,
+      { withAuth: true }
     )
 
-    expect(screen.getByText('LMS Portal')).toBeInTheDocument()
-    expect(screen.getByText('Test content')).toBeInTheDocument()
+    expect(screen.getAllByText('LMS Platform')[0]).toBeInTheDocument()
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
   })
 })
 

@@ -45,8 +45,8 @@ describe('Instructor Journey', () => {
     expect(await screen.findByText(/4,800/)).toBeInTheDocument() // Total Enrollments
 
     // Verify course performance table
-    expect(await screen.findByText(/Mock Course 1/)).toBeInTheDocument()
-    expect(await screen.findByText(/Mock Course 2/)).toBeInTheDocument()
+    expect((await screen.findAllByText(/Introduction to Web Development/))[0]).toBeInTheDocument()
+    expect((await screen.findAllByText(/Advanced React Patterns/))[0]).toBeInTheDocument()
   })
 
   it('should redirect a student away from analytics dashboard', async () => {

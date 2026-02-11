@@ -1,5 +1,5 @@
 import { screen, waitFor, fireEvent } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { renderWithProviders } from '../testUtils'
 import { AppRoutes } from '@/app/router'
 import { server } from '../mocks/server'
@@ -8,6 +8,10 @@ import { http, HttpResponse } from 'msw'
 const API_URL = 'http://localhost:3000/api/v1'
 
 describe('Learner Journey', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it('should allow a learner to login, browse courses, and enroll', async () => {
     // 1. Render login page
     renderWithProviders(<AppRoutes />, { route: '/login', withAuth: true })
@@ -56,10 +60,10 @@ describe('Learner Journey', () => {
   it('should show error message on failed login', async () => {
     server.use(
       http.post(`${API_URL}/auth/token`, () => {
-        return new HttpResponse(JSON.stringify({ message: 'Invalid email or password' }), {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' }
-        })
+        return HttpResponse.json(
+          { message: 'Invalid email or password' },
+          { status: 401 }
+        )
       })
     )
 

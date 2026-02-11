@@ -32,6 +32,7 @@ describe('useCourses', () => {
     })
 
     const filters: CourseFilters = { page: 0, size: 9, search: '', category: '', level: '' }
+    const filtersWithLimit = { ...filters, limit: 9 }
     const queryClient = createTestQueryClient()
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -40,6 +41,6 @@ describe('useCourses', () => {
     const { result } = renderHook(() => useCourses(filters), { wrapper })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(mockGet).toHaveBeenCalledWith('/courses', { params: filters })
+    expect(mockGet).toHaveBeenCalledWith('/courses', { params: filtersWithLimit })
   })
 })

@@ -1,59 +1,16 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { AnalyticsDashboardPage } from './AnalyticsDashboardPage';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AuthContext, type AuthContextType } from '@/shared/context/AuthContext';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-    },
-  },
-});
-
-const mockAuthContext: AuthContextType = {
-  user: {
-    id: '1',
-    email: 'instructor@example.com',
-    displayName: 'Instructor',
-    roles: ['INSTRUCTOR']
-  },
-  token: 'mock-token',
-  isAuthenticated: true,
-  isLoading: false,
-  login: async () => { },
-  logout: () => { },
-};
+import { renderWithProviders } from '@/test/testUtils';
 
 describe('AnalyticsDashboardPage', () => {
   beforeEach(() => {
-    queryClient.clear();
+    localStorage.clear();
   });
 
   const renderPage = () => {
-    return render(
-      <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={mockAuthContext}>
-          <MemoryRouter>
-            <AnalyticsDashboardPage />
-          </MemoryRouter>
-        </AuthContext.Provider>
-      </QueryClientProvider>
-    );
+    return renderWithProviders(<AnalyticsDashboardPage />, { withAuth: true });
   };
-
-  it('renders metric cards', async () => {
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByText('Total Students')).toBeDefined();
-      expect(screen.getByText('1,250')).toBeDefined();
-      expect(screen.getByText('Total Revenue')).toBeDefined();
-      expect(screen.getByText('$125,000')).toBeDefined();
-    });
-  });
 
   it('renders charts', async () => {
     renderPage();

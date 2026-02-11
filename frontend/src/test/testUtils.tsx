@@ -4,6 +4,9 @@ import type { ReactElement, ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '@/shared/context/AuthContext'
 import { ToastProvider } from '@/shared/context/ToastContext'
+import { UIProvider } from '@/shared/context/UIContext'
+import { TenantProvider } from '@/shared/context/TenantContext'
+import { NotificationProvider } from '@/features/notifications/context/NotificationContext'
 
 export function createTestQueryClient() {
   return new QueryClient({
@@ -26,15 +29,21 @@ export function renderWithProviders(ui: ReactElement, options: RenderOptions = {
 
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        {withAuth ? (
-          <AuthProvider>
-            <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-          </AuthProvider>
-        ) : (
-          <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-        )}
-      </ToastProvider>
+      <TenantProvider>
+        <UIProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                {withAuth ? (
+                  <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+                ) : (
+                  <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+                )}
+              </NotificationProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </UIProvider>
+      </TenantProvider>
     </QueryClientProvider>
   )
 

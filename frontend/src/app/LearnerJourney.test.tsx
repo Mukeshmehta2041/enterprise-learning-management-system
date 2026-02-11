@@ -1,8 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, Navigate } from 'react-router-dom'
 import { vi } from 'vitest'
 import { AuthProvider } from '@/shared/context/AuthContext'
+import { UIProvider } from '@/shared/context/UIContext'
+import { TenantProvider } from '@/shared/context/TenantContext'
+import { ToastProvider } from '@/shared/context/ToastContext'
+import { NotificationProvider } from '@/features/notifications/context/NotificationContext'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { CourseListPage } from '@/features/courses/pages/CourseListPage'
 import { CourseDetailPage } from '@/features/courses/pages/CourseDetailPage'
@@ -136,18 +140,27 @@ describe('Learner journey', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <MemoryRouter initialEntries={['/login']}>
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<CourseListPage />} />
-                <Route path="/courses/:courseId" element={<CourseDetailPage />} />
-                <Route path="/courses/:courseId/lesson/:lessonId" element={<LessonPlayerPage />} />
-              </Route>
-            </Routes>
-          </MemoryRouter>
-        </AuthProvider>
+        <TenantProvider>
+          <UIProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <NotificationProvider>
+                  <MemoryRouter initialEntries={['/login']}>
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route element={<ProtectedRoute />}>
+                        <Route path="/dashboard" element={<CourseListPage />} />
+                        <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+                        <Route path="/courses/:courseId/lesson/:lessonId" element={<LessonPlayerPage />} />
+                      </Route>
+                    </Routes>
+                  </MemoryRouter>
+                </NotificationProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </UIProvider>
+        </TenantProvider>
       </QueryClientProvider>
     )
 
@@ -155,9 +168,9 @@ describe('Learner journey', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
-    expect(await screen.findByText(/courses/i)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /courses/i })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('link', { name: /react basics/i }))
+    fireEvent.click(await screen.findByRole('link', { name: /react basics/i }))
 
     const enrollButton = await screen.findByRole('button', { name: /enroll now/i })
     fireEvent.click(enrollButton)

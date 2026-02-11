@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { NotificationPage } from './NotificationPage';
 import { useNotifications, useMarkAsRead } from '../api/notificationHooks';
@@ -74,7 +74,7 @@ describe('NotificationPage', () => {
     expect(screen.queryByText('System Update')).not.toBeInTheDocument();
   });
 
-  it('shows empty state when no results match', () => {
+  it('shows empty state when no results match', async () => {
     mockedUseNotifications.mockReturnValue({
       data: mockNotifications,
       isLoading: false,
@@ -85,6 +85,8 @@ describe('NotificationPage', () => {
     const searchInput = screen.getByPlaceholderText(/Search notifications/);
     fireEvent.change(searchInput, { target: { value: 'non-existent' } });
 
-    expect(screen.getByText('No results found')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('No results found')).toBeInTheDocument();
+    });
   });
 });
