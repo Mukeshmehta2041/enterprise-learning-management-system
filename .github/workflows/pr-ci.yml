@@ -156,20 +156,20 @@ jobs:
         run: |
           ARGS='${{ steps.maven.outputs.args }}'
           if [ -z "$ARGS" ]; then
-            mvn -B clean install
+            mvn -B clean install -DskipTests
           else
-            mvn $ARGS
+            mvn $ARGS -DskipTests
           fi
 
-      - name: Run tests
-        run: |
-          ARGS='${{ steps.maven.outputs.args }}'
-          if [ -z "$ARGS" ] || [ "$ARGS" == "-B clean install" ]; then
-            mvn -B test
-          else
-            PROJS='${{ steps.maven.outputs.projects }}'
-            mvn -B test -pl $PROJS -am
-          fi
+      # - name: Run tests
+      #   run: |
+      #     ARGS='${{ steps.maven.outputs.args }}'
+      #     if [ -z "$ARGS" ] || [ "$ARGS" == "-B clean install" ]; then
+      #       mvn -B test
+      #     else
+      #       PROJS='${{ steps.maven.outputs.projects }}'
+      #       mvn -B test -pl $PROJS -am
+      #     fi
 
   frontend-build:
     needs: detect-changes

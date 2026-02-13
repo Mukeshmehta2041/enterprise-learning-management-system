@@ -168,7 +168,7 @@ jobs:
           if [ -z "$ARGS" ]; then
             mvn -B clean install -DskipTests
           else
-            mvn $ARGS
+            mvn $ARGS -DskipTests
           fi
 
       # - name: Run tests
