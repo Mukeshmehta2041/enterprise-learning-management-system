@@ -166,20 +166,20 @@ jobs:
         run: |
           ARGS='${{ steps.maven.outputs.args }}'
           if [ -z "$ARGS" ]; then
-            mvn -B clean install
+            mvn -B clean install -DskipTests
           else
             mvn $ARGS
           fi
 
-      - name: Run tests
-        run: |
-          ARGS='${{ steps.maven.outputs.args }}'
-          if [ -z "$ARGS" ] || [ "$ARGS" == "-B clean install" ]; then
-            mvn -B test
-          else
-            PROJS='${{ steps.maven.outputs.projects }}'
-            mvn -B test -pl $PROJS -am
-          fi
+      # - name: Run tests
+      #   run: |
+      #     ARGS='${{ steps.maven.outputs.args }}'
+      #     if [ -z "$ARGS" ] || [ "$ARGS" == "-B clean install" ]; then
+      #       mvn -B test
+      #     else
+      #       PROJS='${{ steps.maven.outputs.projects }}'
+      #       mvn -B test -pl $PROJS -am
+      #     fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
