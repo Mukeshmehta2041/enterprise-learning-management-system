@@ -19,7 +19,7 @@ import {
 import { useUI } from '@/shared/context/UIContext'
 import { BasicInfoForm } from '../../components/instructor/BasicInfoForm'
 import { PricingSettingsForm } from '../../components/instructor/PricingSettingsForm'
-import type { CourseDetail, Module } from '@/shared/types/course'
+import type { CourseDetail, ModuleInput } from '@/shared/types/course'
 import { CurriculumForm } from '../../components/instructor/CurriculumForm'
 import { AssignmentManagement } from '../../components/instructor/AssignmentManagement'
 import { Save, Rocket, Settings, List, Info, DollarSign, FileStack } from 'lucide-react'
@@ -79,7 +79,7 @@ export function CourseEditPage() {
     }
   }
 
-  const handleSyncCurriculum = async (modules: Module[]) => {
+  const handleSyncCurriculum = async (modules: ModuleInput[]) => {
     try {
       await syncCurriculumMutation.mutateAsync({
         id: courseId!,

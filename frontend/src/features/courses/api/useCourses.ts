@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
-import { CourseSchema, CourseDetailSchema, type Course, type CourseFilters, type CourseDetail, type Module } from '@/shared/types/course'
+import { CourseSchema, CourseDetailSchema, type Course, type CourseFilters, type CourseDetail, type ModuleInput } from '@/shared/types/course'
 import { type PaginatedResponse } from '@/shared/types/error'
 
 async function fetchCourses(filters: CourseFilters): Promise<PaginatedResponse<Course>> {
@@ -124,7 +124,7 @@ export function useSyncCurriculum() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ id, modules }: { id: string; modules: Module[] }) => {
+    mutationFn: async ({ id, modules }: { id: string; modules: ModuleInput[] }) => {
       const { data } = await apiClient.post(`/courses/${id}/curriculum/sync`, { modules })
       return data
     },

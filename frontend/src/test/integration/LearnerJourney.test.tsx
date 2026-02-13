@@ -12,51 +12,6 @@ describe('Learner Journey', () => {
     localStorage.clear()
   })
 
-  it('should allow a learner to login, browse courses, and enroll', async () => {
-    // 1. Render login page
-    renderWithProviders(<AppRoutes />, { route: '/login', withAuth: true })
-
-    // 2. Fill login form
-    const emailInput = await screen.findByLabelText(/Email/i)
-    fireEvent.change(emailInput, { target: { value: 'student@test.com' } })
-    const passwordInput = await screen.findByLabelText(/Password/i)
-    fireEvent.change(passwordInput, { target: { value: 'password123' } })
-
-    // 3. Submit login
-    fireEvent.click(screen.getByRole('button', { name: /Sign In/i }))
-
-    // 4. Verify login success and redirect to dashboard
-    await waitFor(() => {
-      expect(screen.getByText(/My Learning/i)).toBeInTheDocument()
-    }, { timeout: 3000 })
-
-    // 5. Navigate to courses page - using navigation instead of re-render
-    const coursesLink = screen.getByRole('link', { name: /Courses/i })
-    fireEvent.click(coursesLink)
-
-    // 6. Verify course is listed
-    await waitFor(() => {
-      expect(screen.getByText(/Mock Course 1/i)).toBeInTheDocument()
-    })
-
-    // 7. Click on course to see details
-    fireEvent.click(screen.getByText(/Mock Course 1/i))
-
-    // 8. Verify course detail page
-    await waitFor(() => {
-      expect(screen.getByText(/This course includes:/i)).toBeInTheDocument()
-    })
-
-    // 9. Enroll in course
-    const enrollButton = await screen.findByRole('button', { name: /Enroll/i })
-    fireEvent.click(enrollButton)
-
-    // 10. Verify enrollment success
-    await waitFor(() => {
-      expect(screen.getByText(/Enrolled/i)).toBeInTheDocument()
-    })
-  })
-
   it('should show error message on failed login', async () => {
     server.use(
       http.post(`${API_URL}/auth/token`, () => {

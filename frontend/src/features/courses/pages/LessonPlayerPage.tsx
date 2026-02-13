@@ -1,5 +1,5 @@
 import { Paragraph, Heading2, Heading3 } from '@/shared/ui/Typography'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useCourse } from '../api/useCourses'
 import { useLessonContent } from '../api/useContent'
