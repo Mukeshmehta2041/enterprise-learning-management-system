@@ -21,4 +21,12 @@ public class ContentEvent {
   private String contentType;
   private String storagePath;
   private OffsetDateTime timestamp;
+
+  public String getEventType() {
+    return eventType;
+  }
+
+  public UUID getContentItemId() {
+    return contentItemId;
+  }
 }

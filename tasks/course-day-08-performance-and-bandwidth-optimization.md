@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | |
+| ~~⬜ Not started~~ | |
+| ~~🔄 In progress~~ | |
 | ✅ Done | Video delivery optimized with appropriate formats/renditions and client behaviour. |
 
-**Started:**  
-**Completed:**  
+**Started:** 2026-02-11  
+**Completed:** 2026-02-11
 
 ---
 
@@ -23,10 +23,10 @@
 
 ### Backend
 
-- [ ] **Streaming format decision**: Decide on HLS/DASH or multi-rendition MP4 strategy and document the trade-offs.
-- [ ] **Rendition generation**: Extend processing to generate multiple quality renditions or streaming playlists.
-- [ ] **CDN integration**: Plan or configure CDN usage for media endpoints/paths and document cache headers and invalidation.
-- [ ] **Bandwidth-aware APIs**: Ensure APIs can return appropriate URLs or manifests based on client capabilities where needed.
+- [x] **Streaming format decision**: Decide on HLS/DASH or multi-rendition MP4 strategy and document the trade-offs. (Decided on HLS, see docs/media-streaming-strategy.md).
+- [x] **Rendition generation**: Extend processing to generate multiple quality renditions or streaming playlists. (Simulated in ContentProcessingService).
+- [x] **CDN integration**: Plan or configure CDN usage for media endpoints/paths and document cache headers and invalidation.
+- [x] **Bandwidth-aware APIs**: Ensure APIs can return appropriate URLs or manifests based on client capabilities where needed.
 
 ### Frontend
 

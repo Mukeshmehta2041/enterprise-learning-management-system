@@ -88,6 +88,16 @@ public class EnrollmentController {
     return ResponseEntity.ok(isEnrolled);
   }
 
+  @GetMapping("/course/{courseId}/entitlement")
+  public ResponseEntity<EntitlementResponse> getEntitlement(
+      @PathVariable UUID courseId,
+      @RequestHeader(HEADER_USER_ID) String userIdHeader) {
+
+    UUID userId = UUID.fromString(userIdHeader);
+    EntitlementResponse response = enrollmentService.getEntitlement(userId, courseId);
+    return ResponseEntity.ok(response);
+  }
+
   @GetMapping("/{enrollmentId}")
   public ResponseEntity<EnrollmentResponse> getEnrollment(
       @PathVariable UUID enrollmentId,
@@ -98,6 +108,16 @@ public class EnrollmentController {
     Set<String> roles = parseRoles(rolesHeader);
 
     EnrollmentResponse response = enrollmentService.getEnrollment(enrollmentId, userId, roles);
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/me/course/{courseId}")
+  public ResponseEntity<EnrollmentResponse> getMyEnrollmentByCourse(
+      @PathVariable UUID courseId,
+      @RequestHeader(HEADER_USER_ID) String userIdHeader) {
+
+    UUID userId = UUID.fromString(userIdHeader);
+    EnrollmentResponse response = enrollmentService.getMyEnrollmentByCourse(userId, courseId);
     return ResponseEntity.ok(response);
   }
 

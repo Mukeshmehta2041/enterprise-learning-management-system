@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
-import { View, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native'
+import { View, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, AlertButton } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { AppText } from '../../src/components/AppText'
 import { useInstructorCourse } from '../../src/hooks/useInstructor'
 import { apiClient } from '../../src/api/client'
 import { useQueryClient } from '@tanstack/react-query'
+import { useUpload } from '../../src/hooks/useUpload'
+import { MobileAppError } from '../../src/utils/errors'
+import { useLessonContent } from '../../src/hooks/useContent'
 
 export default function InstructorCourseDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -13,6 +16,33 @@ export default function InstructorCourseDetail() {
   const queryClient = useQueryClient()
   const { data: course, isLoading } = useInstructorCourse(id!)
   const [updating, setUpdating] = useState(false)
+  const [activeUploadId, setActiveUploadId] = useState<string | null>(null)
+
+  const { pickAndUpload, isUploading, progress } = useUpload()
+
+  const handleUpload = async (lessonId: string, type: 'VIDEO' | 'DOCUMENT') => {
+    try {
+      setActiveUploadId(lessonId)
+      await pickAndUpload(lessonId, type)
+      Alert.alert('Success', 'Content uploaded successfully')
+      queryClient.invalidateQueries({ queryKey: ['instructor', 'course', id] })
+    } catch (error) {
+      if (error instanceof MobileAppError) {
+        const actions: AlertButton[] = [{ text: 'OK' }]
+        if (error.isRetryable) {
+          actions.unshift({
+            text: 'Retry',
+            onPress: () => handleUpload(lessonId, type),
+          })
+        }
+        Alert.alert('Upload failed', error.message, actions)
+      } else {
+        Alert.alert('Error', 'Failed to upload content')
+      }
+    } finally {
+      setActiveUploadId(null)
+    }
+  }
 
   const toggleStatus = async () => {
     if (!course) return
@@ -46,10 +76,12 @@ export default function InstructorCourseDetail() {
   if (isLoading || !course) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
-        <AppText>Loading...</AppText>
+        <ActivityIndicator size="large" color="#4f46e5" />
       </View>
     )
   }
+
+  const sortedModules = (course.modules || []).slice().sort((a, b) => getOrder(a) - getOrder(b))
 
   return (
     <View className="flex-1 bg-slate-50">
@@ -106,7 +138,7 @@ export default function InstructorCourseDetail() {
             </TouchableOpacity>
           </View>
 
-          {course.modules?.map((module, index) => (
+          {sortedModules.map((module, index) => (
             <View
               key={module.id}
               className="bg-white rounded-xl border border-slate-100 mb-3 overflow-hidden"
@@ -120,23 +152,18 @@ export default function InstructorCourseDetail() {
               </TouchableOpacity>
 
               <View className="bg-slate-50 border-t border-slate-100">
-                {module.lessons.map((lesson) => (
-                  <TouchableOpacity
-                    key={lesson.id}
-                    className="flex-row items-center p-3 pl-15 border-b border-slate-100"
-                  >
-                    <Ionicons
-                      name={lesson.type === 'VIDEO' ? 'play-circle' : 'document-text'}
-                      size={16}
-                      color="#64748b"
-                      style={{ marginRight: 8, marginLeft: 36 }}
+                {module.lessons
+                  .slice()
+                  .sort((a, b) => getOrder(a) - getOrder(b))
+                  .map((lesson) => (
+                    <LessonRow
+                      key={lesson.id}
+                      lesson={lesson}
+                      onUpload={handleUpload}
+                      isUploading={activeUploadId === lesson.id && isUploading}
+                      progress={progress}
                     />
-                    <AppText className="flex-1 text-slate-700 text-sm" numberOfLines={1}>
-                      {lesson.title}
-                    </AppText>
-                    <Ionicons name="ellipsis-vertical" size={16} color="#cbd5e1" />
-                  </TouchableOpacity>
-                ))}
+                  ))}
               </View>
             </View>
           ))}
@@ -150,7 +177,17 @@ export default function InstructorCourseDetail() {
         </View>
       </ScrollView>
 
-      <View className="p-4 bg-white border-t border-slate-100">
+      <View className="p-4 bg-white border-t border-slate-100 gap-y-3">
+        <TouchableOpacity
+          className="bg-white border border-slate-200 p-4 rounded-xl items-center"
+          onPress={() => router.push(`/instructor-course/${id}/analytics`)}
+        >
+          <View className="flex-row items-center">
+            <Ionicons name="bar-chart-outline" size={20} color="#4f46e5" />
+            <AppText className="text-indigo-600 font-bold ml-2">View Course Analytics</AppText>
+          </View>
+        </TouchableOpacity>
+
         <TouchableOpacity
           className="bg-indigo-600 p-4 rounded-xl items-center shadow-lg shadow-indigo-200"
           onPress={() => router.push(`/instructor-course/${id}/assignments`)}
@@ -163,4 +200,120 @@ export default function InstructorCourseDetail() {
       </View>
     </View>
   )
+}
+
+function LessonRow({
+  lesson,
+  onUpload,
+  isUploading,
+  progress,
+}: {
+  lesson: { id: string; title: string; type: 'VIDEO' | 'DOCUMENT' | 'QUIZ' }
+  onUpload: (lessonId: string, type: 'VIDEO' | 'DOCUMENT') => void
+  isUploading: boolean
+  progress: number
+}) {
+  const { data: contentItems } = useLessonContent(lesson.id)
+  const content = contentItems?.[0]
+  const status = content?.status
+  const metadata = content?.metadata
+  const statusLabel = formatStatus(status)
+
+  return (
+    <View className="border-b border-slate-100">
+      <TouchableOpacity
+        className="flex-row items-center p-3 pl-15"
+        onPress={() => {
+          if (lesson.type !== 'QUIZ') {
+            Alert.alert(
+              'Manage Content',
+              `Upload or replace content for ${lesson.title}`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: `Upload ${lesson.type === 'VIDEO' ? 'Video' : 'Document'}`,
+                  onPress: () => onUpload(lesson.id, lesson.type as 'VIDEO' | 'DOCUMENT'),
+                },
+              ],
+            )
+          }
+        }}
+      >
+        <Ionicons
+          name={lesson.type === 'VIDEO' ? 'play-circle' : (lesson.type === 'QUIZ' ? 'help-circle' : 'document-text')}
+          size={16}
+          color={status === 'READY' ? '#10b981' : status === 'FAILED' ? '#f43f5e' : '#64748b'}
+          style={{ marginRight: 8, marginLeft: 36 }}
+        />
+        <View className="flex-1">
+          <AppText className="text-sm text-slate-900" numberOfLines={1}>
+            {lesson.title}
+          </AppText>
+          <View className="flex-row items-center mt-1">
+            <AppText className={`text-[10px] mr-2 ${status === 'FAILED' ? 'text-rose-600' : 'text-slate-500'}`}>
+              {statusLabel}
+            </AppText>
+            {metadata?.durationSecs ? (
+              <AppText className="text-[10px] text-slate-500 mr-2">
+                {formatDuration(metadata.durationSecs)}
+              </AppText>
+            ) : null}
+            {metadata?.sizeBytes ? (
+              <AppText className="text-[10px] text-slate-500">
+                {formatBytes(metadata.sizeBytes)}
+              </AppText>
+            ) : null}
+          </View>
+        </View>
+
+        {isUploading ? (
+          <View className="flex-row items-center">
+            <AppText className="text-[10px] text-indigo-600 mr-1 font-bold">{progress}%</AppText>
+            <ActivityIndicator size="small" color="#4f46e5" />
+          </View>
+        ) : (
+          status === 'READY' ? (
+            <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+          ) : (
+            <Ionicons name="cloud-upload-outline" size={16} color="#4f46e5" />
+          )
+        )}
+      </TouchableOpacity>
+
+      {isUploading && (
+        <View className="h-0.5 bg-slate-200 w-full overflow-hidden">
+          <View className="h-full bg-indigo-600" style={{ width: `${progress}%` }} />
+        </View>
+      )}
+    </View>
+  )
+}
+
+function formatStatus(status?: string) {
+  if (!status) return 'No media'
+  if (status === 'PROCESSING') return 'Processing'
+  if (status === 'UPLOADING') return 'Uploading'
+  if (status === 'READY') return 'Ready'
+  if (status === 'FAILED') return 'Failed'
+  return status
+}
+
+function formatDuration(seconds: number) {
+  const minutes = Math.floor(seconds / 60)
+  const remaining = seconds % 60
+  if (!remaining) return `${minutes}m`
+  return `${minutes}m ${remaining}s`
+}
+
+function formatBytes(bytes: number) {
+  const mb = bytes / (1024 * 1024)
+  if (mb >= 1) return `${mb.toFixed(1)} MB`
+  const kb = bytes / 1024
+  return `${kb.toFixed(0)} KB`
+}
+
+function getOrder(item: { sortOrder?: number; orderIndex?: number }) {
+  if (typeof item.sortOrder === 'number') return item.sortOrder
+  if (typeof item.orderIndex === 'number') return item.orderIndex
+  return 0
 }

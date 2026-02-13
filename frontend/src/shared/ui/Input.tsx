@@ -5,10 +5,11 @@ import { cn } from '@/shared/utils/cn'
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
+  helperText?: string
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, id, ...props }, ref) => {
+  ({ className, label, error, helperText, id, ...props }, ref) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
     const errorId = `${inputId}-error`
@@ -31,7 +32,11 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           {...props}
         />
-        {error && <p id={errorId} className="text-xs text-red-500">{error}</p>}
+        {error ? (
+          <p id={errorId} className="text-xs text-red-500">{error}</p>
+        ) : helperText ? (
+          <p className="text-xs text-slate-500">{helperText}</p>
+        ) : null}
       </div>
     )
   }

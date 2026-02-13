@@ -49,5 +49,9 @@
 - To add a new service: create under `services/`, update `docs/02-microservices.md`, and add API spec in `docs/api-specs/`.
 - To update an API: edit the relevant spec in `docs/api-specs/`, then update both backend and frontend/mobile clients.
 
+## note:- dont ./mvnw always use mvn pls like mvn clean install 
+
 ---
 For any new pattern or workflow, check the `docs/` folder first. If unclear, update this file with new conventions as they emerge.
+
+

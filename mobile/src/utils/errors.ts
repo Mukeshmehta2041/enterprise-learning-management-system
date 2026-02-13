@@ -48,7 +48,7 @@ export function mapErrorToMobileError(error: unknown): MobileAppError {
 
     if (status === 403) {
       return new MobileAppError(
-        'You do not have permission to perform this action.',
+        apiError?.message || 'You do not have permission to perform this action.',
         'FORBIDDEN',
         403,
         false,

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import { Course } from '../types'
 
@@ -40,6 +40,21 @@ export function useInstructorCourse(id: string) {
   })
 }
 
+export function useUpdateCourse() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Course> }) => {
+      const response = await apiClient.patch<Course>(`/api/v1/courses/${id}`, data)
+      return response.data
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['instructor', 'courses'] })
+      queryClient.invalidateQueries({ queryKey: ['instructor', 'course', variables.id] })
+      queryClient.invalidateQueries({ queryKey: ['courses', variables.id] })
+    },
+  })
+}
+
 export interface AssignmentStats {
   id: string
   title: string
@@ -58,5 +73,35 @@ export function useInstructorAssignments(courseId: string) {
       )
       return response.data
     },
+  })
+}
+
+export interface LectureEngagement {
+  lessonId: string
+  lessonTitle: string
+  totalWatches: number
+  totalCompletes: number
+  totalWatchTimeSecs: number
+  completionRate: number
+}
+
+export interface InstructorCourseAnalytics {
+  courseId: string
+  totalEnrollments: number
+  activeLearners: number
+  completionRate: number
+  lectureEngagement: LectureEngagement[]
+}
+
+export function useInstructorCourseAnalytics(courseId: string) {
+  return useQuery<InstructorCourseAnalytics>({
+    queryKey: ['instructor', 'analytics', courseId],
+    queryFn: async () => {
+      const response = await apiClient.get<InstructorCourseAnalytics>(
+        `/api/v1/analytics/course/${courseId}`,
+      )
+      return response.data
+    },
+    enabled: !!courseId,
   })
 }

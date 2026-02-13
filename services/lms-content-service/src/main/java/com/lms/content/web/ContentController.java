@@ -142,6 +142,19 @@ public class ContentController {
           .build();
     }
 
+    List<ContentResponseDTO.QuizQuestionDTO> questions = null;
+    if (item.getQuestions() != null && !item.getQuestions().isEmpty()) {
+      questions = item.getQuestions().stream()
+          .map(q -> ContentResponseDTO.QuizQuestionDTO.builder()
+              .id(q.getId())
+              .questionText(q.getQuestionText())
+              .options(q.getOptions())
+              .correctOptionId(q.getCorrectOptionId())
+              .sortOrder(q.getSortOrder())
+              .build())
+          .collect(Collectors.toList());
+    }
+
     return ContentResponseDTO.builder()
         .id(item.getId())
         .courseId(item.getCourseId())
@@ -150,6 +163,7 @@ public class ContentController {
         .title(item.getTitle())
         .status(item.getStatus())
         .metadata(metadataDTO)
+        .questions(questions)
         .build();
   }
 

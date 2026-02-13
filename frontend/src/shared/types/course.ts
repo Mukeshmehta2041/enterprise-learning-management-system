@@ -11,6 +11,10 @@ export const LessonSchema = z.object({
   duration: z.string().optional(),
   sortOrder: z.number().optional(),
   order: z.number().optional(),
+  isPreview: z.boolean().optional(),
+  canWatch: z.boolean().optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
+  availableAt: z.string().optional().nullable(),
 }).transform((data) => ({
   ...data,
   contentType: (data.type || data.contentType || 'VIDEO') as 'VIDEO' | 'DOCUMENT' | 'QUIZ',
@@ -45,8 +49,16 @@ export const CourseSchema = z.object({
   thumbnailUrl: z.string().optional().nullable(),
   category: z.string(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).or(z.string()),
-  price: z.number(),
+  price: z.number().optional().default(0),
+  currency: z.string().optional().default('USD'),
+  isFree: z.boolean().optional().default(true),
+  hasAccess: z.boolean().optional().default(false),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).or(z.string()),
+  isFeatured: z.boolean().optional().default(false),
+  isTrending: z.boolean().optional().default(false),
+  completionThreshold: z.number().optional().default(100),
+  requireAllAssignments: z.boolean().optional().default(false),
+  tags: z.array(z.string()).optional().default([]),
   totalEnrollments: z.number().optional().default(0),
   rating: z.number().optional().default(0),
   duration: z.string().optional().default('0h'),
@@ -70,6 +82,9 @@ export const CourseFiltersSchema = z.object({
   level: z.string().optional(),
   status: z.string().optional(),
   search: z.string().optional(),
+  isFeatured: z.boolean().optional(),
+  isTrending: z.boolean().optional(),
+  tags: z.string().optional(),
   sort: z.string().optional(),
   order: z.enum(['asc', 'desc']).optional(),
 })
@@ -88,6 +103,8 @@ export type LessonInput = {
   duration?: string
   sortOrder?: number
   order?: number
+  isPreview?: boolean
+  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 }
 
 export type ModuleInput = {

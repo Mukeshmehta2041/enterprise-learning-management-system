@@ -172,7 +172,7 @@ describe('Learner journey', () => {
 
     fireEvent.click(await screen.findByRole('link', { name: /react basics/i }))
 
-    const enrollButton = await screen.findByRole('button', { name: /enroll now/i })
+    const enrollButton = await screen.findByRole('button', { name: /enroll/i })
     fireEvent.click(enrollButton)
 
     await waitFor(() => expect(mockPost).toHaveBeenCalledWith('/enrollments', { courseId: course.id }))

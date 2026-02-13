@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | |
+| ~~⬜ Not started~~ | |
+| ~~🔄 In progress~~ | |
 | ✅ Done | Video player UX implemented with core controls and failure handling across platforms. |
 
-**Started:**  
-**Completed:**  
+**Started:** 2026-02-11  
+**Completed:** 2026-02-11
 
 ---
 
@@ -23,8 +23,8 @@
 
 ### Backend
 
-- [ ] **Playback telemetry schema**: Define events for play, pause, seek, completion, and errors; add API or ingestion endpoints to record them.
-- [ ] **Captions/subtitles model**: Extend the media model to track subtitle/caption files and their languages where applicable.
+- [x] **Playback telemetry schema**: Define events for play, pause, seek, completion, and errors; add API or ingestion endpoints to record them.
+- [x] **Captions/subtitles model**: Extend the media model to track subtitle/caption files and their languages where applicable.
 
 ### Frontend
 

@@ -2,12 +2,14 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { apiClient } from '../api/client'
 import { Course, PageResponse } from '../types'
 
+const LIST_FIELDS = 'id,title,thumbnailUrl,instructorName,price,isFree,level,averageRating,rating,enrollmentCount,duration';
+
 export function useCourses(params?: { search?: string; status?: string; level?: string }) {
   return useQuery<Course[]>({
     queryKey: ['courses', params],
     queryFn: async () => {
       const response = await apiClient.get<PageResponse<Course>>('/api/v1/courses', {
-        params: { ...params },
+        params: { ...params, fields: LIST_FIELDS },
       })
       return response.data.items || response.data.content || []
     },
@@ -15,7 +17,16 @@ export function useCourses(params?: { search?: string; status?: string; level?: 
 }
 
 export function useInfiniteCourses(
-  params: { search?: string; status?: string; level?: string; size?: number } = {},
+  params: {
+    search?: string;
+    status?: string;
+    level?: string;
+    category?: string;
+    isFeatured?: boolean;
+    isTrending?: boolean;
+    tags?: string; // Comma separated
+    size?: number;
+  } = {},
 ) {
   return useInfiniteQuery({
     queryKey: ['courses', 'infinite', params],
@@ -25,6 +36,7 @@ export function useInfiniteCourses(
           ...params,
           page: pageParam,
           size: params.size || 10,
+          fields: LIST_FIELDS,
         },
       })
       return response.data
@@ -46,5 +58,29 @@ export function useCourse(id: string) {
       return response.data
     },
     enabled: !!id,
+  })
+}
+
+export function useFeaturedCourses() {
+  return useQuery<Course[]>({
+    queryKey: ['courses', 'featured'],
+    queryFn: async () => {
+      const response = await apiClient.get<PageResponse<Course>>('/api/v1/courses', {
+        params: { isFeatured: true, size: 5, fields: LIST_FIELDS },
+      })
+      return response.data.items || response.data.content || []
+    },
+  })
+}
+
+export function useTrendingCourses() {
+  return useQuery<Course[]>({
+    queryKey: ['courses', 'trending'],
+    queryFn: async () => {
+      const response = await apiClient.get<PageResponse<Course>>('/api/v1/courses', {
+        params: { isTrending: true, size: 5, fields: LIST_FIELDS },
+      })
+      return response.data.items || response.data.content || []
+    },
   })
 }

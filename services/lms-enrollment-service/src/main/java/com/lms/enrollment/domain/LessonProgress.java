@@ -69,6 +69,10 @@ public class LessonProgress {
     return lastAccessedAt;
   }
 
+  public Double getLastPositionSecs() {
+    return lastPositionSecs;
+  }
+
   public void markCompleted() {
     if (!this.completed) {
       this.completed = true;

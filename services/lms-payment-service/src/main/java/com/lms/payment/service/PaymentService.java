@@ -56,6 +56,7 @@ public class PaymentService {
     Payment payment = Payment.builder()
         .userId(request.getUserId())
         .planId(request.getPlanId())
+        .courseId(request.getCourseId())
         .amount(request.getAmount())
         .idempotencyKey(request.getIdempotencyKey())
         .status(Payment.PaymentStatus.PENDING)
@@ -91,9 +92,10 @@ public class PaymentService {
   }
 
   private void publishPaymentEvent(Payment payment) {
+    String courseIdStr = payment.getCourseId() != null ? "\"" + payment.getCourseId() + "\"" : "null";
     String event = String.format(
-        "{\"eventType\":\"PaymentCompleted\",\"aggregateId\":\"%d\",\"aggregateType\":\"Payment\",\"payload\":{\"userId\":\"%s\",\"amount\":%.2f}}",
-        payment.getId(), payment.getUserId().toString(), payment.getAmount());
+        "{\"eventType\":\"PaymentCompleted\",\"aggregateId\":\"%d\",\"aggregateType\":\"Payment\",\"payload\":{\"userId\":\"%s\",\"courseId\":%s,\"amount\":%.2f}}",
+        payment.getId(), payment.getUserId().toString(), courseIdStr, payment.getAmount());
     kafkaTemplate.send("payment.events", event);
   }
 

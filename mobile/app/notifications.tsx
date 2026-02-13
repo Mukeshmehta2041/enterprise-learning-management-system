@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { View, FlatList, RefreshControl, TouchableOpacity } from 'react-native'
-import { Stack } from 'expo-router'
+import { Stack, useRouter } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AppText } from '../src/components/AppText'
 import { apiClient } from '../src/api/client'
@@ -9,6 +9,7 @@ import { setBadgeCount } from '../src/utils/notifications'
 
 export default function NotificationsScreen() {
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   const {
     data: notifications,
@@ -38,18 +39,57 @@ export default function NotificationsScreen() {
     },
   })
 
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'COURSE_UPDATE':
+      case 'LESSON_PUBLISHED':
+      case 'LESSON_UPDATED':
+        return 'book-outline'
+      case 'ASSIGNMENT_CREATED':
+      case 'ASSIGNMENT_UPDATED':
+        return 'clipboard-outline'
+      case 'ASSIGNMENT_DUE_SOON':
+        return 'alarm-outline'
+      case 'ASSIGNMENT_GRADED':
+        return 'ribbon-outline'
+      case 'ENROLLMENT':
+        return 'school-outline'
+      case 'USER_WELCOME':
+        return 'happy-outline'
+      default:
+        return 'notifications-outline'
+    }
+  }
+
+  const handlePress = (item: any) => {
+    if (!item.read) {
+      markReadMutation.mutate(item.id)
+    }
+    if (item.link) {
+      let url = item.link
+      // Normalize web-style links to mobile routes
+      if (url.startsWith('/courses/')) {
+        url = url.replace('/courses/', '/course/')
+      }
+      if (url.startsWith('/assignments/')) {
+        url = url.replace('/assignments/', '/assignment/')
+      }
+      router.push(url as any)
+    }
+  }
+
   const renderItem = ({ item }: { item: any }) => {
     if (!item) return null
     return (
       <TouchableOpacity
         className={`px-6 py-4 border-b border-slate-50 flex-row items-center ${item.read ? 'bg-white' : 'bg-blue-50/30'}`}
-        onPress={() => !item.read && markReadMutation.mutate(item.id)}
+        onPress={() => handlePress(item)}
       >
         <View
           className={`w-10 h-10 rounded-full items-center justify-center mr-4 ${item.read ? 'bg-slate-100' : 'bg-primary/20'}`}
         >
           <Ionicons
-            name={item.type === 'COURSE_UPDATE' ? 'book' : 'notifications'}
+            name={getIcon(item.type) as any}
             size={20}
             color={item.read ? '#64748b' : '#4f46e5'}
           />

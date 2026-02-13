@@ -13,9 +13,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,6 +46,9 @@ public class CourseController {
       @RequestParam(required = false) String category,
       @RequestParam(required = false) String level,
       @RequestParam(required = false) String search,
+      @RequestParam(required = false) Boolean isFeatured,
+      @RequestParam(required = false) Boolean isTrending,
+      @RequestParam(required = false) List<String> tags,
       @RequestParam(required = false) String sort,
       @RequestParam(required = false, defaultValue = "desc") String order,
       @RequestParam(required = false) String cursor,
@@ -67,7 +73,8 @@ public class CourseController {
 
     Integer effectiveLimit = limit != null ? limit : size;
     CourseListResponse response = courseService.listCourses(
-        courseStatus, category, level, search, sort, order, cursor, effectiveLimit, page, userId, roles);
+        courseStatus, category, level, search, isFeatured, isTrending, tags,
+        sort, order, cursor, effectiveLimit, page, userId, roles);
 
     MappingJacksonValue filteredResponse = SparseFieldFilter.filter(response, fields);
 
@@ -98,6 +105,16 @@ public class CourseController {
     return ResponseEntity.ok(response);
   }
 
+  @PostMapping("/{courseId}/duplicate")
+  public ResponseEntity<CourseResponse> duplicateCourse(
+      @PathVariable UUID courseId,
+      @RequestHeader(HEADER_USER_ID) String currentUserId,
+      @RequestHeader(HEADER_ROLES) String currentRolesHeader) {
+    UUID userId = UUID.fromString(currentUserId);
+    Set<String> roles = parseRoles(currentRolesHeader);
+    return ResponseEntity.ok(courseService.duplicateCourse(courseId, userId, roles));
+  }
+
   @GetMapping("/{courseId}/validate-instructor/{userId}")
   public ResponseEntity<Boolean> validateInstructor(
       @PathVariable UUID courseId,
@@ -106,24 +123,53 @@ public class CourseController {
     return ResponseEntity.ok(isInstructor);
   }
 
+  @GetMapping("/{courseId}/lessons/{lessonId}/validate-preview")
+  public ResponseEntity<Boolean> validatePreview(
+      @PathVariable UUID courseId,
+      @PathVariable UUID lessonId) {
+    boolean isPreview = courseService.isLessonPreview(courseId, lessonId);
+    return ResponseEntity.ok(isPreview);
+  }
+
+  @GetMapping("/{courseId}/is-free")
+  public ResponseEntity<Boolean> isFree(@PathVariable UUID courseId) {
+    boolean isFree = courseService.isFree(courseId);
+    return ResponseEntity.ok(isFree);
+  }
+
+  @GetMapping("/{courseId}/is-published")
+  public ResponseEntity<Boolean> isPublished(@PathVariable UUID courseId) {
+    boolean isPublished = courseService.getCourseStatus(courseId) == CourseStatus.PUBLISHED;
+    return ResponseEntity.ok(isPublished);
+  }
+
   @GetMapping("/{courseId}")
   public ResponseEntity<CourseDetailResponse> getCourse(
       @PathVariable UUID courseId,
       @RequestHeader(value = HEADER_USER_ID, required = false) String currentUserId,
-      @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader) {
+      @RequestHeader(value = HEADER_ROLES, required = false) String currentRolesHeader,
+      WebRequest webRequest) {
 
-    if (currentUserId == null || currentUserId.isBlank()) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    UUID userId = (currentUserId != null && !currentUserId.isBlank()) ? UUID.fromString(currentUserId) : null;
+    Set<String> roles = parseRoles(currentRolesHeader);
+
+    // Day 17: Conditional GET optimization
+    Instant lastUpdate = courseService.getUpdatedAt(courseId);
+    if (lastUpdate != null) {
+      String etag = String.format("\"%s-%d\"", courseId, lastUpdate.toEpochMilli());
+      if (webRequest.checkNotModified(etag)) {
+        return null;
+      }
     }
 
-    Set<String> roles = parseRoles(currentRolesHeader);
-    UUID userId = UUID.fromString(currentUserId);
     CourseDetailResponse response = courseService.getCourseById(courseId, userId, roles);
 
-    CacheControl cacheControl = CacheControl.maxAge(Duration.ofMinutes(10)).cachePublic();
+    CacheControl cacheControl = CacheControl.maxAge(Duration.ofMinutes(1)).cachePublic();
+    String etag = String.format("\"%s-%d\"", courseId, response.updatedAt().toEpochMilli());
 
     return ResponseEntity.ok()
         .cacheControl(cacheControl)
+        .eTag(etag)
         .header("Deprecation", "true")
         .header("Sunset", "2025-12-31")
         .body(response);
@@ -269,6 +315,51 @@ public class CourseController {
     return ResponseEntity.ok(response);
   }
 
+  @DeleteMapping("/{courseId}/modules/{moduleId}")
+  @Operation(summary = "Delete a module", description = "Deletes a module from a course")
+  public ResponseEntity<Void> deleteModule(
+      @PathVariable UUID courseId,
+      @PathVariable UUID moduleId,
+      @RequestHeader(value = HEADER_USER_ID) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES) String currentRolesHeader) {
+
+    UUID userId = UUID.fromString(currentUserId);
+    Set<String> roles = parseRoles(currentRolesHeader);
+
+    courseService.deleteModule(courseId, moduleId, userId, roles);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/{courseId}/modules/reorder")
+  @Operation(summary = "Reorder modules", description = "Updates the sort order of multiple modules in a course")
+  public ResponseEntity<Void> reorderModules(
+      @PathVariable UUID courseId,
+      @Valid @RequestBody BulkReorderRequest request,
+      @RequestHeader(value = HEADER_USER_ID) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES) String currentRolesHeader) {
+
+    UUID userId = UUID.fromString(currentUserId);
+    Set<String> roles = parseRoles(currentRolesHeader);
+
+    courseService.reorderModules(courseId, request, userId, roles);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/{courseId}/curriculum/sync")
+  @Operation(summary = "Sync curriculum", description = "Saves the entire course modules and lessons structure in one request")
+  public ResponseEntity<List<ModuleResponse>> syncCurriculum(
+      @PathVariable UUID courseId,
+      @Valid @RequestBody SyncCurriculumRequest request,
+      @RequestHeader(value = HEADER_USER_ID) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES) String currentRolesHeader) {
+
+    UUID userId = UUID.fromString(currentUserId);
+    Set<String> roles = parseRoles(currentRolesHeader);
+
+    List<ModuleResponse> modules = courseService.syncCurriculum(courseId, request, userId, roles);
+    return ResponseEntity.ok(modules);
+  }
+
   @PostMapping("/{courseId}/modules/{moduleId}/lessons")
   public ResponseEntity<LessonResponse> createLesson(
       @PathVariable UUID courseId,
@@ -344,6 +435,23 @@ public class CourseController {
 
     courseService.deleteLesson(courseId, moduleId, lessonId, userId, roles);
     return ResponseEntity.noContent().build();
+  }
+
+  @PatchMapping("/admin/bulk-status")
+  @Operation(summary = "Bulk update course status", description = "Admin only. Update status of multiple courses.")
+  public ResponseEntity<Void> bulkUpdateStatus(
+      @RequestBody BulkStatusUpdateRequest request,
+      @RequestHeader(value = HEADER_USER_ID) String currentUserId,
+      @RequestHeader(value = HEADER_ROLES) String currentRolesHeader) {
+    Set<String> roles = parseRoles(currentRolesHeader);
+    if (!roles.contains("ADMIN")) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+    courseService.bulkUpdateStatus(request.courseIds(), request.status(), UUID.fromString(currentUserId));
+    return ResponseEntity.ok().build();
+  }
+
+  public record BulkStatusUpdateRequest(List<UUID> courseIds, CourseStatus status) {
   }
 
   private Set<String> parseRoles(String rolesHeader) {

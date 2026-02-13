@@ -10,12 +10,12 @@
 
 | Status | Description |
 |--------|-------------|
-| ⬜ Not started | |
-| 🔄 In progress | |
+| ~~⬜ Not started~~ | |
+| ~~🔄 In progress~~ | |
 | ✅ Done | Media-related errors are well-defined, observable, and surfaced with clear UX. |
 
-**Started:**  
-**Completed:**  
+**Started:** 2026-02-11  
+**Completed:** 2026-02-11
 
 ---
 
@@ -23,10 +23,10 @@
 
 ### Backend
 
-- [ ] **Error taxonomy**: Define a set of media-specific error codes (upload failures, processing failures, access denied, unsupported format, size limit exceeded).
-- [ ] **Consistent responses**: Ensure all media and lecture endpoints return structured error responses aligned with the global error model.
-- [ ] **Logging & tracing**: Add structured logging and tracing around upload, processing, and playback-token endpoints, including correlation IDs.
-- [ ] **Metrics & alerts**: Expose metrics (error rates, processing duration, failure counts) and configure basic alerts for problematic trends.
+- [x] **Error taxonomy**: Define a set of media-specific error codes (upload failures, processing failures, access denied, unsupported format, size limit exceeded).
+- [x] **Consistent responses**: Ensure all media and lecture endpoints return structured error responses aligned with the global error model.
+- [x] **Logging & tracing**: Add structured logging and tracing around upload, processing, and playback-token endpoints, including correlation IDs.
+- [x] **Metrics & alerts**: Expose metrics (error rates, processing duration, failure counts) and configure basic alerts for problematic trends.
 
 ### Frontend
 

@@ -9,6 +9,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -28,6 +29,44 @@ public class CourseEventPublisher {
   public void publishCourseDeleted(String courseId) {
     EventEnvelope event = EventEnvelope.of("CourseDeleted", courseId, Map.of("id", courseId), null);
     kafkaTemplate.send(TOPIC, courseId, event);
+  }
+
+  public void publishModuleDeleted(String courseId, String moduleId) {
+    EventEnvelope event = EventEnvelope.of("ModuleDeleted", moduleId,
+        Map.of("courseId", courseId, "moduleId", moduleId), null);
+    kafkaTemplate.send(TOPIC, courseId, event);
+  }
+
+  public void publishLessonDeleted(String courseId, String lessonId) {
+    EventEnvelope event = EventEnvelope.of("LessonDeleted", lessonId,
+        Map.of("courseId", courseId, "lessonId", lessonId), null);
+    kafkaTemplate.send(TOPIC, courseId, event);
+  }
+
+  public void publishLessonPublished(UUID courseId, UUID lessonId, String title) {
+    EventEnvelope event = EventEnvelope.of(
+        "LessonPublished",
+        lessonId.toString(),
+        Map.of(
+            "courseId", courseId,
+            "lessonId", lessonId,
+            "title", title),
+        null);
+    kafkaTemplate.send(TOPIC, courseId.toString(), event);
+    log.info("Published LessonPublished event for lesson: {}", lessonId);
+  }
+
+  public void publishLessonUpdated(UUID courseId, UUID lessonId, String title) {
+    EventEnvelope event = EventEnvelope.of(
+        "LessonUpdated",
+        lessonId.toString(),
+        Map.of(
+            "courseId", courseId,
+            "lessonId", lessonId,
+            "title", title),
+        null);
+    kafkaTemplate.send(TOPIC, courseId.toString(), event);
+    log.info("Published LessonUpdated event for lesson: {}", lessonId);
   }
 
   private void publish(Course course, String eventType) {

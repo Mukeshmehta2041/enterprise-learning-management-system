@@ -11,6 +11,10 @@ public record CreateCourseRequest(
     String category,
     String level,
     java.math.BigDecimal price,
+    String currency,
+    Boolean isFree,
+    java.math.BigDecimal completionThreshold,
+    Boolean requireAllAssignments,
     CourseStatus status,
     java.util.List<CreateModuleRequest> modules) {
 }

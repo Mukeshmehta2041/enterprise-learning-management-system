@@ -1,12 +1,14 @@
 import React from 'react'
-import { View, ScrollView, RefreshControl, TouchableOpacity } from 'react-native'
+import { View, ScrollView, RefreshControl, TouchableOpacity, Image } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useQuery } from '@tanstack/react-query'
 import { AppText } from '../../src/components/AppText'
 import { Card } from '../../src/components/Card'
 import { ProgressBar } from '../../src/components/ProgressBar'
+import { CourseCarousel } from '../../src/components/CourseCarousel'
 import { apiClient } from '../../src/api/client'
 import { useAuthStore } from '../../src/state/useAuthStore'
+import { useFeaturedCourses, useTrendingCourses } from '../../src/hooks/useCourses'
 import { Ionicons } from '@expo/vector-icons'
 
 export default function HomeScreen() {
@@ -15,8 +17,8 @@ export default function HomeScreen() {
 
   const {
     data: enrollments,
-    isLoading,
-    refetch,
+    isLoading: isEnrollmentsLoading,
+    refetch: refetchEnrollments,
   } = useQuery({
     queryKey: ['enrollments', 'me'],
     queryFn: async () => {
@@ -25,13 +27,32 @@ export default function HomeScreen() {
     },
   })
 
-  const activeEnrollments = enrollments?.filter((e: any) => e.status !== 'COMPLETED') || []
-  const completedEnrollments = enrollments?.filter((e: any) => e.status === 'COMPLETED') || []
+  const { data: featuredCourses, isLoading: isFeaturedLoading, refetch: refetchFeatured } = useFeaturedCourses()
+  const { data: trendingCourses, isLoading: isTrendingLoading, refetch: refetchTrending } = useTrendingCourses()
+
+  const onRefresh = () => {
+    refetchEnrollments()
+    refetchFeatured()
+    refetchTrending()
+  }
+
+  const isLoading = isEnrollmentsLoading || isFeaturedLoading || isTrendingLoading
+
+  const sortedEnrollments = [...(enrollments || [])].sort((a: any, b: any) =>
+    new Date(b.lastAccessedAt || b.enrolledAt).getTime() -
+    new Date(a.lastAccessedAt || a.enrolledAt).getTime()
+  )
+
+  const continueWatching = sortedEnrollments.find((e: any) => e.status !== 'COMPLETED')
+  const otherActiveEnrollments = sortedEnrollments.filter(
+    (e: any) => e.status !== 'COMPLETED' && e.id !== continueWatching?.id
+  )
+  const completedEnrollments = sortedEnrollments.filter((e: any) => e.status === 'COMPLETED')
 
   return (
     <ScrollView
       className="flex-1 bg-background"
-      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} />}
     >
       <View className="px-6 py-8">
         <View className="flex-row justify-between items-center mb-6">
@@ -40,7 +61,7 @@ export default function HomeScreen() {
             <AppText color="muted">Continue your learning journey</AppText>
           </View>
           <TouchableOpacity
-            className="w-12 h-12 bg-primary/10 rounded-full items-center justify-center"
+            className="w-12 h-12 bg-primary/10 rounded-full items-center justify-center border border-primary/20"
             onPress={() => router.push('/(tabs)/profile')}
           >
             <AppText color="primary" weight="bold">
@@ -49,61 +70,119 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {activeEnrollments.length > 0 ? (
+        {continueWatching && (
           <View className="mb-8">
             <AppText variant="h3" className="mb-4">
-              My Dashboard
+              Continue Watching
             </AppText>
-            {activeEnrollments.map((enr: any) => (
-              <TouchableOpacity
-                key={enr.id}
-                onPress={() => router.push(`/course/${enr.courseId}`)}
-                activeOpacity={0.8}
-              >
-                <Card className="mb-4 p-4 border-l-4 border-l-primary">
-                  <View className="flex-row justify-between items-start mb-3">
-                    <View className="flex-1">
-                      <AppText variant="body" weight="bold" numberOfLines={1}>
-                        {enr.courseTitle || 'Untitled Course'}
+            <TouchableOpacity
+              onPress={() =>
+                continueWatching.lastLessonId
+                  ? router.push(`/course/${continueWatching.courseId}/lesson/${continueWatching.lastLessonId}`)
+                  : router.push(`/course/${continueWatching.courseId}`)
+              }
+              activeOpacity={0.9}
+            >
+              <Card className="p-0 overflow-hidden border-0 bg-slate-900 shadow-xl shadow-primary/20">
+                <View className="flex-row h-32">
+                  <View className="w-1/3 bg-slate-800 items-center justify-center">
+                    {continueWatching.courseThumbnailUrl ? (
+                      <Image
+                        source={{ uri: continueWatching.courseThumbnailUrl }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Ionicons name="play-circle" size={48} color="#4f46e5" />
+                    )}
+                  </View>
+                  <View className="flex-1 p-4 justify-between">
+                    <View>
+                      <View className="bg-primary/20 self-start px-2 py-0.5 rounded mb-1">
+                        <AppText variant="tiny" weight="bold" color="primary" className="uppercase tracking-tighter">
+                          Resume Learning
+                        </AppText>
+                      </View>
+                      <AppText variant="body" weight="bold" className="text-white" numberOfLines={1}>
+                        {continueWatching.courseTitle}
                       </AppText>
-                      <AppText variant="small" color="muted">
-                        Started: {new Date(enr.enrolledAt).toLocaleDateString()}
+                      <AppText variant="tiny" className="text-slate-400">
+                        Progress: {Math.round(continueWatching.progressPct)}%
                       </AppText>
                     </View>
-                    <AppText variant="small" weight="bold" color="primary">
-                      {enr.progressPct}%
-                    </AppText>
+                    <ProgressBar progress={continueWatching.progressPct} className="h-1.5 bg-slate-800" />
                   </View>
-                  <ProgressBar progress={enr.progressPct} className="mb-2" />
-                  <AppText variant="small" color="primary" weight="medium">
-                    Continue Learning
-                  </AppText>
-                </Card>
-              </TouchableOpacity>
-            ))}
+                </View>
+              </Card>
+            </TouchableOpacity>
           </View>
-        ) : (
-          !isLoading && (
-            <View className="bg-white p-8 rounded-2xl items-center mb-8 border border-dashed border-slate-200">
-              <Ionicons name="school-outline" size={48} color="#94a3b8" />
-              <AppText className="mt-4 mb-2" weight="bold">
-                No active courses
-              </AppText>
-              <AppText color="muted" className="text-center mb-6">
-                Browse the catalog to find your next course!
-              </AppText>
-              <TouchableOpacity
-                className="bg-primary px-6 py-2.5 rounded-lg"
-                onPress={() => router.push('/(tabs)/courses')}
-              >
-                <AppText className="text-white font-bold">Explore Courses</AppText>
-              </TouchableOpacity>
-            </View>
-          )
         )}
 
+        {otherActiveEnrollments.length > 0 && (
+          <View className="mb-8">
+            <AppText variant="h3" className="mb-4">
+              Your Courses
+            </AppText>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+              {otherActiveEnrollments.map((enr: any) => (
+                <TouchableOpacity
+                  key={enr.id}
+                  className="mr-4 w-64"
+                  onPress={() => router.push(`/course/${enr.courseId}`)}
+                  activeOpacity={0.8}
+                >
+                  <Card className="p-4 border-l-4 border-l-primary/40">
+                    <AppText variant="body" weight="bold" numberOfLines={1} className="mb-2">
+                      {enr.courseTitle}
+                    </AppText>
+                    <View className="flex-row justify-between items-center mb-2">
+                      <AppText variant="tiny" color="muted">
+                        Progress
+                      </AppText>
+                      <AppText variant="tiny" weight="bold" color="primary">
+                        {Math.round(enr.progressPct)}%
+                      </AppText>
+                    </View>
+                    <ProgressBar progress={enr.progressPct} className="h-1" />
+                  </Card>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {enrollments?.length === 0 && !isEnrollmentsLoading && (
+          <View className="bg-white p-8 rounded-2xl items-center mb-8 border border-dashed border-slate-200">
+            <Ionicons name="school-outline" size={48} color="#94a3b8" />
+            <AppText className="mt-4 mb-2" weight="bold">
+              No active courses
+            </AppText>
+            <AppText color="muted" className="text-center mb-6">
+              Browse the catalog to find your next course!
+            </AppText>
+            <TouchableOpacity
+              className="bg-primary px-6 py-2.5 rounded-lg"
+              onPress={() => router.push('/(tabs)/courses')}
+            >
+              <AppText className="text-white font-bold">Explore Courses</AppText>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <CourseCarousel
+          title="Featured Courses"
+          courses={featuredCourses}
+          isLoading={isFeaturedLoading}
+        />
+
+        <CourseCarousel
+          title="Trending Now"
+          courses={trendingCourses}
+          isLoading={isTrendingLoading}
+        />
+
         {completedEnrollments.length > 0 && (
-          <View>
+          <View className="mb-8">
             <AppText variant="h3" className="mb-4">
               Completed
             </AppText>

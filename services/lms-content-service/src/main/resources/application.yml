@@ -58,6 +58,8 @@ springdoc:
 lms:
   course-service:
     url: ${LMS_COURSE_SERVICE_URL:http://lms-course-service:8083}
+  enrollment-service:
+    url: ${LMS_ENROLLMENT_SERVICE_URL:http://lms-enrollment-service:8084}
   storage:
     bucket: ${LMS_STORAGE_BUCKET:lms-media}
     endpoint: ${LMS_STORAGE_ENDPOINT:http://minio:9000}

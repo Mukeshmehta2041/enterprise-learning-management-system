@@ -3,12 +3,14 @@ import { z } from 'zod'
 export const AssignmentSchema = z.object({
   id: z.string(),
   courseId: z.string(),
+  moduleId: z.string().optional().nullable(),
+  lessonId: z.string().optional().nullable(),
   courseTitle: z.string().optional().default('Untitled Course'),
   title: z.string(),
   description: z.string(),
   dueDate: z.string().optional().nullable(),
-  maxPoints: z.number().optional().default(100),
-  maxScore: z.number().optional(), // Match backend if present
+  maxScore: z.number().optional().default(100),
+  isMandatory: z.boolean().optional().default(true),
   status: z.enum(['PUBLISHED', 'DRAFT', 'ARCHIVED']).or(z.string()).optional().default('PUBLISHED'),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -19,12 +21,12 @@ export type Assignment = z.infer<typeof AssignmentSchema>;
 export const SubmissionSchema = z.object({
   id: z.string(),
   assignmentId: z.string(),
-  userId: z.string(),
+  studentId: z.string(),
   content: z.string(),
-  submissionDate: z.string(),
-  grade: z.number().optional(),
-  feedback: z.string().optional(),
-  status: z.enum(['SUBMITTED', 'GRADED', 'LATE']),
+  submittedAt: z.string(),
+  grade: z.number().optional().nullable(),
+  feedback: z.string().optional().nullable(),
+  status: z.enum(['SUBMITTED', 'GRADED']).or(z.string()),
 })
 
 export type Submission = z.infer<typeof SubmissionSchema>;

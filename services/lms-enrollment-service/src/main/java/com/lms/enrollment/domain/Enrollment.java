@@ -44,8 +44,14 @@ public class Enrollment {
   @Column(name = "completed_at")
   private Instant completedAt;
 
+  @Column(name = "last_lesson_id")
+  private UUID lastLessonId;
+
   @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<LessonProgress> lessonProgress = new ArrayList<>();
+
+  @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<AssignmentCompletion> assignmentCompletions = new ArrayList<>();
 
   protected Enrollment() {
   }
@@ -103,21 +109,48 @@ public class Enrollment {
     this.completedAt = completedAt;
   }
 
+  public UUID getLastLessonId() {
+    return lastLessonId;
+  }
+
+  public void setLastLessonId(UUID lastLessonId) {
+    this.lastLessonId = lastLessonId;
+  }
+
   public List<LessonProgress> getLessonProgress() {
     return lessonProgress;
   }
 
-  public void updateProgress(int completedLessons, int totalLessons) {
-    if (totalLessons > 0) {
-      this.progressPct = BigDecimal.valueOf((double) completedLessons / totalLessons * 100)
-          .setScale(2, RoundingMode.HALF_UP);
-    } else {
-      this.progressPct = BigDecimal.ZERO;
-    }
+  public List<AssignmentCompletion> getAssignmentCompletions() {
+    return assignmentCompletions;
+  }
 
-    if (this.progressPct.compareTo(BigDecimal.valueOf(100)) >= 0) {
-      this.status = EnrollmentStatus.COMPLETED;
-      this.completedAt = Instant.now();
+  public void updateProgress(int completedLessons, int totalLessons,
+      BigDecimal completionThreshold, boolean requireAllAssignments,
+      long completedAssignments, long totalMandatoryAssignments) {
+
+    BigDecimal lessonProgress = totalLessons > 0
+        ? BigDecimal.valueOf((double) completedLessons / totalLessons * 100)
+        : BigDecimal.ZERO;
+
+    this.progressPct = lessonProgress.setScale(2, RoundingMode.HALF_UP);
+
+    boolean meetsThreshold = this.progressPct.compareTo(completionThreshold) >= 0;
+    boolean meetsAssignments = !requireAllAssignments || (completedAssignments >= totalMandatoryAssignments);
+
+    if (meetsThreshold && meetsAssignments) {
+      if (this.status != EnrollmentStatus.COMPLETED) {
+        this.status = EnrollmentStatus.COMPLETED;
+        this.completedAt = Instant.now();
+      }
+    } else {
+      // If they were completed but now something changed (e.g. new content added),
+      // keep it simple or revert status? For now, we'll just allow it to stay in
+      // progress.
+      if (this.status == EnrollmentStatus.COMPLETED) {
+        this.status = EnrollmentStatus.IN_PROGRESS;
+        this.completedAt = null;
+      }
     }
   }
 }

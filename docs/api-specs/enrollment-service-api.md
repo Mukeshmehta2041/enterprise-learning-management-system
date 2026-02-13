@@ -27,6 +27,14 @@ Base path: `/api/v1/enrollments`. All endpoints require authentication. Gateway 
 - **Response:** `200 OK`; body: full enrollment + optional `lessonProgress` (array of lesson id and completedAt).
 - **Errors:** `404` not found; `403` no access.
 
+## Get Entitlement for User and Course
+
+- **Method:** `GET /api/v1/enrollments/course/{courseId}/entitlement`
+- **Auth:** Required.
+- **Header:** `X-User-Id` (supplied by gateway).
+- **Response:** `200 OK`; body: `userId`, `courseId`, `accessLevel` (NONE, PREVIEW, FULL), `isEnrolled` (boolean), `reason` (string).
+- **Errors:** `404` course not found.
+
 ## Update progress (lesson completed)
 
 - **Method:** `POST /api/v1/enrollments/{enrollmentId}/progress` or `PATCH /api/v1/enrollments/{enrollmentId}/lessons/{lessonId}/complete`

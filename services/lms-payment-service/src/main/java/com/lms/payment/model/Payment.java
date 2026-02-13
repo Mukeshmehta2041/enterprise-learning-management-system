@@ -27,8 +27,11 @@ public class Payment {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
-  @Column(name = "plan_id", nullable = false)
+  @Column(name = "plan_id")
   private Long planId;
+
+  @Column(name = "course_id")
+  private UUID courseId;
 
   @Column(nullable = false)
   private BigDecimal amount;

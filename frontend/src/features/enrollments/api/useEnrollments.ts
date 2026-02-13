@@ -49,7 +49,11 @@ export function useEnrollSub() {
       queryClient.invalidateQueries({ queryKey: ['enrollments'] })
       queryClient.invalidateQueries({ queryKey: ['enrollment', data.courseId] })
       queryClient.invalidateQueries({ queryKey: ['courses'] })
-      success('Successfully enrolled in the course!')
+      if (data.status === 'PENDING_PAYMENT') {
+        success('Enrollment started. Complete payment to unlock this course.')
+      } else {
+        success('Successfully enrolled in the course!')
+      }
     },
     onError: (err) => {
       error(err.message || 'Failed to enroll in the course')
@@ -59,16 +63,22 @@ export function useEnrollSub() {
 
 export function useUpdateProgress(courseId: string) {
   const queryClient = useQueryClient()
+  const currentEnrollment = queryClient.getQueryData<Enrollment>(['enrollment', courseId])
 
   return useMutation<
-    Enrollment,
+    void,
     AppError,
     ProgressUpdate,
     { previousEnrollment?: Enrollment; previousEnrollments?: Enrollment[] }
   >({
     mutationFn: async (update: ProgressUpdate) => {
-      const { data } = await apiClient.post<Enrollment>(`/enrollments/${courseId}/progress`, update)
-      return EnrollmentSchema.parse(data)
+      if (!currentEnrollment) {
+        // Fallback: try to fetch first or use courseId if they match (dangerous)
+        const { data: enrollment } = await apiClient.get<Enrollment>(`/enrollments/course/${courseId}`)
+        await apiClient.patch(`/enrollments/${enrollment.id}/progress`, update)
+        return
+      }
+      await apiClient.patch(`/enrollments/${currentEnrollment.id}/progress`, update)
     },
     onMutate: async (update) => {
       await queryClient.cancelQueries({ queryKey: ['enrollment', courseId] })

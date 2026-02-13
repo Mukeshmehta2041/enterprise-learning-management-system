@@ -7,13 +7,16 @@ import { AppText } from '../../src/components/AppText'
 import { Button } from '../../src/components/Button'
 import { Badge } from '../../src/components/Badge'
 import { Card } from '../../src/components/Card'
+import { ProgressBar } from '../../src/components/ProgressBar'
 
 import { useCourse } from '../../src/hooks/useCourses'
-import { useEnrollments, useEnrollMutation } from '../../src/hooks/useEnrollments'
+import { useEnrollment, useEnrollMutation } from '../../src/hooks/useEnrollments'
+import { useCourseAssignments } from '../../src/hooks/useAssignments'
 import { useRole } from '../../src/hooks/useRole'
 import { useAuthStore } from '../../src/state/useAuthStore'
 import { useNotificationStore } from '../../src/state/useNotificationStore'
 import { analytics } from '../../src/utils/analytics'
+import { Assignment } from '../../src/types'
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -24,9 +27,9 @@ export default function CourseDetailScreen() {
   const { isAdmin } = useRole()
 
   const { data: course, isLoading, error } = useCourse(id)
-  const { data: enrollments } = useEnrollments()
-
-  const isEnrolled = enrollments?.some((e) => e.courseId === id)
+  const enrollment = useEnrollment(id!)
+  const { data: assignments } = useCourseAssignments(id!)
+  const isEnrolled = !!enrollment
   const isAuthor = course?.instructorId === currentUser?.id
 
   const enrollMutation = useEnrollMutation()
@@ -43,10 +46,34 @@ export default function CourseDetailScreen() {
   }, [course, isEnrolled])
 
   const handleEnroll = () => {
+    if (course && !course.isFree && !course.hasAccess) {
+      analytics.track('enroll_clicked', { courseId: id, courseTitle: course?.title })
+      enrollMutation.mutate(id, {
+        onSuccess: () => {
+          router.push({
+            pathname: '/checkout',
+            params: {
+              courseId: id,
+              courseName: course.title,
+              price: `${course.currency === 'USD' ? '$' : (course.currency || '$')}${course.price.toFixed(2)}`
+            }
+          })
+        },
+        onError: (err: any) => {
+          showNotification(err?.message || 'Failed to start checkout', 'error')
+        },
+      })
+      return
+    }
+
     analytics.track('enroll_clicked', { courseId: id, courseTitle: course?.title })
     enrollMutation.mutate(id, {
-      onSuccess: () => {
-        showNotification('You have been enrolled in this course!', 'success')
+      onSuccess: (data: any) => {
+        if (data?.status === 'PENDING_PAYMENT') {
+          showNotification('Enrollment started. Complete payment to unlock this course.', 'info')
+        } else {
+          showNotification('You have been enrolled in this course!', 'success')
+        }
         analytics.track('enrollment_success', { courseId: id, courseTitle: course?.title })
       },
       onError: (err: any) => {
@@ -141,54 +168,174 @@ export default function CourseDetailScreen() {
             Course Content
           </AppText>
 
-          {course.modules?.map((module, index) => (
-            <Card key={module.id} className="mb-4">
-              <AppText variant="h3" className="mb-2">
-                Module {index + 1}: {module.title}
-              </AppText>
+          {course.modules
+            ?.slice()
+            .sort((a, b) => (a.sortOrder ?? a.orderIndex ?? 0) - (b.sortOrder ?? b.orderIndex ?? 0))
+            .map((module, index) => {
+              const lessons = module.lessons
+                ?.slice()
+                .sort((a, b) => (a.sortOrder ?? a.orderIndex ?? 0) - (b.sortOrder ?? b.orderIndex ?? 0)) || []
+              const completedLessons = lessons.filter((lesson) => enrollment?.completedLessonIds?.includes(lesson.id))
+              const moduleProgress = lessons.length > 0
+                ? Math.round((completedLessons.length / lessons.length) * 100)
+                : 0
 
-              {module.lessons?.map((lesson) => (
-                <TouchableOpacity
-                  key={lesson.id}
-                  className="flex-row items-center py-3 border-t border-slate-50"
-                  onPress={() => router.push(`/course/${id}/lesson/${lesson.id}`)}
-                >
-                  <Ionicons
-                    name={lesson.type === 'VIDEO' ? 'play-circle-outline' : 'document-text-outline'}
-                    size={20}
-                    color="#4f46e5"
-                  />
-                  <AppText variant="body" className="ml-3 flex-1">
-                    {lesson.title}
-                  </AppText>
-                  {lesson.duration && (
-                    <AppText variant="small" color="muted">
-                      {lesson.duration}m
+              return (
+                <Card key={module.id} className="mb-4">
+                  <View className="mb-3">
+                    <AppText variant="h3" className="mb-2">
+                      Module {index + 1}: {module.title}
                     </AppText>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </Card>
-          ))}
+                    {isEnrolled && lessons.length > 0 && (
+                      <View className="mb-2">
+                        <View className="flex-row items-center justify-between mb-2">
+                          <AppText variant="caption" color="muted">
+                            Progress {completedLessons.length}/{lessons.length}
+                          </AppText>
+                          <AppText variant="caption" color="muted">
+                            {moduleProgress}%
+                          </AppText>
+                        </View>
+                        <ProgressBar progress={moduleProgress} />
+                      </View>
+                    )}
+                  </View>
+
+                  {lessons.map((lesson) => {
+                    const isLessonCompleted = enrollment?.completedLessonIds?.includes(lesson.id)
+                    const durationMinutes = lesson.durationMinutes ?? lesson.duration
+                    const lessonAssignments = assignments?.filter((a) => a.lessonId === lesson.id) || []
+                    const canWatch = lesson.canWatch ?? Boolean(course?.hasAccess || lesson.isPreview)
+                    const isLocked = !canWatch
+
+                    return (
+                      <View key={lesson.id} style={{ opacity: isLocked ? 0.6 : 1 }}>
+                        <TouchableOpacity
+                          className="flex-row items-center py-3 border-t border-slate-50"
+                          onPress={() => {
+                            if (!isLocked) {
+                              router.push(`/course/${id}/lesson/${lesson.id}`)
+                            } else {
+                              showNotification('Please enroll to access this lesson', 'info')
+                            }
+                          }}
+                        >
+                          {isLocked ? (
+                            <Ionicons name="lock-closed" size={20} color="#94a3b8" />
+                          ) : isLessonCompleted ? (
+                            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                          ) : (
+                            <Ionicons
+                              name={lesson.type === 'VIDEO' ? 'play-circle-outline' : 'document-text-outline'}
+                              size={20}
+                              color="#4f46e5"
+                            />
+                          )}
+                          <View className="ml-3 flex-1">
+                            <AppText variant="body" weight={isLocked ? "medium" : "bold"}>
+                              {lesson.title}
+                            </AppText>
+                            {lesson.isPreview && !course?.hasAccess && (
+                              <AppText variant="tiny" weight="bold" className="text-emerald-600 uppercase tracking-tighter">
+                                Free Preview
+                              </AppText>
+                            )}
+                          </View>
+                          {durationMinutes !== undefined && durationMinutes !== null && (
+                            <AppText variant="small" color="muted">
+                              {durationMinutes}m
+                            </AppText>
+                          )}
+                        </TouchableOpacity>
+
+                        {/* Lesson Assignments */}
+                        {lessonAssignments.map((assignment: Assignment) => (
+                          <TouchableOpacity
+                            key={assignment.id}
+                            className="flex-row items-center ml-8 py-2 px-3 mb-2 bg-indigo-50/50 rounded-lg"
+                            onPress={() => router.push(`/assignment/${assignment.id}`)}
+                          >
+                            <Ionicons name="clipboard-outline" size={16} color="#4f46e5" />
+                            <View className="ml-2 flex-1">
+                              <AppText variant="small" weight="bold" className="text-indigo-900">
+                                {assignment.title}
+                              </AppText>
+                              {assignment.dueDate && (
+                                <AppText variant="tiny" color="muted">
+                                  Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                                </AppText>
+                              )}
+                            </View>
+                            <Ionicons name="chevron-forward" size={14} color="#a5b4fc" />
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )
+                  })}
+
+                  {/* Module Assignments */}
+                  {assignments?.filter((a) => a.moduleId === module.id && !a.lessonId).map((assignment: Assignment) => (
+                    <TouchableOpacity
+                      key={assignment.id}
+                      className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg flex-row items-center"
+                      onPress={() => router.push(`/assignment/${assignment.id}`)}
+                    >
+                      <View className="w-10 h-10 bg-indigo-100 rounded-full items-center justify-center">
+                        <Ionicons name="clipboard" size={20} color="#4f46e5" />
+                      </View>
+                      <View className="ml-3 flex-1">
+                        <AppText variant="body" weight="bold">{assignment.title}</AppText>
+                        <AppText variant="tiny" color="muted">
+                          {assignment.dueDate ? `Due: ${new Date(assignment.dueDate).toLocaleDateString()}` : 'Module Assignment'}
+                        </AppText>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
+                    </TouchableOpacity>
+                  ))}
+                </Card>
+              )
+            })}
         </View>
       </ScrollView>
 
       {/* Action */}
-      <View className="p-6 bg-white border-t border-slate-100">
-        {isAuthor ? (
-          <Button
-            title="Edit Course"
-            variant="outline"
-            onPress={() => router.push(`/course/${id}/edit`)}
-          />
-        ) : (
-          <Button
-            title={isEnrolled ? 'Already Enrolled' : 'Enroll Now'}
-            onPress={() => !isEnrolled && handleEnroll()}
-            loading={enrollMutation.isPending}
-            disabled={isEnrolled || isAdmin}
-          />
-        )}
+      <View className="p-6 bg-white border-t border-slate-100 flex-row items-center justify-between">
+        <View className="flex-1 mr-4">
+          {!course?.hasAccess && (
+            <>
+              <AppText variant="tiny" color="muted" weight="bold" className="uppercase tracking-widest">
+                Price
+              </AppText>
+              <AppText variant="h2" weight="black">
+                {course?.isFree ? 'FREE' : `${course?.currency === 'USD' ? '$' : (course?.currency || '$')}${course?.price.toFixed(2)}`}
+              </AppText>
+            </>
+          )}
+        </View>
+
+        <View className="flex-1">
+          {isAuthor ? (
+            <Button
+              title="Edit Course"
+              variant="outline"
+              onPress={() => router.push(`/course/${id}/edit`)}
+            />
+          ) : (
+            <Button
+              title={course?.hasAccess ? 'Continue Learning' : (course?.isFree ? 'Enroll for Free' : 'Buy Now')}
+              onPress={() => {
+                if (course?.hasAccess) {
+                  // Find first lesson or resume
+                  router.push(`/course/${id}/lesson/resume`)
+                } else {
+                  handleEnroll()
+                }
+              }}
+              loading={enrollMutation.isPending}
+              disabled={isAdmin}
+            />
+          )}
+        </View>
       </View>
     </View>
   )

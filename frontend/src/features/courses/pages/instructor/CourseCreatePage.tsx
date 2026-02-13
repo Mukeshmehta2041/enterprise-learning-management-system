@@ -15,6 +15,8 @@ type CourseFormData = {
   category?: string
   level?: string
   price?: number
+  completionThreshold?: number
+  requireAllAssignments?: boolean
   modules?: ModuleInput[]
 }
 
@@ -33,6 +35,8 @@ export function CourseCreatePage() {
     category: '',
     level: 'BEGINNER',
     price: 0,
+    completionThreshold: 100,
+    requireAllAssignments: false,
     modules: []
   })
 
@@ -107,8 +111,8 @@ export function CourseCreatePage() {
               isSubmitting={createCourse.isPending}
               onSubmit={() => {
                 // Ensure all required fields are present before submitting
-                if (courseData.title && courseData.description && courseData.category && 
-                    courseData.level && courseData.price !== undefined && courseData.modules) {
+                if (courseData.title && courseData.description && courseData.category &&
+                  courseData.level && courseData.price !== undefined && courseData.modules) {
                   const submitData = {
                     title: courseData.title,
                     description: courseData.description,

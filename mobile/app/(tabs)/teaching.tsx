@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { AppText } from '../../src/components/AppText'
 import { useInstructorCourses, useInstructorStats } from '../../src/hooks/useInstructor'
+import { useExportJobs } from '../../src/hooks/useReports'
 import { Course } from '../../src/types'
 import { useRouter } from 'expo-router'
 
@@ -15,11 +16,13 @@ export default function TeachingScreen() {
     refetch: refetchCourses,
   } = useInstructorCourses()
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useInstructorStats()
+  const { data: exportJobs, refetch: refetchJobs } = useExportJobs()
 
   const onRefresh = React.useCallback(() => {
     refetchCourses()
     refetchStats()
-  }, [refetchCourses, refetchStats])
+    refetchJobs()
+  }, [refetchCourses, refetchStats, refetchJobs])
 
   const StatCard = ({
     title,
@@ -93,6 +96,45 @@ export default function TeachingScreen() {
           <AppText className="text-indigo-600 font-medium">View All</AppText>
         </TouchableOpacity>
       </View>
+
+      {/* Reports Summary for Mobile */}
+      {exportJobs && exportJobs.length > 0 && (
+        <View className="mb-8">
+          <AppText className="text-lg font-bold text-slate-900 mb-4">Recent Reports</AppText>
+          <View className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+            {exportJobs.slice(0, 2).map((job) => (
+              <View key={job.id} className="flex-row items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                <View className="flex-1">
+                  <AppText className="text-sm font-medium text-slate-900 truncate">
+                    {job.type.replace('_', ' ')}
+                  </AppText>
+                  <AppText className="text-xs text-slate-500">
+                    {new Date(job.createdAt).toLocaleDateString()}
+                  </AppText>
+                </View>
+                <View className={`px-2 py-1 rounded-full ${job.status === 'COMPLETED' ? 'bg-emerald-100' :
+                    job.status === 'FAILED' ? 'bg-red-100' : 'bg-amber-100'
+                  }`}>
+                  <AppText className={`text-[10px] font-bold ${job.status === 'COMPLETED' ? 'text-emerald-700' :
+                      job.status === 'FAILED' ? 'text-red-700' : 'text-amber-700'
+                    }`}>
+                    {job.status}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity
+              className="mt-2 items-center"
+              onPress={() => {
+                // In a real app we'd have a reports screen, 
+                // for now we show a toast or message
+              }}
+            >
+              <AppText className="text-sm text-indigo-600 font-medium">Manage Reports in Web Portal</AppText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   )
 

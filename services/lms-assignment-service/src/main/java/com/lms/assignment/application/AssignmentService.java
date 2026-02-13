@@ -13,9 +13,6 @@ import com.lms.assignment.infrastructure.SubmissionRepository;
 import com.lms.common.exception.ResourceNotFoundException;
 import com.lms.common.exception.ForbiddenException;
 import com.lms.common.events.EventEnvelope;
-import com.lms.common.security.RBACEnforcer;
-import com.lms.common.security.UserContext;
-import com.lms.common.security.UserContextHolder;
 import com.lms.common.audit.AuditLogger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,10 +47,13 @@ public class AssignmentService {
     Assignment assignment = Assignment.builder()
         .id(UUID.randomUUID())
         .courseId(request.getCourseId())
+        .moduleId(request.getModuleId())
+        .lessonId(request.getLessonId())
         .title(request.getTitle())
         .description(request.getDescription())
         .dueDate(request.getDueDate())
         .maxScore(request.getMaxScore())
+        .isMandatory(request.isMandatory())
         .build();
     Assignment saved = assignmentRepository.save(assignment);
 
@@ -61,7 +61,9 @@ public class AssignmentService {
     kafkaTemplate.send("assignment.events", saved.getId().toString(), EventEnvelope.of(
         "AssignmentCreated",
         saved.getId().toString(),
-        Map.of("courseId", saved.getCourseId()),
+        Map.of(
+            "courseId", saved.getCourseId(),
+            "title", saved.getTitle()),
         null));
 
     auditLogger.logSuccess("ASSIGNMENT_CREATE", "ASSIGNMENT", saved.getId().toString(),
@@ -69,9 +71,57 @@ public class AssignmentService {
     return saved;
   }
 
+  @Transactional
+  public Assignment updateAssignment(UUID assignmentId, com.lms.assignment.api.UpdateAssignmentRequest request,
+      UUID userId, Set<String> roles) {
+    Assignment assignment = assignmentRepository.findById(assignmentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Assignment not found"));
+
+    // Only instructor of course or admin can update assignment
+    if (!roles.contains("ADMIN")
+        && !(roles.contains("INSTRUCTOR") && courseServiceClient.isUserInstructor(assignment.getCourseId(), userId))) {
+      throw new ForbiddenException("Not authorized to update assignment for this course");
+    }
+
+    assignment.setTitle(request.getTitle());
+    assignment.setDescription(request.getDescription());
+    assignment.setDueDate(request.getDueDate());
+    assignment.setMaxScore(request.getMaxScore());
+    if (request.getIsMandatory() != null) {
+      assignment.setMandatory(request.getIsMandatory());
+    }
+    assignment.setModuleId(request.getModuleId());
+    assignment.setLessonId(request.getLessonId());
+
+    Assignment saved = assignmentRepository.save(assignment);
+
+    // Notify via Kafka
+    kafkaTemplate.send("assignment.events", saved.getId().toString(), EventEnvelope.of(
+        "AssignmentUpdated",
+        saved.getId().toString(),
+        Map.of(
+            "courseId", saved.getCourseId(),
+            "title", saved.getTitle()),
+        null));
+
+    auditLogger.logSuccess("ASSIGNMENT_UPDATE", "ASSIGNMENT", saved.getId().toString(),
+        Map.of("courseId", saved.getCourseId()));
+    return saved;
+  }
+
   @Transactional(readOnly = true)
-  public List<Submission> getSubmissionsByStudentId(UUID studentId) {
-    return submissionRepository.findAllByStudentId(studentId);
+  public List<Assignment> getAssignmentsByCourse(UUID courseId) {
+    return assignmentRepository.findByCourseId(courseId);
+  }
+
+  @Transactional(readOnly = true)
+  public List<Assignment> getAssignmentsByModule(UUID moduleId) {
+    return assignmentRepository.findByModuleId(moduleId);
+  }
+
+  @Transactional(readOnly = true)
+  public List<Assignment> getAssignmentsByLesson(UUID lessonId) {
+    return assignmentRepository.findByLessonId(lessonId);
   }
 
   @Transactional
@@ -143,7 +193,15 @@ public class AssignmentService {
     kafkaTemplate.send("assignment.events", saved.getId().toString(), EventEnvelope.of(
         "AssignmentGraded",
         saved.getId().toString(),
-        Map.of("submissionId", submissionId, "score", saved.getScore()),
+        Map.of(
+            "submissionId", submissionId,
+            "assignmentId", submission.getAssignment().getId(),
+            "score", saved.getScore(),
+            "studentId", submission.getStudentId(),
+            "courseId", submission.getAssignment().getCourseId(),
+            "lessonId",
+            submission.getAssignment().getLessonId() != null ? submission.getAssignment().getLessonId() : "",
+            "assignmentTitle", submission.getAssignment().getTitle()),
         null));
 
     auditLogger.logSuccess("SUBMISSION_GRADE", "SUBMISSION", submissionId.toString(),
@@ -163,11 +221,6 @@ public class AssignmentService {
   }
 
   @Transactional(readOnly = true)
-  public List<Assignment> getAssignmentsByCourse(UUID courseId) {
-    return assignmentRepository.findByCourseId(courseId);
-  }
-
-  @Transactional(readOnly = true)
   public List<Submission> getSubmissionsByAssignment(UUID assignmentId, UUID userId, Set<String> roles) {
     Assignment assignment = assignmentRepository.findById(assignmentId)
         .orElseThrow(() -> new ResourceNotFoundException("Assignment not found"));
@@ -182,5 +235,10 @@ public class AssignmentService {
     }
 
     return submissionRepository.findByAssignmentId(assignmentId);
+  }
+
+  @Transactional(readOnly = true)
+  public List<Submission> getSubmissionsByStudentId(UUID studentId) {
+    return submissionRepository.findAllByStudentId(studentId);
   }
 }

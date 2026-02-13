@@ -16,13 +16,20 @@ public class CommonGlobalExceptionHandler {
   @ExceptionHandler(MediaException.class)
   public ResponseEntity<ErrorResponse> handleMediaException(MediaException ex) {
     log.error("Media error: {} - Code: {}", ex.getMessage(), ex.getErrorCode().getCode());
+
+    HttpStatus status = switch (ex.getErrorCode()) {
+      case FILE_TOO_LARGE, INVALID_FILE_TYPE -> HttpStatus.BAD_REQUEST;
+      case CONTENT_NOT_FOUND -> HttpStatus.NOT_FOUND;
+      default -> HttpStatus.INTERNAL_SERVER_ERROR;
+    };
+
     ErrorResponse error = ErrorResponse.builder()
-        .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+        .status(status.value())
         .error("Media Error")
         .message(ex.getMessage())
         .code(ex.getErrorCode().getCode())
         .build();
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    return ResponseEntity.status(status).body(error);
   }
 
   @ExceptionHandler(ResourceNotFoundException.class)

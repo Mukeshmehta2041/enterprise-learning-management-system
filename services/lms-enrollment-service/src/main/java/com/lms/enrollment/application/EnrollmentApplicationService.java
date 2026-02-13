@@ -1,6 +1,7 @@
 package com.lms.enrollment.application;
 
 import com.lms.enrollment.api.*;
+import com.lms.enrollment.client.AssignmentServiceClient;
 import com.lms.enrollment.client.CourseServiceClient;
 import com.lms.enrollment.domain.*;
 import com.lms.enrollment.infrastructure.EnrollmentEventPublisher;
@@ -18,10 +19,12 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,7 +38,9 @@ public class EnrollmentApplicationService {
 
   private final EnrollmentRepository enrollmentRepository;
   private final LessonProgressRepository lessonProgressRepository;
+  private final AssignmentCompletionRepository assignmentCompletionRepository;
   private final CourseServiceClient courseServiceClient;
+  private final AssignmentServiceClient assignmentServiceClient;
   private final StringRedisTemplate redisTemplate;
   private final AuditLogger auditLogger;
   private final EnrollmentEventPublisher eventPublisher;
@@ -46,13 +51,17 @@ public class EnrollmentApplicationService {
   public EnrollmentApplicationService(
       EnrollmentRepository enrollmentRepository,
       LessonProgressRepository lessonProgressRepository,
+      AssignmentCompletionRepository assignmentCompletionRepository,
       CourseServiceClient courseServiceClient,
+      AssignmentServiceClient assignmentServiceClient,
       StringRedisTemplate redisTemplate,
       AuditLogger auditLogger,
       EnrollmentEventPublisher eventPublisher) {
     this.enrollmentRepository = enrollmentRepository;
     this.lessonProgressRepository = lessonProgressRepository;
+    this.assignmentCompletionRepository = assignmentCompletionRepository;
     this.courseServiceClient = courseServiceClient;
+    this.assignmentServiceClient = assignmentServiceClient;
     this.redisTemplate = redisTemplate;
     this.auditLogger = auditLogger;
     this.eventPublisher = eventPublisher;
@@ -81,12 +90,21 @@ public class EnrollmentApplicationService {
       }
 
       // Validate course exists and is published
-      if (!courseServiceClient.isCoursePublished(courseId)) {
+      CourseServiceClient.CourseResponse course = courseServiceClient.getCourse(courseId);
+      if (course == null || !"PUBLISHED".equalsIgnoreCase(course.status())) {
         throw new BadRequestException("Course not found or not published");
       }
 
       UUID enrollmentId = UUID.randomUUID();
       Enrollment enrollment = new Enrollment(enrollmentId, userId, courseId);
+
+      // Day 16: Handle Paid vs Free
+      if (course.isFree() != null && !course.isFree()) {
+        log.info("Creating pending enrollment for paid course: {}", courseId);
+        enrollment.setStatus(EnrollmentStatus.PENDING_PAYMENT);
+      } else {
+        enrollment.setStatus(EnrollmentStatus.ENROLLED);
+      }
 
       Enrollment saved = enrollmentRepository.save(enrollment);
       log.info("User {} enrolled in course {}", userId, courseId);
@@ -98,6 +116,48 @@ public class EnrollmentApplicationService {
     } finally {
       redisTemplate.delete(lockKey);
     }
+  }
+
+  @Transactional
+  public void activateEnrollment(UUID userId, UUID courseId) {
+    enrollmentRepository.findByUserIdAndCourseId(userId, courseId)
+        .ifPresent(enrollment -> {
+          if (enrollment.getStatus() == EnrollmentStatus.PENDING_PAYMENT) {
+            enrollment.setStatus(EnrollmentStatus.ENROLLED);
+            enrollmentRepository.save(enrollment);
+            log.info("Activated enrollment for user {} and course {}", userId, courseId);
+            auditLogger.logSuccess("ENROLLMENT_ACTIVATE", "ENROLLMENT", enrollment.getId().toString());
+          }
+        });
+  }
+
+  @Transactional(readOnly = true)
+  public EntitlementResponse getEntitlement(UUID userId, UUID courseId) {
+    Optional<Enrollment> enrollmentOpt = enrollmentRepository.findByUserIdAndCourseId(userId, courseId);
+
+    CourseServiceClient.CourseResponse course = courseServiceClient.getCourse(courseId);
+
+    if (enrollmentOpt.isPresent()) {
+      Enrollment enrollment = enrollmentOpt.get();
+      if (enrollment.getStatus() == EnrollmentStatus.ENROLLED) {
+        return new EntitlementResponse(userId, courseId, EntitlementResponse.AccessLevel.FULL, true, "Enrolled");
+      } else if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
+        return new EntitlementResponse(userId, courseId, EntitlementResponse.AccessLevel.FULL, true, "Completed");
+      } else if (enrollment.getStatus() == EnrollmentStatus.PENDING_PAYMENT) {
+        return new EntitlementResponse(userId, courseId, EntitlementResponse.AccessLevel.PREVIEW, true,
+            "Enrolled (Pending Payment)");
+      }
+    }
+
+    if (course != null) {
+      if (course.isFree() != null && course.isFree()) {
+        return new EntitlementResponse(userId, courseId, EntitlementResponse.AccessLevel.FULL, false, "Free course");
+      }
+      return new EntitlementResponse(userId, courseId, EntitlementResponse.AccessLevel.PREVIEW, false,
+          "Paid course, not enrolled");
+    }
+
+    return new EntitlementResponse(userId, courseId, EntitlementResponse.AccessLevel.NONE, false, "Course not found");
   }
 
   @Transactional(readOnly = true)
@@ -199,6 +259,13 @@ public class EnrollmentApplicationService {
     throw new ForbiddenException("Not authorized to view this enrollment");
   }
 
+  @Transactional(readOnly = true)
+  public EnrollmentResponse getMyEnrollmentByCourse(UUID userId, UUID courseId) {
+    Enrollment enrollment = enrollmentRepository.findByUserIdAndCourseId(userId, courseId)
+        .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found for this course"));
+    return mapToEnrollmentResponse(enrollment);
+  }
+
   public void updateProgress(UUID enrollmentId, UpdateProgressRequest request, UUID userId, Set<String> roles) {
     Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
         .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found"));
@@ -226,20 +293,103 @@ public class EnrollmentApplicationService {
 
     lessonProgressRepository.save(progress);
 
-    // Update aggregate progress
-    int totalLessons = courseServiceClient.getTotalLessons(enrollment.getCourseId());
-    long completedLessons = lessonProgressRepository.countByEnrollmentIdAndCompletedTrue(enrollmentId);
+    recalculateProgress(enrollment, request.lessonId());
+  }
 
-    enrollment.updateProgress((int) completedLessons, totalLessons);
+  @Transactional
+  public void recordAssignmentCompletion(UUID enrollmentId, UUID assignmentId, UUID lessonId) {
+    Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+        .orElseThrow(() -> new ResourceNotFoundException("Enrollment not found"));
+
+    if (!assignmentCompletionRepository.existsByEnrollmentIdAndAssignmentId(enrollmentId, assignmentId)) {
+      AssignmentCompletion completion = AssignmentCompletion.builder()
+          .id(UUID.randomUUID())
+          .enrollment(enrollment)
+          .assignmentId(assignmentId)
+          .lessonId(lessonId)
+          .completedAt(Instant.now())
+          .build();
+      assignmentCompletionRepository.save(completion);
+      log.info("Recorded assignment completion for assignment {} in enrollment {}", assignmentId, enrollmentId);
+    }
+
+    recalculateProgress(enrollment, lessonId);
+  }
+
+  private void recalculateProgress(Enrollment enrollment, UUID lastLessonId) {
+    UUID enrollmentId = enrollment.getId();
+    UUID courseId = enrollment.getCourseId();
+
+    // Fetch course requirements
+    CourseServiceClient.CourseDetailResponse course = courseServiceClient.getCourseDetail(courseId);
+    int totalLessons = 0;
+    if (course != null && course.modules() != null) {
+      totalLessons = course.modules().stream()
+          .filter(m -> m.lessons() != null)
+          .mapToInt(m -> m.lessons().size())
+          .sum();
+    }
+
+    BigDecimal threshold = (course != null && course.completionThreshold() != null)
+        ? course.completionThreshold()
+        : new BigDecimal("100.00");
+
+    boolean requireAssignments = course != null && Boolean.TRUE.equals(course.requireAllAssignments());
+
+    // Fetch assignment requirements
+    List<AssignmentServiceClient.AssignmentSummary> assignments = assignmentServiceClient
+        .getAssignmentsForCourse(courseId);
+    long totalMandatory = assignments.stream().filter(AssignmentServiceClient.AssignmentSummary::isMandatory).count();
+
+    // Current status
+    long completedLessons = lessonProgressRepository.countByEnrollmentIdAndCompletedTrue(enrollmentId);
+    List<AssignmentCompletion> completedAssignments = assignmentCompletionRepository
+        .findAllByEnrollmentId(enrollmentId);
+
+    long completedMandatoryCount = assignments.stream()
+        .filter(AssignmentServiceClient.AssignmentSummary::isMandatory)
+        .filter(a -> completedAssignments.stream().anyMatch(ca -> ca.getAssignmentId().equals(a.id())))
+        .count();
+
+    if (lastLessonId != null) {
+      enrollment.setLastLessonId(lastLessonId);
+    }
+
+    enrollment.updateProgress(
+        (int) completedLessons,
+        totalLessons,
+        threshold,
+        requireAssignments,
+        completedMandatoryCount,
+        totalMandatory);
+
     enrollmentRepository.save(enrollment);
 
-    log.info("Progress updated for enrollment {}: {}/{} lessons", enrollmentId, completedLessons, totalLessons);
+    log.info("Progress updated for enrollment {}: {}/{} lessons, {}/{} mandatory assignments. Progress: {}%",
+        enrollmentId, completedLessons, totalLessons, completedMandatoryCount, totalMandatory,
+        enrollment.getProgressPct());
+
     auditLogger.logSuccess("COURSE_PROGRESS_UPDATE", "ENROLLMENT", enrollmentId.toString(),
-        Map.of("lessonsCompleted", completedLessons, "totalLessons", totalLessons));
+        Map.of("lessonsCompleted", completedLessons, "totalLessons", totalLessons,
+            "assignmentsCompleted", completedMandatoryCount));
   }
 
   private EnrollmentResponse mapToEnrollmentResponse(Enrollment enrollment) {
     var course = courseServiceClient.getCourse(enrollment.getCourseId());
+
+    List<UUID> completedLessonIds = enrollment.getLessonProgress().stream()
+        .filter(LessonProgress::isCompleted)
+        .map(LessonProgress::getLessonId)
+        .collect(Collectors.toList());
+
+    Map<UUID, Integer> lessonPositions = enrollment.getLessonProgress().stream()
+        .filter(lp -> lp.getLastPositionSecs() != null)
+        .collect(Collectors.toMap(
+            LessonProgress::getLessonId,
+            lp -> lp.getLastPositionSecs().intValue(),
+            (v1, v2) -> v1 // Handle duplicates if any, though lessonId should be unique
+        ));
+
     return new EnrollmentResponse(
         enrollment.getId(),
         enrollment.getCourseId(),
@@ -248,13 +398,20 @@ public class EnrollmentApplicationService {
         enrollment.getUserId(),
         enrollment.getStatus().name(),
         enrollment.getProgressPct(),
+        completedLessonIds,
+        lessonPositions,
+        enrollment.getLastLessonId(),
         enrollment.getEnrolledAt(),
         enrollment.getCompletedAt(),
         enrollment.getUpdatedAt());
   }
 
   public boolean isUserEnrolled(UUID userId, UUID courseId) {
-    return enrollmentRepository.existsByUserIdAndCourseId(userId, courseId);
+    return enrollmentRepository.findByUserIdAndCourseId(userId, courseId)
+        .map(e -> e.getStatus() == EnrollmentStatus.ENROLLED
+            || e.getStatus() == EnrollmentStatus.IN_PROGRESS
+            || e.getStatus() == EnrollmentStatus.COMPLETED)
+        .orElse(false);
   }
 
   public static class ConflictException extends RuntimeException {

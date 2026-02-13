@@ -39,14 +39,17 @@ export function useUpdateProgressMutation() {
       enrollmentId,
       lessonId,
       completed,
+      positionSecs,
     }: {
       enrollmentId: string
       lessonId: string
-      completed: boolean
+      completed?: boolean
+      positionSecs?: number
     }) => {
       const response = await apiClient.patch(`/api/v1/enrollments/${enrollmentId}/progress`, {
         lessonId,
         completed,
+        positionSecs,
       })
       return response.data
     },

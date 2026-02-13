@@ -3,20 +3,28 @@ import { useEffect } from 'react'
 import {
   Container,
   Heading1,
-  TextMuted,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
   Button,
 } from '@/shared/ui'
-import { useCourse, useUpdateCourse, usePublishCourse, useSaveAsDraft } from '../../api/useCourses'
+import {
+  useCourse,
+  useUpdateCourse,
+  usePublishCourse,
+  useSaveAsDraft,
+  useSyncCurriculum
+} from '../../api/useCourses'
 import { useUI } from '@/shared/context/UIContext'
 import { BasicInfoForm } from '../../components/instructor/BasicInfoForm'
-import type { CourseDetail } from '@/shared/types/course'
+import { PricingSettingsForm } from '../../components/instructor/PricingSettingsForm'
+import type { CourseDetail, Module } from '@/shared/types/course'
 import { CurriculumForm } from '../../components/instructor/CurriculumForm'
-import { Save, Rocket, Settings, List, Info, DollarSign } from 'lucide-react'
+import { AssignmentManagement } from '../../components/instructor/AssignmentManagement'
+import { Save, Rocket, Settings, List, Info, DollarSign, FileStack } from 'lucide-react'
 import { useToast } from '@/shared/context/ToastContext'
+import { Badge } from '@/shared/ui/Badge'
 
 export function CourseEditPage() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -28,6 +36,7 @@ export function CourseEditPage() {
   const updateCourseMutation = useUpdateCourse()
   const publishCourseMutation = usePublishCourse()
   const saveAsDraftMutation = useSaveAsDraft()
+  const syncCurriculumMutation = useSyncCurriculum()
 
   useEffect(() => {
     if (course) {
@@ -70,6 +79,18 @@ export function CourseEditPage() {
     }
   }
 
+  const handleSyncCurriculum = async (modules: Module[]) => {
+    try {
+      await syncCurriculumMutation.mutateAsync({
+        id: courseId!,
+        modules,
+      })
+      success('Curriculum updated successfully')
+    } catch {
+      showError('Failed to update curriculum')
+    }
+  }
+
   if (isLoading) {
     return (
       <Container className="py-8">
@@ -99,8 +120,19 @@ export function CourseEditPage() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <Heading1>{course.title}</Heading1>
-          <TextMuted>Course ID: {course.id}</TextMuted>
+          <div className="flex items-center gap-3 mb-1">
+            <Heading1>{course.title}</Heading1>
+            <Badge variant={course.status === 'PUBLISHED' ? 'success' : 'secondary'}>
+              {course.status}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-4 text-slate-500 text-sm">
+            <span>ID: {course.id}</span>
+            <span>•</span>
+            <span className="font-medium text-emerald-600">${course.price}</span>
+            <span>•</span>
+            <span>{course.category}</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -140,6 +172,13 @@ export function CourseEditPage() {
             Curriculum
           </TabsTrigger>
           <TabsTrigger
+            value="assignments"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-1 gap-2"
+          >
+            <FileStack size={18} />
+            Assignments
+          </TabsTrigger>
+          <TabsTrigger
             value="pricing"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none py-2 px-1 gap-2"
           >
@@ -164,6 +203,9 @@ export function CourseEditPage() {
                 category: course.category,
                 level: course.level,
                 price: course.price,
+                thumbnailUrl: course.thumbnailUrl ?? '',
+                completionThreshold: course.completionThreshold ?? 100,
+                requireAllAssignments: course.requireAllAssignments ?? false,
               }}
               onSubmit={handleUpdateInfo}
               isSubmitting={updateCourseMutation.isPending}
@@ -174,15 +216,29 @@ export function CourseEditPage() {
         <TabsContent value="curriculum">
           <div className="max-w-4xl">
             <CurriculumForm
+              courseId={course.id}
               initialModules={course.modules}
-              onSave={(modules) => console.log('Update curriculum', modules)}
+              onSave={handleSyncCurriculum}
             />
           </div>
         </TabsContent>
 
+        <TabsContent value="assignments">
+          <div className="max-w-4xl">
+            <AssignmentManagement course={course} />
+          </div>
+        </TabsContent>
+
         <TabsContent value="pricing">
-          <div className="bg-white p-6 rounded-xl border border-slate-200">
-            <TextMuted>Pricing and access settings will go here.</TextMuted>
+          <div className="max-w-2xl">
+            <PricingSettingsForm
+              defaultValues={{
+                price: course.price,
+                status: course.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
+              }}
+              onSubmit={handleUpdateInfo}
+              isSubmitting={updateCourseMutation.isPending}
+            />
           </div>
         </TabsContent>
 

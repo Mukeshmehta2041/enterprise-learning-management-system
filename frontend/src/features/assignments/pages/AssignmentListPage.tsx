@@ -80,7 +80,7 @@ export function AssignmentListPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="hidden md:block text-right">
-                      <div className="text-sm font-bold text-slate-700">{assignment.maxPoints} pts</div>
+                      <div className="text-sm font-bold text-slate-700">{assignment.maxScore} pts</div>
                       <Small className="text-slate-400">Maximum Grade</Small>
                     </div>
                     <ChevronRight className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />

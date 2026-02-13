@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
-import { CourseSchema, CourseDetailSchema, type Course, type CourseFilters, type CourseDetail } from '@/shared/types/course'
+import { CourseSchema, CourseDetailSchema, type Course, type CourseFilters, type CourseDetail, type Module } from '@/shared/types/course'
 import { type PaginatedResponse } from '@/shared/types/error'
 
 async function fetchCourses(filters: CourseFilters): Promise<PaginatedResponse<Course>> {
@@ -27,6 +27,22 @@ export function useCourses(filters: CourseFilters) {
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
+  })
+}
+
+export function useFeaturedCourses() {
+  return useQuery({
+    queryKey: ['courses', 'featured'],
+    queryFn: () => fetchCourses({ isFeatured: true, limit: 10 }),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useTrendingCourses() {
+  return useQuery({
+    queryKey: ['courses', 'trending'],
+    queryFn: () => fetchCourses({ isTrending: true, limit: 10 }),
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -86,6 +102,34 @@ export function useSaveAsDraft() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['courses'] })
       queryClient.setQueryData(['courses', data.id], data)
+    },
+  })
+}
+
+export function useDuplicateCourse() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.post<CourseDetail>(`/courses/${id}/duplicate`)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] })
+    },
+  })
+}
+
+export function useSyncCurriculum() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, modules }: { id: string; modules: Module[] }) => {
+      const { data } = await apiClient.post(`/courses/${id}/curriculum/sync`, { modules })
+      return data
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['courses', variables.id] })
     },
   })
 }

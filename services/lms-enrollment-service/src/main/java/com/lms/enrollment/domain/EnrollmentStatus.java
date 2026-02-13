@@ -4,5 +4,6 @@ public enum EnrollmentStatus {
   ENROLLED,
   IN_PROGRESS,
   COMPLETED,
-  DROPPED
+  DROPPED,
+  PENDING_PAYMENT
 }

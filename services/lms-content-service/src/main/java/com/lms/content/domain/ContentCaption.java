@@ -13,27 +13,27 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 public class ContentCaption {
-    @Id
-    private UUID id;
+  @Id
+  private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "content_item_id", nullable = false)
-    private ContentItem contentItem;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "content_item_id", nullable = false)
+  private ContentItem contentItem;
 
-    @Column(nullable = false)
-    private String languageCode; // e.g., "en", "es"
+  @Column(nullable = false)
+  private String languageCode; // e.g., "en", "es"
 
-    @Column(nullable = false)
-    private String label; // e.g., "English", "Spanish"
+  @Column(nullable = false)
+  private String label; // e.g., "English", "Spanish"
 
-    @Column(nullable = false)
-    private String storagePath;
+  @Column(nullable = false)
+  private String storagePath;
 
-    public ContentCaption(UUID id, ContentItem contentItem, String languageCode, String label, String storagePath) {
-        this.id = id;
-        this.contentItem = contentItem;
-        this.languageCode = languageCode;
-        this.label = label;
-        this.storagePath = storagePath;
-    }
+  public ContentCaption(UUID id, ContentItem contentItem, String languageCode, String label, String storagePath) {
+    this.id = id;
+    this.contentItem = contentItem;
+    this.languageCode = languageCode;
+    this.label = label;
+    this.storagePath = storagePath;
+  }
 }

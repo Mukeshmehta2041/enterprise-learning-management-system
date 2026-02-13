@@ -17,6 +17,7 @@ public class InAppNotification {
   private String type;
   private String title;
   private String message;
+  private String link;
   private Boolean read;
   private Instant createdAt;
   private Instant readAt;

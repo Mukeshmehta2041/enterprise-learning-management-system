@@ -7,9 +7,14 @@ import com.lms.content.repository.ContentItemRepository;
 import com.lms.content.repository.ContentVersionRepository;
 import com.lms.content.repository.QuizQuestionRepository;
 import com.lms.common.exception.ForbiddenException;
+import com.lms.common.exception.MediaErrorCode;
+import com.lms.common.exception.MediaException;
 import com.lms.common.exception.ResourceNotFoundException;
 import com.lms.common.audit.AuditLogger;
+import io.micrometer.observation.annotation.Observed;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +27,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
+
 @Service
 @RequiredArgsConstructor
 public class ContentApplicationService {
@@ -31,11 +38,14 @@ public class ContentApplicationService {
   private final ContentEventPublisher contentEventPublisher;
   private final CourseServiceClient courseServiceClient;
   private final AuditLogger auditLogger;
+  private final MeterRegistry meterRegistry;
   private final StorageService storageService;
 
   @Transactional
+  @Observed(name = "content.create")
   public ContentItem createContent(UUID courseId, UUID lessonId, ContentType type, String title, UUID userId,
       Set<String> roles) {
+    log.info("Creating content: {} for course: {} by user: {}", title, courseId, userId);
     if (!roles.contains("ADMIN")
         && !(roles.contains("INSTRUCTOR") && courseServiceClient.isUserInstructor(courseId, userId))) {
       throw new ForbiddenException("Not authorized to create content for this course");
@@ -51,8 +61,10 @@ public class ContentApplicationService {
   }
 
   @Transactional
+  @Observed(name = "content.addVersion")
   public ContentVersion addVersion(UUID contentItemId, Integer version, String storagePath, String checksum,
       UUID userId, Set<String> roles) {
+    log.info("Adding version: {} to content item: {}", version, contentItemId);
     ContentItem contentItem = getById(contentItemId);
 
     if (!roles.contains("ADMIN")
@@ -65,7 +77,9 @@ public class ContentApplicationService {
   }
 
   @Transactional
+  @Observed(name = "content.getUploadUrl")
   public URL getUploadUrl(UUID contentId, String fileName, String contentType, UUID userId, Set<String> roles) {
+    log.info("Requesting upload URL for content: {} (Type: {})", contentId, contentType);
     ContentItem contentItem = getById(contentId);
 
     if (!roles.contains("ADMIN")
@@ -73,25 +87,35 @@ public class ContentApplicationService {
       throw new ForbiddenException("Not authorized to upload content for this course");
     }
 
+    // Basic content type validation
+    if (contentType == null || (!contentType.startsWith("video/") && !contentType.equals("application/pdf"))) {
+      throw new MediaException(MediaErrorCode.INVALID_FILE_TYPE, "Unsupported content type: " + contentType);
+    }
+
     // Determine version number (latest + 1)
     int nextVersion = contentItem.getVersions().size() + 1;
     String storagePath = String.format("content/%s/%s/%s/v%d/%s",
         contentItem.getCourseId(), contentItem.getLessonId(), contentItem.getId(), nextVersion, fileName);
 
-    URL uploadUrl = storageService.generatePresignedUploadUrl(storagePath, contentType, Duration.ofMinutes(15));
+    try {
+      URL uploadUrl = storageService.generatePresignedUploadUrl(storagePath, contentType, Duration.ofMinutes(15));
 
-    contentItem.setStatus(ContentStatus.UPLOADING);
-    contentItemRepository.save(contentItem);
+      contentItem.setStatus(ContentStatus.UPLOADING);
+      contentItemRepository.save(contentItem);
 
-    // We don't save the version yet as it's not actually uploaded
-    // But we might want to store the intended storage path temporarily or let the
-    // client provide it in completeUpload
+      meterRegistry.counter("media.upload.initiated", "type", contentType).increment();
 
-    return uploadUrl;
+      return uploadUrl;
+    } catch (Exception e) {
+      log.error("Failed to generate presigned URL for content {}: {}", contentId, e.getMessage());
+      throw new MediaException(MediaErrorCode.STORAGE_UNAVAILABLE, "Could not initiate upload", e);
+    }
   }
 
   @Transactional
+  @Observed(name = "content.completeUpload")
   public void completeUpload(UUID contentId, String storagePath, UUID userId, Set<String> roles) {
+    log.info("Completing upload for content: {} with storage path: {}", contentId, storagePath);
     ContentItem contentItem = getById(contentId);
 
     if (!roles.contains("ADMIN")
@@ -108,6 +132,7 @@ public class ContentApplicationService {
     contentVersionRepository.save(version);
 
     contentEventPublisher.publishContentUploadCompleted(contentItem, storagePath);
+    meterRegistry.counter("media.upload.completed").increment();
     auditLogger.logSuccess("CONTENT_UPLOAD_COMPLETE", "CONTENT", contentId.toString(),
         Map.of("storagePath", storagePath));
   }
@@ -134,6 +159,31 @@ public class ContentApplicationService {
     return contentItemRepository.findByLessonId(lessonId);
   }
 
+  @Transactional
+  public void addQuizQuestions(UUID contentItemId, List<QuizQuestion> questions, UUID userId, Set<String> roles) {
+    ContentItem contentItem = getById(contentItemId);
+
+    if (!roles.contains("ADMIN")
+        && !(roles.contains("INSTRUCTOR") && courseServiceClient.isUserInstructor(contentItem.getCourseId(), userId))) {
+      throw new ForbiddenException("Not authorized to manage quiz questions for this course");
+    }
+
+    if (contentItem.getType() != ContentType.QUIZ) {
+      throw new IllegalArgumentException("Content item is not a quiz");
+    }
+
+    // Clear existing questions if anyway
+    contentItem.getQuestions().clear();
+    for (QuizQuestion q : questions) {
+      if (q.getId() == null)
+        q.setId(UUID.randomUUID());
+      q.setContentItem(contentItem);
+      contentItem.getQuestions().add(q);
+    }
+    contentItemRepository.save(contentItem);
+    auditLogger.logSuccess("QUIZ_UPDATE", "CONTENT", contentItemId.toString());
+  }
+
   public ContentItem getById(UUID id) {
     return contentItemRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Content not found: " + id));
@@ -143,15 +193,43 @@ public class ContentApplicationService {
   public PlaybackTokenResponse getPlaybackToken(UUID contentItemId, UUID userId, Set<String> roles) {
     ContentItem contentItem = getById(contentItemId);
 
-    boolean isAuthorized = roles.contains("ADMIN")
-        || (roles.contains("INSTRUCTOR") && courseServiceClient.isUserInstructor(contentItem.getCourseId(), userId))
-        || courseServiceClient.isUserEnrolled(contentItem.getCourseId(), userId);
+    boolean isInstructorOrAdmin = roles.contains("ADMIN")
+        || (roles.contains("INSTRUCTOR") && courseServiceClient.isUserInstructor(contentItem.getCourseId(), userId));
+    boolean isEnrolled = courseServiceClient.isUserEnrolled(contentItem.getCourseId(), userId);
+    boolean isPreview = courseServiceClient.isLessonPreview(contentItem.getCourseId(), contentItem.getLessonId());
+    boolean isFree = courseServiceClient.isCourseFree(contentItem.getCourseId());
+
+    boolean isAuthorized = isInstructorOrAdmin || isEnrolled || isPreview || isFree;
 
     if (!isAuthorized) {
-      throw new ForbiddenException("Not authorized to access this content. Enrollment required.");
+      auditLogger.log(
+          "PLAYBACK_TOKEN_DENIED",
+          "CONTENT",
+          contentItemId.toString(),
+          "FAILURE",
+          "Not enrolled, not a preview, and course not free",
+          Map.of("userId", userId, "reason", "Not enrolled, not a preview, and course not free"));
+      throw new ForbiddenException("Not authorized to access this content. Enrollment or purchase required.");
     }
 
-    // In a real implementation, we would generate a signed URL or a JWT token for the player
+    if (!isInstructorOrAdmin && !courseServiceClient.isCoursePublished(contentItem.getCourseId())) {
+      auditLogger.log(
+          "PLAYBACK_TOKEN_DENIED",
+          "CONTENT",
+          contentItemId.toString(),
+          "FAILURE",
+          "Course not published",
+          Map.of("userId", userId, "reason", "Course not published"));
+      throw new ForbiddenException("This course is currently not available.");
+    }
+
+    if (isInstructorOrAdmin && !isEnrolled && !isPreview) {
+      auditLogger.logSuccess("ADMIN_OVERRIDE", "CONTENT", contentItemId.toString(),
+          Map.of("userId", userId, "courseId", contentItem.getCourseId(), "lessonId", contentItem.getLessonId()));
+    }
+
+    // In a real implementation, we would generate a signed URL or a JWT token for
+    // the player
     // For now, we use the storage service to generate a short-lived download URL
     ContentVersion latestVersion = contentItem.getVersions().stream()
         .max((v1, v2) -> v1.getVersion().compareTo(v2.getVersion()))
@@ -167,11 +245,23 @@ public class ContentApplicationService {
             .build())
         .collect(Collectors.toList());
 
+    List<PlaybackTokenResponse.RenditionDTO> renditionDTOs = latestVersion.getRenditions().stream()
+        .map(r -> PlaybackTokenResponse.RenditionDTO.builder()
+            .resolution(r.getResolution())
+            .bitrate(r.getBitrate())
+            .url(storageService.generatePresignedDownloadUrl(r.getStoragePath(), Duration.ofHours(1)).toString())
+            .build())
+        .collect(Collectors.toList());
+
+    auditLogger.logSuccess("PLAYBACK_TOKEN_ISSUED", "CONTENT", contentItemId.toString(),
+        Map.of("userId", userId));
+
     return PlaybackTokenResponse.builder()
         .playbackUrl(playbackUrl.toString())
         .token(UUID.randomUUID().toString()) // Mock token
         .expiresAt(LocalDateTime.now().plusHours(1))
         .captions(captionDTOs)
+        .renditions(renditionDTOs)
         .build();
   }
 }

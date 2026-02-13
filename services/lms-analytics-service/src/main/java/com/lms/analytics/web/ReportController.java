@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 import java.util.Map;
 
-@RestController
+@RestController("analyticsReportController")
 @RequestMapping("/api/v1/analytics/reports")
 @RequiredArgsConstructor
 @Slf4j

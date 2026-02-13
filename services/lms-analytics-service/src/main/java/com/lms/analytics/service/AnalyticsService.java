@@ -1,11 +1,10 @@
 package com.lms.analytics.service;
 
-import com.lms.analytics.dto.CourseAnalyticsDTO;
-import com.lms.analytics.dto.EnrollmentTrendDTO;
-import com.lms.analytics.dto.GlobalStatsDTO;
-import com.lms.analytics.dto.PlaybackTelemetryRequest;
+import com.lms.analytics.dto.*;
 import com.lms.analytics.model.EnrollmentAggregate;
+import com.lms.analytics.model.LectureEngagement;
 import com.lms.analytics.repository.EnrollmentAggregateRepository;
+import com.lms.analytics.repository.LectureEngagementRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,20 +26,89 @@ public class AnalyticsService {
   private EnrollmentAggregateRepository enrollmentAggregateRepository;
 
   @Autowired
+  private LectureEngagementRepository lectureEngagementRepository;
+
+  @Autowired
   private MeterRegistry meterRegistry;
 
+  @Transactional
   public void recordPlaybackEvent(PlaybackTelemetryRequest request) {
     log.info("Recording playback event: {} for user: {} on lesson: {}",
         request.getEventType(), request.getUserId(), request.getLessonId());
 
     meterRegistry.counter("lms.playback.events",
         "type", request.getEventType().name(),
-        "courseId", request.getCourseId() != null ? request.getCourseId().toString() : "unknown"
-    ).increment();
+        "courseId", request.getCourseId() != null ? request.getCourseId().toString() : "unknown").increment();
 
-    // If it's a HEARTBEAT or PAUSE, we might want to update the 'resume' position.
-    // However, the resume position is technically 'progress', so it belongs in the Enrollment Service.
-    // The Analytics Service could forward this event to Kafka for the Enrollment Service to consume.
+    if (request.getLessonId() != null && request.getCourseId() != null) {
+      updateLectureEngagement(request);
+    }
+  }
+
+  private void updateLectureEngagement(PlaybackTelemetryRequest request) {
+    LocalDate today = LocalDate.now();
+    LectureEngagement engagement = lectureEngagementRepository
+        .findByLessonIdAndDate(request.getLessonId(), today)
+        .orElse(LectureEngagement.builder()
+            .lessonId(request.getLessonId())
+            .courseId(request.getCourseId())
+            .date(today)
+            .totalWatches(0)
+            .totalCompletes(0)
+            .totalWatchTimeSecs(0L)
+            .avgWatchTimeSecs(0.0)
+            .build());
+
+    switch (request.getEventType()) {
+      case PLAY:
+        engagement.incrementWatches();
+        break;
+      case COMPLETE:
+        engagement.incrementCompletes();
+        break;
+      case HEARTBEAT:
+        // Assume 30s heartbeat if not specified
+        engagement.addWatchTime(30);
+        break;
+      default:
+        break;
+    }
+
+    lectureEngagementRepository.save(engagement);
+  }
+
+  @Transactional(readOnly = true)
+  public InstructorCourseAnalyticsDTO getInstructorCourseAnalytics(UUID courseId, LocalDate start, LocalDate end) {
+    // In a real system, we'd join with course service to get titles.
+    // For now, we aggregate what we have in analytics DB.
+
+    List<LectureEngagement> metrics = lectureEngagementRepository
+        .findAllByCourseIdAndDateBetween(courseId, start, end);
+
+    Map<UUID, List<LectureEngagement>> byLesson = metrics.stream()
+        .collect(Collectors.groupingBy(LectureEngagement::getLessonId));
+
+    List<InstructorCourseAnalyticsDTO.LessonEngagementDTO> lessonDTOs = new ArrayList<>();
+
+    byLesson.forEach((lessonId, reports) -> {
+      int totalWatches = reports.stream().mapToInt(LectureEngagement::getTotalWatches).sum();
+      int totalCompletes = reports.stream().mapToInt(LectureEngagement::getTotalCompletes).sum();
+      double totalWatchTime = reports.stream().mapToLong(LectureEngagement::getTotalWatchTimeSecs).sum();
+
+      lessonDTOs.add(InstructorCourseAnalyticsDTO.LessonEngagementDTO.builder()
+          .lessonId(lessonId)
+          .lessonTitle("Lesson " + lessonId.toString().substring(0, 8))
+          .totalWatches(totalWatches)
+          .totalCompletes(totalCompletes)
+          .completionRate(totalWatches > 0 ? (double) totalCompletes / totalWatches : 0.0)
+          .averageWatchTimeSecs(totalWatches > 0 ? totalWatchTime / totalWatches : 0.0)
+          .build());
+    });
+
+    return InstructorCourseAnalyticsDTO.builder()
+        .courseId(courseId)
+        .lessonMetrics(lessonDTOs)
+        .build();
   }
 
   @Transactional

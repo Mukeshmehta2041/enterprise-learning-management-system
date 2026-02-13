@@ -12,16 +12,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlaybackTelemetryRequest {
-    private UUID lessonId;
-    private UUID courseId;
-    private UUID userId;
-    private PlaybackEventType eventType;
-    private Double positionSecs;
-    private String errorCode;
-    private String errorMessage;
-    private Long timestamp;
+  private UUID lessonId;
+  private UUID courseId;
+  private UUID userId;
+  private PlaybackEventType eventType;
+  private Double positionSecs;
+  private String errorCode;
+  private String errorMessage;
+  private Long timestamp;
 
-    public enum PlaybackEventType {
-        PLAY, PAUSE, SEEK, COMPLETE, ERROR, HEARTBEAT
-    }
+  public enum PlaybackEventType {
+    PLAY, PAUSE, SEEK, COMPLETE, ERROR, HEARTBEAT
+  }
 }

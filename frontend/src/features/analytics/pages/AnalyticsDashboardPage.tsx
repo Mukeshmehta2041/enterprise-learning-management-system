@@ -1,6 +1,6 @@
-import { useGlobalStats, useCourseAnalytics, useEnrollmentTrends } from '../api/analyticsHooks';
+import { useGlobalStats, useCourseAnalytics, useEnrollmentTrends, useInstructorCourseAnalytics } from '../api/analyticsHooks';
 import { Card, PageHeader, Container } from '@/shared/ui/Layout';
-import { Users, BookOpen, GraduationCap, DollarSign, TrendingUp, Filter, Calendar, FileText, Star } from 'lucide-react';
+import { Users, BookOpen, GraduationCap, DollarSign, TrendingUp, Filter, Calendar, FileText, Star, Play, CheckCircle } from 'lucide-react';
 import { TextMuted, TextSmall } from '@/shared/ui/Typography';
 import { Button } from '@/shared/ui';
 import { useState } from 'react';
@@ -27,6 +27,10 @@ export function AnalyticsDashboardPage() {
     courseId: selectedCourse || undefined,
   });
   const { data: trends, isLoading: isTrendLoading } = useEnrollmentTrends();
+  const { data: instructorCourseStats } = useInstructorCourseAnalytics(selectedCourse, {
+    startDate: dateRange.start || undefined,
+    endDate: dateRange.end || undefined,
+  });
 
   if (isGlobalLoading || isCourseLoading || isTrendLoading) {
     return <div className="p-8 text-center text-slate-500">Loading analytics data...</div>;
@@ -213,6 +217,71 @@ export function AnalyticsDashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Lecture Engagement Details */}
+      {selectedCourse && instructorCourseStats && (
+        <Card
+          className="mb-8"
+          title="Lecture Engagement"
+          description="Detailed breakdown of how students are interacting with specific lectures."
+        >
+          <div className="flex justify-end pb-4">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              Last 30 Days
+            </Button>
+          </div>
+          <div className="overflow-x-auto -mx-6">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-y border-slate-100">
+                <tr>
+                  <th className="px-6 py-3 font-medium">Lecture Title</th>
+                  <th className="px-6 py-3 font-medium text-center">Total Watches</th>
+                  <th className="px-6 py-3 font-medium text-center">Completes</th>
+                  <th className="px-6 py-3 font-medium text-center">Completion Rate</th>
+                  <th className="px-6 py-3 font-medium text-right">Avg. Watch Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {instructorCourseStats.lessonMetrics.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                      No lecture data available for the selected period.
+                    </td>
+                  </tr>
+                ) : (
+                  instructorCourseStats.lessonMetrics.map((lesson) => (
+                    <tr key={lesson.lessonId} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-900">{lesson.lessonTitle}</td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5 font-medium text-slate-600">
+                          <Play className="h-3.5 w-3.5 text-indigo-500" />
+                          {lesson.totalWatches}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center text-slate-600 font-medium">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                          {lesson.totalCompletes}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${lesson.completionRate > 0.7 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'
+                          }`}>
+                          {(lesson.completionRate * 100).toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-medium text-slate-900">
+                        {Math.floor(lesson.averageWatchTimeSecs / 60)}m {Math.floor(lesson.averageWatchTimeSecs % 60)}s
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Course Performance Table */}

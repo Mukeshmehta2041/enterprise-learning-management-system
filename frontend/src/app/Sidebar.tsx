@@ -5,6 +5,7 @@ import {
   BookOpen,
   ClipboardList,
   BarChart3,
+  FileText,
   Settings,
   CreditCard,
   X,
@@ -25,6 +26,12 @@ const navItems: Array<{ name: string; href: string; icon: LucideIcon; roles?: Ro
     name: 'Analytics',
     href: '/analytics',
     icon: BarChart3,
+    roles: ['INSTRUCTOR', 'ADMIN']
+  },
+  {
+    name: 'Reports',
+    href: '/reports',
+    icon: FileText,
     roles: ['INSTRUCTOR', 'ADMIN']
   },
   { name: 'Subscription', href: '/pricing', icon: CreditCard },

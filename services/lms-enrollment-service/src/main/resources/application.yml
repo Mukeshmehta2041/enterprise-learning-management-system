@@ -86,3 +86,5 @@ lms:
     max-per-user: ${LMS_ENROLLMENT_MAX_PER_USER:10}
   course-service:
     url: ${LMS_COURSE_SERVICE_URL:http://lms-course-service:8083}
+  assignment-service:
+    url: ${LMS_ASSIGNMENT_SERVICE_URL:http://lms-assignment-service:8087}

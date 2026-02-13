@@ -6,7 +6,7 @@
 # Via Admin API (requires token with ADMIN role)
 curl -H "Authorization: Bearer $ADMIN_TOKEN" \
      -H "X-Roles: ADMIN" \
-     "https://api.lms.com/api/v1/admin/users/search?email=user@example.com"
+     "https://api.lms.com/api/v1/users/admin/search?email=user@example.com"
 ```
 
 ### Suspend a User
@@ -21,7 +21,9 @@ curl -X PATCH -H "Authorization: Bearer $ADMIN_TOKEN" \
 ```bash
 curl -X PATCH -H "Authorization: Bearer $ADMIN_TOKEN" \
      -H "X-Roles: ADMIN" \
-     "https://api.lms.com/api/v1/admin/courses/$COURSE_ID/status?status=SUSPENDED"
+     "https://api.lms.com/api/v1/courses/admin/bulk-status" \
+     -H "Content-Type: application/json" \
+     -d '{"courseIds": ["'$COURSE_ID'"], "status": "SUSPENDED"}'
 ```
 
 ## 3. Cache Management

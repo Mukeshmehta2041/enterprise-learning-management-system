@@ -1,37 +1,63 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Card, Container } from '@/shared/ui/Layout';
 import { Button, Heading4 } from '@/shared/ui';
 import { CheckCircle2, Loader2, CreditCard, ShieldCheck, AlertCircle, ChevronLeft, Lock } from 'lucide-react';
 import { useState } from 'react';
+import { apiClient } from '@/shared/api/client';
+import { useAuth } from '@/shared/context/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function CheckoutPage() {
   const { intentId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<'review' | 'processing' | 'success' | 'error'>('review');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Mock course/plan data that would normally come from the intent or API
-  const orderData = {
-    item: 'Pro Learner Annual Plan',
-    price: 199.00,
-    tax: 15.92,
-    discount: 0,
-    total: 214.92,
-  };
+  const courseId = searchParams.get('courseId') || ''
+  const courseName = searchParams.get('courseName') || 'Course Access'
+  const currency = searchParams.get('currency') || 'USD'
+  const priceValue = Number.parseFloat(searchParams.get('price') || '0')
+  const orderTotal = Number.isFinite(priceValue) ? priceValue : 0
+  const orderLabel = courseId ? courseName : 'Premium Access'
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (!user?.id) {
+      setStatus('error');
+      setErrorMsg('Please sign in to complete your purchase.');
+      return;
+    }
+
     setStatus('processing');
+    setErrorMsg('');
 
-    // Simulate payment logic
-    setTimeout(() => {
-      // 10% chance of failure for demo purposes
-      if (Math.random() < 0.1) {
-        setStatus('error');
-        setErrorMsg('Your card was declined. Please check your card details and try again.');
-      } else {
+    try {
+      const response = await apiClient.post('/payments', {
+        userId: user.id,
+        planId: null,
+        courseId: courseId || null,
+        amount: orderTotal,
+        idempotencyKey: intentId || `${user.id}-${courseId}`,
+      });
+
+      const payment = response.data;
+
+      setTimeout(async () => {
+        await apiClient.post(`/payments/webhook/completed?intentId=${payment.paymentIntentId}`);
         setStatus('success');
-      }
-    }, 2500);
+        await queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+        if (courseId) {
+          await queryClient.invalidateQueries({ queryKey: ['course', courseId] });
+          await queryClient.invalidateQueries({ queryKey: ['enrollment', courseId] });
+        }
+      }, 2000);
+    } catch (error) {
+      console.error('Payment failed', error);
+      setStatus('error');
+      setErrorMsg('Your card was declined. Please check your card details and try again.');
+    }
   };
 
   if (status === 'success') {
@@ -44,7 +70,7 @@ export function CheckoutPage() {
             </div>
             <Heading4 className="text-3xl font-bold text-slate-900">Payment Successful!</Heading4>
             <p className="mt-4 text-slate-600 text-lg leading-relaxed">
-              Welcome to the Pro community! Your subscription is now active and you have full access to all premium content.
+              Thanks for your purchase. Your access is now active and you can start learning right away.
             </p>
             <div className="mt-6 p-4 bg-slate-50 rounded-lg w-full max-w-xs text-left">
               <div className="flex justify-between text-sm mb-1">
@@ -53,12 +79,15 @@ export function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Amount Paid:</span>
-                <span className="font-medium text-slate-900">${orderData.total.toFixed(2)}</span>
+                <span className="font-medium text-slate-900">{currency} {orderTotal.toFixed(2)}</span>
               </div>
             </div>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 w-full">
-              <Button onClick={() => navigate('/dashboard')} className="flex-1 py-6 text-lg">
-                Start Learning
+              <Button
+                onClick={() => navigate(courseId ? `/courses/${courseId}` : '/dashboard')}
+                className="flex-1 py-6 text-lg"
+              >
+                {courseId ? 'Go to Course' : 'Start Learning'}
               </Button>
             </div>
             <button
@@ -147,25 +176,25 @@ export function CheckoutPage() {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between items-start">
                 <div className="pr-4">
-                  <p className="font-semibold text-slate-900">{orderData.item}</p>
-                  <p className="text-xs text-slate-500 mt-1">Annual subscription with full access</p>
+                  <p className="font-semibold text-slate-900">{orderLabel}</p>
+                  <p className="text-xs text-slate-500 mt-1">Secure access for this course</p>
                 </div>
-                <span className="font-medium text-slate-900">${orderData.price.toFixed(2)}</span>
+                <span className="font-medium text-slate-900">{currency} {orderTotal.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="space-y-3 pt-6 border-t border-slate-100">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal</span>
-                <span>${orderData.price.toFixed(2)}</span>
+                <span>{currency} {orderTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Estimated Tax (8%)</span>
-                <span>${orderData.tax.toFixed(2)}</span>
+                <span>Estimated Tax</span>
+                <span>{currency} 0.00</span>
               </div>
               <div className="flex justify-between font-bold text-lg text-slate-900 pt-3 border-t border-slate-100">
                 <span>Total</span>
-                <span>USD ${orderData.total.toFixed(2)}</span>
+                <span>{currency} {orderTotal.toFixed(2)}</span>
               </div>
             </div>
 

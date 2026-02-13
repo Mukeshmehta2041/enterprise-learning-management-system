@@ -37,12 +37,28 @@ public class CourseServiceClient {
 
   @CircuitBreaker(name = "courseService")
   @Retry(name = "courseService")
+  public CourseDetailResponse getCourseDetail(UUID courseId) {
+    try {
+      return restClient.get()
+          .uri("/api/v1/courses/{courseId}", courseId)
+          .header("X-Roles", "ADMIN")
+          .header("X-User-Id", UUID.randomUUID().toString())
+          .retrieve()
+          .body(CourseDetailResponse.class);
+    } catch (Exception e) {
+      log.error("Error fetching course details for: {}", courseId, e);
+      return null;
+    }
+  }
+
+  @CircuitBreaker(name = "courseService")
+  @Retry(name = "courseService")
   public CourseResponse getCourse(UUID courseId) {
     try {
       return getCourseResponse(courseId);
     } catch (Exception e) {
       log.error("Error fetching course details for: {}", courseId, e);
-      return new CourseResponse(courseId, "Untitled Course", "UNKNOWN", null);
+      return new CourseResponse(courseId, "Untitled Course", "UNKNOWN", null, null, "USD", true);
     }
   }
 
@@ -101,11 +117,18 @@ public class CourseServiceClient {
     return 0;
   }
 
-  public record CourseResponse(UUID id, String title, String status, String thumbnailUrl) {
+  public record CourseResponse(
+      UUID id,
+      String title,
+      String status,
+      String thumbnailUrl,
+      java.math.BigDecimal price,
+      String currency,
+      Boolean isFree) {
   }
 
   public record CourseDetailResponse(UUID id, String title, String status, String thumbnailUrl,
-      List<ModuleResponse> modules) {
+      java.math.BigDecimal completionThreshold, Boolean requireAllAssignments, List<ModuleResponse> modules) {
   }
 
   public record ModuleResponse(UUID id, List<LessonResponse> lessons) {

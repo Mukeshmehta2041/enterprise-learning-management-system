@@ -9,6 +9,8 @@ interface CreateCourseData {
   category: string
   level: string
   price: number
+  completionThreshold?: number
+  requireAllAssignments?: boolean
   modules: Array<{
     title: string
     lessons: Array<{

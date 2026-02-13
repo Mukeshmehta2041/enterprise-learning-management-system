@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, SlidersHorizontal, Edit, Eye, Trash2 } from 'lucide-react'
+import { Plus, SlidersHorizontal, Edit, Eye, Trash2, Copy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import {
   Heading1,
@@ -14,9 +14,10 @@ import {
   Select,
 } from '@/shared/ui'
 import { useUrlFilters } from '@/shared/hooks/useUrlFilters'
-import { useCourses } from '../../api/useCourses'
+import { useCourses, useDuplicateCourse } from '../../api/useCourses'
 import { type CourseFilters } from '@/shared/types/course'
 import { format } from 'date-fns'
+import { useToast } from '@/shared/context/ToastContext'
 
 const INITIAL_FILTERS: CourseFilters = {
   page: 1,
@@ -29,12 +30,24 @@ const INITIAL_FILTERS: CourseFilters = {
 
 export function InstructorCourseListPage() {
   const navigate = useNavigate()
+  const { success, error } = useToast()
   const [filters, setFilters] = useUrlFilters(INITIAL_FILTERS)
   const [showFilters, setShowFilters] = useState(false)
 
   // In a real app, we would use a specific hook for instructor courses
   // that automatically filters by instructorId on the backend.
   const { data, isLoading } = useCourses(filters)
+  const duplicateMutation = useDuplicateCourse()
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      const result = await duplicateMutation.mutateAsync(id)
+      success('Course duplicated successfully')
+      navigate(`/instructor/courses/${result.id}/edit`)
+    } catch (err: unknown) {
+      error(err instanceof Error ? err.message : 'Failed to duplicate course')
+    }
+  }
 
   const handleFilterChange = (key: keyof CourseFilters, value: unknown) => {
     const patch: Partial<CourseFilters> = { [key]: value as CourseFilters[keyof CourseFilters] }
@@ -188,6 +201,15 @@ export function InstructorCourseListPage() {
                           aria-label={`View ${course.title}`}
                         >
                           <Eye size={18} />
+                        </IconButton>
+                        <IconButton
+                          variant="ghost"
+                          onClick={() => handleDuplicate(course.id)}
+                          title="Duplicate Course"
+                          aria-label={`Duplicate ${course.title}`}
+                          isLoading={duplicateMutation.isPending && duplicateMutation.variables === course.id}
+                        >
+                          <Copy size={18} />
                         </IconButton>
                         <IconButton
                           variant="ghost"

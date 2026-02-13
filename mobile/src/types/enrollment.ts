@@ -7,8 +7,10 @@ export interface Enrollment {
   instructorName: string
   enrolledAt: string
   progress: number // 0 to 100
-  status: 'ACTIVE' | 'COMPLETED' | 'DROPPED'
+  status: 'ENROLLED' | 'IN_PROGRESS' | 'ACTIVE' | 'COMPLETED' | 'DROPPED' | 'PENDING_PAYMENT'
   lastAccessedAt: string
+  completedLessonIds?: string[]
+  lessonPositions?: Record<string, number>
 }
 
 export interface EnrollmentProgress {

@@ -4,34 +4,70 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { AppText } from '../src/components/AppText'
 import { Button } from '../src/components/Button'
 import { useNotificationStore } from '../src/state/useNotificationStore'
+import { useAuthStore } from '../src/state/useAuthStore'
 import { analytics } from '../src/utils/analytics'
+import { apiClient } from '../src/api/client'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function CheckoutScreen() {
-  const { planId, planName, price } = useLocalSearchParams()
+  const { planId, planName, courseId, courseName, price } = useLocalSearchParams()
   const [status, setStatus] = useState<'pending' | 'processing' | 'success' | 'failed'>('pending')
   const router = useRouter()
   const { showNotification } = useNotificationStore()
+  const user = useAuthStore((state) => state.user)
+  const queryClient = useQueryClient()
+
+  const itemName = String(planName || courseName || 'Item')
 
   useEffect(() => {
     analytics.track('payment_started', {
-      planId: String(planId),
-      planName: String(planName),
+      planId: String(planId || ''),
+      courseId: String(courseId || ''),
+      itemName,
       price: String(price),
     })
   }, [])
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     setStatus('processing')
-    // Simulate payment processing
-    setTimeout(() => {
-      setStatus('success')
-      showNotification(`Successfully subscribed to ${planName}!`, 'success')
-      analytics.track('payment_completed', {
-        planId: String(planId),
-        planName: String(planName),
-        price: String(price),
+    try {
+      if (!user?.id) {
+        showNotification('Please sign in to complete payment.', 'error')
+        setStatus('failed')
+        return
+      }
+      // Create payment in our backend
+      const response = await apiClient.post('/api/v1/payments', {
+        userId: user?.id,
+        planId: planId ? Number(planId) : null,
+        courseId: courseId || null,
+        amount: parseFloat(String(price).replace(/[^0-9.]/g, '')),
+        idempotencyKey: Math.random().toString(36).substring(7),
       })
-    }, 2000)
+
+      const payment = response.data
+
+      // Simulate webhook call for mock testing
+      setTimeout(async () => {
+        await apiClient.post(`/api/v1/payments/webhook/completed?intentId=${payment.paymentIntentId}`)
+
+        setStatus('success')
+        showNotification(`Successfully purchased ${itemName}!`, 'success')
+        analytics.track('payment_completed', {
+          paymentId: payment.id,
+          courseId: String(courseId || ''),
+          price: String(price),
+        })
+        await queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] })
+        if (courseId) {
+          await queryClient.invalidateQueries({ queryKey: ['course', courseId] })
+        }
+      }, 2000)
+    } catch (error) {
+      console.error('Payment failed', error)
+      setStatus('failed')
+      showNotification('Payment failed. Please try again.', 'error')
+    }
   }
 
   const handleCancel = () => {
@@ -53,7 +89,10 @@ export default function CheckoutScreen() {
             </AppText>
             <View className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
               <View className="flex-row justify-between mb-4">
-                <AppText weight="medium">{planName} Subscription</AppText>
+                <View className="flex-1 mr-4">
+                  <AppText weight="medium">{itemName}</AppText>
+                  <AppText variant="tiny" color="muted">Secure content access fee</AppText>
+                </View>
                 <AppText weight="bold">{price}</AppText>
               </View>
               <View className="h-[1px] bg-slate-200 my-4" />
@@ -100,13 +139,13 @@ export default function CheckoutScreen() {
             Payment Successful!
           </AppText>
           <AppText color="muted" className="text-center mb-10">
-            Thank you for your purchase. Your {planName} plan is now active. A receipt has been sent
-            to your email.
+            Thank you for your purchase. Your access is now active. A receipt has been sent to your
+            email.
           </AppText>
           <Button
-            title="Back to Profile"
+            title={courseId ? 'Go to Course' : 'Back to Profile'}
             className="w-full"
-            onPress={() => router.replace('/(tabs)/profile')}
+            onPress={() => router.replace(courseId ? `/course/${courseId}` : '/(tabs)/profile')}
           />
         </View>
       )}

@@ -40,6 +40,9 @@ public interface CourseRepository extends JpaRepository<Course, UUID>, JpaSpecif
   List<Course> findPublishedOrInstructor(@Param("userId") UUID userId, @Param("createdAt") Instant createdAt,
       Pageable pageable);
 
+  @Query("SELECT c.updatedAt FROM Course c WHERE c.id = :courseId")
+  Optional<Instant> findUpdatedAtById(@Param("courseId") UUID courseId);
+
   @Query("SELECT c FROM Course c JOIN c.instructors ci " +
       "WHERE ci.userId = :userId AND c.createdAt < :createdAt ORDER BY c.createdAt DESC")
   List<Course> findByInstructorId(@Param("userId") UUID userId, @Param("createdAt") Instant createdAt,

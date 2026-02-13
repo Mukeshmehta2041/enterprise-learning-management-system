@@ -14,8 +14,8 @@
 | 🔄 In progress | |
 | ✅ Done | Sections/modules modeled and wired into course and lecture structure across stack. |
 
-**Started:**  
-**Completed:**  
+**Started:** 2026-02-11  
+**Completed:** 2026-02-11  
 
 ---
 
@@ -23,22 +23,22 @@
 
 ### Backend
 
-- [ ] **Section/module entities**: Introduce section/module entities with fields like title, description, order, and course linkage.
-- [ ] **Associations**: Define associations between sections, lectures, and assignments (e.g. foreign keys or mapping tables).
-- [ ] **CRUD endpoints**: Implement section/module CRUD endpoints and ordering APIs within a course.
-- [ ] **Migration plan**: Plan and implement data migrations for existing courses to adopt sections/modules where needed.
+- [x] **Section/module entities**: Introduce section/module entities with fields like title, description, order, and course linkage.
+- [x] **Associations**: Define associations between sections, lectures, and assignments (e.g. foreign keys or mapping tables).
+- [x] **CRUD endpoints**: Implement section/module CRUD endpoints and ordering APIs within a course.
+- [x] **Migration plan**: Plan and implement data migrations for existing courses to adopt sections/modules where needed.
 
 ### Frontend
 
-- [ ] **Hierarchical course view**: Update course detail pages to show sections/modules and nested lectures.
-- [ ] **Section-level progress**: Show progress at the section/module level based on completed lectures and assignments.
-- [ ] **Editing UI**: Provide an instructor UI for adding, editing, and reordering sections/modules.
+- [x] **Hierarchical course view**: Update course detail pages to show sections/modules and nested lectures.
+- [x] **Section-level progress**: Show progress at the section/module level based on completed lectures and assignments.
+- [x] **Editing UI**: Provide an instructor UI for adding, editing, and reordering sections/modules.
 
 ### Mobile
 
-- [ ] **Mobile section navigation**: Design and implement a mobile-friendly UI for navigating sections/modules within a course.
-- [ ] **Progress cues**: Show progress indicators per section/module on mobile (e.g. checkmarks, progress bars).
-- [ ] **Consistency with web**: Ensure the mobile structure matches the web ordering and associations.
+- [x] **Mobile section navigation**: Design and implement a mobile-friendly UI for navigating sections/modules within a course.
+- [x] **Progress cues**: Show progress indicators per section/module on mobile (e.g. checkmarks, progress bars).
+- [x] **Consistency with web**: Ensure the mobile structure matches the web ordering and associations.
 
 ---
 

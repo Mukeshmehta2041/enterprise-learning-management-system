@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,9 +79,84 @@ public class CourseApplicationService {
     auditLogger.logSuccess("USER_DATA_CLEANUP", "USER", userId.toString());
   }
 
+  @Transactional
+  public void bulkUpdateStatus(List<UUID> courseIds, CourseStatus status, UUID adminId) {
+    List<Course> courses = courseRepository.findAllById(courseIds);
+    for (Course course : courses) {
+      CourseStatus oldStatus = course.getStatus();
+      course.setStatus(status);
+      courseRepository.save(course);
+
+      courseEventPublisher.publishCourseUpdated(course);
+      auditLogger.logSuccess("COURSE_MODERATION", "COURSE", course.getId().toString(),
+          Map.of("oldStatus", oldStatus, "newStatus", status, "adminId", adminId));
+    }
+  }
+
+  @Transactional
+  public CourseResponse duplicateCourse(UUID courseId, UUID userId, Set<String> roles) {
+    Course original = courseRepository.findById(courseId)
+        .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+    if (!roles.contains("ADMIN") && !original.getInstructors().stream()
+        .anyMatch(i -> i.getUserId().equals(userId))) {
+      throw new ForbiddenException("Not authorized to duplicate this course");
+    }
+
+    // Clone basic info
+    Course duplicate = Course.builder()
+        .id(UUID.randomUUID())
+        .title("Copy of " + original.getTitle())
+        .description(original.getDescription())
+        .thumbnailUrl(original.getThumbnailUrl())
+        .category(original.getCategory())
+        .level(original.getLevel())
+        .price(original.getPrice())
+        .status(CourseStatus.DRAFT)
+        .isFeatured(false)
+        .isTrending(false)
+        .tags(new HashSet<>(original.getTags()))
+        .build();
+
+    // Re-link instructors (or just the current user)
+    CourseInstructor instructor = new CourseInstructor(duplicate, userId, "INSTRUCTOR");
+    duplicate.getInstructors().add(instructor);
+
+    Course saved = courseRepository.save(duplicate);
+
+    // Deep copy modules and lessons
+    for (CourseModule originalModule : original.getModules()) {
+      CourseModule duplicateModule = new CourseModule(
+          UUID.randomUUID(),
+          saved,
+          originalModule.getTitle(),
+          originalModule.getSortOrder());
+      duplicateModule.setSortOrder(originalModule.getSortOrder());
+      CourseModule savedModule = moduleRepository.save(duplicateModule);
+
+      for (Lesson originalLesson : originalModule.getLessons()) {
+        Lesson duplicateLesson = new Lesson(
+            UUID.randomUUID(),
+            savedModule,
+            originalLesson.getTitle(),
+            originalLesson.getType(),
+            originalLesson.getDurationMinutes(),
+            originalLesson.getSortOrder());
+        duplicateLesson.setPreview(originalLesson.isPreview());
+        duplicateLesson.setStatus(LessonStatus.DRAFT);
+        lessonRepository.save(duplicateLesson);
+      }
+    }
+
+    auditLogger.logSuccess("COURSE_DUPLICATE", "COURSE", saved.getId().toString(),
+        Map.of("originalId", courseId));
+    return mapToCourseResponse(saved);
+  }
+
   @Transactional(readOnly = true)
   public CourseListResponse listCourses(
       CourseStatus status, String category, String level, String search,
+      Boolean isFeatured, Boolean isTrending, List<String> tags,
       String sort, String order,
       String cursor, Integer limit, Integer page,
       UUID currentUserId,
@@ -106,7 +182,8 @@ public class CourseApplicationService {
         if (roles.contains("INSTRUCTOR") && currentUserId != null) {
           predicates.add(cb.or(
               cb.equal(root.get("status"), CourseStatus.PUBLISHED),
-              cb.equal(root.join("instructors", jakarta.persistence.criteria.JoinType.LEFT).get("userId"),
+              cb.equal(root.join("instructors", jakarta.persistence.criteria.JoinType.LEFT)
+                  .get("userId"),
                   currentUserId)));
         } else {
           predicates.add(cb.equal(root.get("status"), CourseStatus.PUBLISHED));
@@ -119,6 +196,20 @@ public class CourseApplicationService {
 
       if (level != null && !level.isBlank()) {
         predicates.add(cb.equal(cb.upper(root.get("level")), level.toUpperCase()));
+      }
+
+      if (isFeatured != null) {
+        predicates.add(cb.equal(root.get("isFeatured"), isFeatured));
+      }
+
+      if (isTrending != null) {
+        predicates.add(cb.equal(root.get("isTrending"), isTrending));
+      }
+
+      if (tags != null && !tags.isEmpty()) {
+        for (String tag : tags) {
+          predicates.add(cb.isMember(tag, root.get("tags")));
+        }
       }
 
       if (search != null && !search.isBlank()) {
@@ -190,6 +281,11 @@ public class CourseApplicationService {
       hasAccess = enrollmentServiceClient.isUserEnrolled(currentUserId, courseId);
     }
 
+    // Day 16: Free courses grant access to all lessons even without enrollment
+    if (!hasAccess && course.isFree()) {
+      hasAccess = true;
+    }
+
     return mapToCourseDetailResponse(course, hasAccess);
   }
 
@@ -227,6 +323,13 @@ public class CourseApplicationService {
     course.setCategory(request.category());
     course.setLevel(request.level());
     course.setPrice(request.price() != null ? request.price() : java.math.BigDecimal.ZERO);
+    course.setCurrency(request.currency() != null ? request.currency() : "USD");
+    course.setFree(
+        request.isFree() != null ? request.isFree() : (course.getPrice().compareTo(java.math.BigDecimal.ZERO) == 0));
+    course.setCompletionThreshold(request.completionThreshold() != null
+        ? request.completionThreshold()
+        : new java.math.BigDecimal("100.00"));
+    course.setRequireAllAssignments(Boolean.TRUE.equals(request.requireAllAssignments()));
 
     // Add modules and lessons if provided
     if (request.modules() != null) {
@@ -291,6 +394,21 @@ public class CourseApplicationService {
     }
     if (request.price() != null) {
       course.setPrice(request.price());
+    }
+    if (request.currency() != null) {
+      course.setCurrency(request.currency());
+    }
+    if (request.isFree() != null) {
+      course.setFree(request.isFree());
+    }
+    if (request.completionThreshold() != null) {
+      course.setCompletionThreshold(request.completionThreshold());
+    }
+    if (request.requireAllAssignments() != null) {
+      course.setRequireAllAssignments(request.requireAllAssignments());
+    }
+    if (request.thumbnailUrl() != null) {
+      course.setThumbnailUrl(request.thumbnailUrl());
     }
     if (request.status() != null) {
       course.setStatus(request.status());
@@ -414,6 +532,48 @@ public class CourseApplicationService {
     return mapToModuleResponse(updated, true);
   }
 
+  public void deleteModule(UUID courseId, UUID moduleId, UUID currentUserId, Set<String> roles) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    if (!canModifyCourse(course, currentUserId, roles)) {
+      throw new ForbiddenException("Not authorized to modify this course");
+    }
+
+    CourseModule module = moduleRepository.findById(moduleId)
+        .orElseThrow(() -> new ResourceNotFoundException("Module not found: " + moduleId));
+
+    if (!module.getCourse().getId().equals(courseId)) {
+      throw new BadRequestException("Module does not belong to course");
+    }
+
+    moduleRepository.delete(module);
+    courseEventPublisher.publishModuleDeleted(courseId.toString(), moduleId.toString());
+    log.info("Module deleted: {}", moduleId);
+  }
+
+  public void reorderModules(UUID courseId, BulkReorderRequest request, UUID currentUserId, Set<String> roles) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    if (!canModifyCourse(course, currentUserId, roles)) {
+      throw new ForbiddenException("Not authorized to modify this course");
+    }
+
+    for (BulkReorderRequest.ReorderItem item : request.items()) {
+      CourseModule module = moduleRepository.findById(item.id())
+          .orElseThrow(() -> new ResourceNotFoundException("Module not found: " + item.id()));
+
+      if (!module.getCourse().getId().equals(courseId)) {
+        throw new BadRequestException("Module " + item.id() + " does not belong to course");
+      }
+
+      module.setSortOrder(item.sortOrder());
+      moduleRepository.save(module);
+    }
+    log.info("Modules reordered for course: {}", courseId);
+  }
+
   public LessonResponse createLesson(UUID courseId, UUID moduleId, CreateLessonRequest request,
       UUID currentUserId, Set<String> roles) {
     Course course = courseRepository.findById(courseId)
@@ -464,7 +624,11 @@ public class CourseApplicationService {
       lesson.setPreview(request.isPreview());
     }
     if (request.status() != null) {
-      lesson.setStatus(request.status());
+      try {
+        lesson.setStatus(LessonStatus.valueOf(request.status().toUpperCase()));
+      } catch (IllegalArgumentException ex) {
+        throw new BadRequestException("Invalid lesson status: " + request.status());
+      }
     }
 
     Lesson updated = lessonRepository.save(lesson);
@@ -496,6 +660,97 @@ public class CourseApplicationService {
   }
 
   @Transactional
+  public List<ModuleResponse> syncCurriculum(UUID courseId, SyncCurriculumRequest request, UUID currentUserId,
+      Set<String> roles) {
+    Course course = courseRepository.findById(courseId)
+        .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
+
+    if (!canModifyCourse(course, currentUserId, roles)) {
+      throw new ForbiddenException("Not authorized to modify this course");
+    }
+
+    if (request.modules().size() > 50) {
+      throw new BadRequestException("Course cannot have more than 50 modules");
+    }
+
+    // Map existing modules by ID
+    Map<UUID, CourseModule> existingModules = course.getModules().stream()
+        .collect(Collectors.toMap(CourseModule::getId, m -> m));
+
+    Set<UUID> receivedModuleIds = new HashSet<>();
+
+    for (int i = 0; i < request.modules().size(); i++) {
+      var modReq = request.modules().get(i);
+      CourseModule module;
+
+      if (modReq.id() != null && existingModules.containsKey(modReq.id())) {
+        module = existingModules.get(modReq.id());
+        module.setTitle(modReq.title());
+        module.setSortOrder(modReq.sortOrder() != null ? modReq.sortOrder() : i);
+        receivedModuleIds.add(modReq.id());
+      } else {
+        UUID moduleId = modReq.id() != null ? modReq.id() : UUID.randomUUID();
+        module = new CourseModule(moduleId, course, modReq.title(),
+            modReq.sortOrder() != null ? modReq.sortOrder() : i);
+        course.addModule(module);
+        receivedModuleIds.add(moduleId);
+      }
+
+      if (modReq.lessons().size() > 100) {
+        throw new BadRequestException("Module '" + modReq.title() + "' cannot have more than 100 lessons");
+      }
+
+      // Handle lessons in module
+      Map<UUID, Lesson> existingLessons = module.getLessons().stream()
+          .collect(Collectors.toMap(Lesson::getId, l -> l));
+      Set<UUID> receivedLessonIds = new HashSet<>();
+
+      for (int j = 0; j < modReq.lessons().size(); j++) {
+        var lesReq = modReq.lessons().get(j);
+        Lesson lesson;
+        if (lesReq.id() != null && existingLessons.containsKey(lesReq.id())) {
+          lesson = existingLessons.get(lesReq.id());
+          String oldTitle = lesson.getTitle();
+          lesson.setTitle(lesReq.title());
+          lesson.setType(LessonType.valueOf(lesReq.type()));
+          lesson.setDurationMinutes(lesReq.durationMinutes());
+          lesson.setSortOrder(lesReq.sortOrder() != null ? lesReq.sortOrder() : j);
+          lesson.setPreview(lesReq.isPreview());
+          receivedLessonIds.add(lesReq.id());
+
+          if (!oldTitle.equals(lesReq.title()) && course.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishLessonUpdated(courseId, lesson.getId(), lesson.getTitle());
+          }
+        } else {
+          UUID lessonId = lesReq.id() != null ? lesReq.id() : UUID.randomUUID();
+          lesson = new Lesson(lessonId, module, lesReq.title(), LessonType.valueOf(lesReq.type()),
+              lesReq.durationMinutes(), lesReq.sortOrder() != null ? lesReq.sortOrder() : j);
+          lesson.setPreview(lesReq.isPreview());
+          module.addLesson(lesson);
+          receivedLessonIds.add(lessonId);
+
+          if (course.getStatus() == CourseStatus.PUBLISHED) {
+            courseEventPublisher.publishLessonPublished(courseId, lessonId, lesson.getTitle());
+          }
+        }
+      }
+
+      // Remove lessons not received
+      module.getLessons().removeIf(l -> !receivedLessonIds.contains(l.getId()));
+    }
+
+    // Remove modules not received
+    course.getModules().removeIf(m -> !receivedModuleIds.contains(m.getId()));
+
+    Course saved = courseRepository.save(course);
+    courseCacheService.evictCourse(courseId);
+
+    return saved.getModules().stream()
+        .map(m -> mapToModuleResponse(m, true))
+        .collect(Collectors.toList());
+  }
+
+  @Transactional
   public void deleteLesson(UUID courseId, UUID moduleId, UUID lessonId, UUID currentUserId, Set<String> roles) {
     Course course = courseRepository.findById(courseId)
         .orElseThrow(() -> new CourseNotFoundException("Course not found: " + courseId));
@@ -512,6 +767,7 @@ public class CourseApplicationService {
     }
 
     lessonRepository.delete(lesson);
+    courseEventPublisher.publishLessonDeleted(courseId.toString(), lessonId.toString());
     log.info("Lesson deleted: {}", lessonId);
   }
 
@@ -523,6 +779,28 @@ public class CourseApplicationService {
 
   public boolean isUserInstructor(UUID courseId, UUID userId) {
     return courseRepository.isUserInstructor(courseId, userId);
+  }
+
+  public boolean isLessonPreview(UUID courseId, UUID lessonId) {
+    return lessonRepository.findById(lessonId)
+        .map(lesson -> lesson.isPreview() && lesson.getModule().getCourse().getId().equals(courseId))
+        .orElse(false);
+  }
+
+  public boolean isFree(UUID courseId) {
+    return courseRepository.findById(courseId)
+        .map(Course::isFree)
+        .orElse(false);
+  }
+
+  public CourseStatus getCourseStatus(UUID courseId) {
+    return courseRepository.findById(courseId)
+        .map(Course::getStatus)
+        .orElse(CourseStatus.DRAFT);
+  }
+
+  public Instant getUpdatedAt(UUID courseId) {
+    return courseRepository.findUpdatedAtById(courseId).orElse(null);
   }
 
   private boolean canViewCourse(CourseDetailResponse course, UUID currentUserId, Set<String> roles) {
@@ -577,7 +855,15 @@ public class CourseApplicationService {
         course.getCategory(),
         course.getLevel(),
         course.getPrice(),
+        course.getCurrency(),
+        course.isFree(),
+        course.getThumbnailUrl(),
         course.getStatus() != null ? course.getStatus().name() : "DRAFT",
+        course.isFeatured(),
+        course.isTrending(),
+        course.getCompletionThreshold(),
+        course.isRequireAllAssignments(),
+        course.getTags(),
         instructorIds,
         course.getCreatedAt(),
         course.getUpdatedAt());
@@ -600,7 +886,15 @@ public class CourseApplicationService {
         course.getCategory(),
         course.getLevel(),
         course.getPrice(),
+        course.getCurrency(),
+        course.isFree(),
+        course.getThumbnailUrl(),
         course.getStatus().name(),
+        course.isFeatured(),
+        course.isTrending(),
+        course.getCompletionThreshold(),
+        course.isRequireAllAssignments(),
+        course.getTags(),
         modules,
         instructorIds,
         course.getCreatedAt(),
@@ -634,7 +928,8 @@ public class CourseApplicationService {
         lesson.getSortOrder(),
         lesson.isPreview(),
         lesson.isPreview() || hasAccess,
-        lesson.getStatus(),
+        lesson.getStatus() != null ? lesson.getStatus().name() : "PUBLISHED",
+        lesson.getAvailableAt(),
         lesson.getCreatedAt(),
         lesson.getUpdatedAt());
   }

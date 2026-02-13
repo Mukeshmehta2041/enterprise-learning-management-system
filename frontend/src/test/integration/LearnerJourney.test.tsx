@@ -48,7 +48,7 @@ describe('Learner Journey', () => {
     })
 
     // 9. Enroll in course
-    const enrollButton = await screen.findByRole('button', { name: /Enroll Now/i })
+    const enrollButton = await screen.findByRole('button', { name: /Enroll/i })
     fireEvent.click(enrollButton)
 
     // 10. Verify enrollment success

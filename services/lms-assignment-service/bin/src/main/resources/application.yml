@@ -5,10 +5,17 @@ spring:
   application:
     name: lms-assignment-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lms}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/lms}
     username: ${SPRING_DATASOURCE_USERNAME:lms}
     password: ${SPRING_DATASOURCE_PASSWORD:lms}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      pool-name: AssignmentServiceHikariPool
   jpa:
     hibernate:
       ddl-auto: validate
@@ -25,14 +32,40 @@ spring:
     create-schemas: true
     baseline-on-migrate: true
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9093}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: assignment-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.lms.common.events"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      courseService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    instances:
+      courseService:
+        maxAttempts: 3
+        waitDuration: 2s
 
 springdoc:
   api-docs:
     path: /api/v1/assignments/v3/api-docs
+
+lms:
+  course-service:
+    url: ${LMS_COURSE_SERVICE_URL:http://localhost:8083}
 
 management:
   endpoints:

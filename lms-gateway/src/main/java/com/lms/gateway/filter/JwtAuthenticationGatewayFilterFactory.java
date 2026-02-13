@@ -40,6 +40,10 @@ public class JwtAuthenticationGatewayFilterFactory
   public GatewayFilter apply(Config config) {
     return (exchange, chain) -> {
       ServerHttpRequest request = exchange.getRequest();
+      String authenticatedBy = request.getHeaders().getFirst("X-Authenticated-By");
+      if ("API_KEY".equalsIgnoreCase(authenticatedBy)) {
+        return chain.filter(exchange);
+      }
       String path = request.getURI().getPath();
 
       // Skip authentication for Swagger/OpenAPI endpoints

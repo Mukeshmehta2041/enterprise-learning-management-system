@@ -8,11 +8,14 @@ import java.util.UUID;
 
 @Data
 public class CreateAssignmentRequest {
-    @NotNull
-    private UUID courseId;
-    @NotBlank
-    private String title;
-    private String description;
-    private OffsetDateTime dueDate;
-    private Integer maxScore = 100;
+  @NotNull
+  private UUID courseId;
+  private UUID moduleId;
+  private UUID lessonId;
+  @NotBlank
+  private String title;
+  private String description;
+  private OffsetDateTime dueDate;
+  private Integer maxScore = 100;
+  private boolean isMandatory = true;
 }

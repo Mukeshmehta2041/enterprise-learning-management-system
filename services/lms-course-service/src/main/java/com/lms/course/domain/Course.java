@@ -1,18 +1,31 @@
 package com.lms.course.domain;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Table(name = "courses", schema = "lms_course")
 @EntityListeners(AuditingEntityListener.class)
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Course {
 
   @Id
@@ -28,18 +41,44 @@ public class Course {
   @Column(name = "description", columnDefinition = "TEXT")
   private String description;
 
+  @Column(name = "thumbnail_url", length = 512)
+  private String thumbnailUrl;
+
   @Column(name = "category", length = 100)
   private String category;
 
   @Column(name = "level", length = 50)
   private String level;
 
-  @Column(name = "price")
-  private java.math.BigDecimal price = java.math.BigDecimal.ZERO;
+  @Column(name = "price", precision = 10, scale = 2)
+  private BigDecimal price = BigDecimal.ZERO;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 50)
   private CourseStatus status = CourseStatus.DRAFT;
+
+  @Column(name = "is_featured", nullable = false)
+  private boolean isFeatured = false;
+
+  @Column(name = "is_trending", nullable = false)
+  private boolean isTrending = false;
+
+  @Column(name = "completion_threshold", precision = 5, scale = 2)
+  private BigDecimal completionThreshold = new BigDecimal("100.00");
+
+  @Column(name = "require_all_assignments", nullable = false)
+  private boolean requireAllAssignments = false;
+
+  @Column(name = "currency", length = 3)
+  private String currency = "USD";
+
+  @Column(name = "is_free", nullable = false)
+  private boolean isFree = false;
+
+  @ElementCollection
+  @CollectionTable(name = "course_tags", schema = "lms_course", joinColumns = @JoinColumn(name = "course_id"))
+  @Column(name = "tag")
+  private Set<String> tags = new HashSet<>();
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -55,9 +94,6 @@ public class Course {
 
   @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<CourseInstructor> instructors = new ArrayList<>();
-
-  protected Course() {
-  }
 
   public Course(UUID id, String title, String slug, String description, CourseStatus status) {
     this.id = id;

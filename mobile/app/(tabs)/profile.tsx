@@ -50,7 +50,7 @@ export default function ProfileScreen() {
         <ListItem
           title="Notifications"
           leftIcon="notifications-outline"
-          onPress={() => router.push('/notifications')}
+          onPress={() => router.push('/settings/notifications')}
         />
         <ListItem
           title="Appearance"

@@ -5,7 +5,7 @@ import { useCallback, useMemo } from 'react'
  * A hook to sync state with URL search parameters.
  * Useful for filters, search, and pagination.
  */
-export function useUrlFilters<T extends Record<string, string | number | undefined>>(initialFilters: T) {
+export function useUrlFilters<T extends Record<string, string | number | boolean | undefined>>(initialFilters: T) {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const filters = useMemo(() => {
@@ -18,6 +18,8 @@ export function useUrlFilters<T extends Record<string, string | number | undefin
         const initialValue = initialFilters[key]
         if (typeof initialValue === 'number') {
           (currentFilters as Record<string, unknown>)[key] = Number(value)
+        } else if (typeof initialValue === 'boolean') {
+          (currentFilters as Record<string, unknown>)[key] = value === 'true'
         } else {
           (currentFilters as Record<string, unknown>)[key] = value
         }

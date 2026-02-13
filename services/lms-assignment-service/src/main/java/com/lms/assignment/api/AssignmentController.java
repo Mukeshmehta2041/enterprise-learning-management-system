@@ -43,9 +43,29 @@ public class AssignmentController {
     return assignmentService.createAssignment(request, userId, roles);
   }
 
+  @PutMapping("/{id}")
+  public Assignment updateAssignment(
+      @PathVariable UUID id,
+      @RequestBody @Valid UpdateAssignmentRequest request,
+      @RequestHeader(HEADER_USER_ID) UUID userId,
+      @RequestHeader(HEADER_ROLES) String rolesHeader) {
+    Set<String> roles = parseRoles(rolesHeader);
+    return assignmentService.updateAssignment(id, request, userId, roles);
+  }
+
   @GetMapping("/course/{courseId}")
   public List<Assignment> getAssignmentsByCourse(@PathVariable UUID courseId) {
     return assignmentService.getAssignmentsByCourse(courseId);
+  }
+
+  @GetMapping("/module/{moduleId}")
+  public List<Assignment> getAssignmentsByModule(@PathVariable UUID moduleId) {
+    return assignmentService.getAssignmentsByModule(moduleId);
+  }
+
+  @GetMapping("/lesson/{lessonId}")
+  public List<Assignment> getAssignmentsByLesson(@PathVariable UUID lessonId) {
+    return assignmentService.getAssignmentsByLesson(lessonId);
   }
 
   @PostMapping("/{assignmentId}/submit")

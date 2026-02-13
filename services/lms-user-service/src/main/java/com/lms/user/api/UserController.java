@@ -207,6 +207,31 @@ public class UserController {
     return ResponseEntity.noContent().build();
   }
 
+  @PostMapping("/push-token")
+  public ResponseEntity<Void> updatePushToken(
+      @RequestHeader(value = HEADER_USER_ID) String currentUserId,
+      @Valid @RequestBody PushTokenRequest request) {
+    if (currentUserId == null || currentUserId.isBlank()) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    userService.updatePushToken(UUID.fromString(currentUserId), request.token(), request.platform());
+    return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/admin/search")
+  public ResponseEntity<java.util.List<UserResponse>> searchUsersByEmail(
+      @RequestParam String email,
+      @RequestHeader(HEADER_ROLES) String rolesHeader) {
+    Set<String> roles = parseRoles(rolesHeader);
+    if (!roles.contains("ADMIN")) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+    java.util.List<UserResponse> responses = userService.searchByEmail(email).stream()
+        .map(this::buildUserResponse)
+        .collect(Collectors.toList());
+    return ResponseEntity.ok(responses);
+  }
+
   private UserResponse buildUserResponse(User user) {
     String displayName = profileRepository.findByUserId(user.getId())
         .map(Profile::getDisplayName)

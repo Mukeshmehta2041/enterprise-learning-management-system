@@ -27,7 +27,11 @@ public class CourseControllerIntegrationTest extends BaseIntegrationTest {
         "Description",
         "Technology",
         "BEGINNER",
-        java.math.BigDecimal.valueOf(49.99),
+        BigDecimal.valueOf(49.99),
+        "USD",
+        false,
+        new BigDecimal("100.00"),
+        false,
         CourseStatus.DRAFT,
         java.util.Collections.emptyList());
 

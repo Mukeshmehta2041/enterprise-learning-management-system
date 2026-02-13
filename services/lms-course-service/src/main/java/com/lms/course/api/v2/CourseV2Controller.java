@@ -33,6 +33,9 @@ public class CourseV2Controller {
       @RequestParam(required = false) String category,
       @RequestParam(required = false) String level,
       @RequestParam(required = false) String search,
+      @RequestParam(required = false) Boolean isFeatured,
+      @RequestParam(required = false) Boolean isTrending,
+      @RequestParam(required = false) List<String> tags,
       @RequestParam(required = false) String sort,
       @RequestParam(required = false, defaultValue = "desc") String order,
       @RequestParam(required = false) String cursor,
@@ -54,7 +57,20 @@ public class CourseV2Controller {
     }
 
     CourseListResponse v1Response = courseService.listCourses(
-        courseStatus, category, level, search, sort, order, cursor, limit, page, userId, roles);
+        courseStatus,
+        category,
+        level,
+        search,
+        isFeatured,
+        isTrending,
+        tags,
+        sort,
+        order,
+        cursor,
+        limit,
+        page,
+        userId,
+        roles);
 
     return ResponseEntity.ok(convertToV2(v1Response));
   }

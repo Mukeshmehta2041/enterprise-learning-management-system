@@ -35,4 +35,17 @@ public class InternalUserController {
 
     return ResponseEntity.ok(response);
   }
+
+  @GetMapping("/{userId}/push-token")
+  public ResponseEntity<Map<String, String>> getPushToken(
+      @org.springframework.web.bind.annotation.PathVariable java.util.UUID userId) {
+    var user = userService.getById(userId);
+    var profile = userService.getProfile(userId);
+    if (profile.getPushToken() == null) {
+      return ResponseEntity.notFound().build();
+    }
+    return ResponseEntity.ok(Map.of(
+        "token", profile.getPushToken(),
+        "platform", profile.getPushPlatform() != null ? profile.getPushPlatform() : "unknown"));
+  }
 }

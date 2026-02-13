@@ -80,6 +80,12 @@ public class UserApplicationService {
   }
 
   @Transactional(readOnly = true)
+  public Profile getProfile(UUID userId) {
+    return profileRepository.findByUserId(userId)
+        .orElseThrow(() -> new UserNotFoundException(userId));
+  }
+
+  @Transactional(readOnly = true)
   public User getByEmail(String email) {
     return userRepository.findByEmail(email)
         .orElseThrow(() -> new UserNotFoundException(email));
@@ -105,6 +111,16 @@ public class UserApplicationService {
     profileRepository.save(profile);
     auditLogger.logSuccess("USER_UPDATE_PROFILE", "USER", userId.toString());
     return user;
+  }
+
+  @Transactional
+  public void updatePushToken(UUID userId, String token, String platform) {
+    Profile profile = profileRepository.findByUserId(userId)
+        .orElseThrow(() -> new UserNotFoundException(userId));
+    profile.setPushToken(token);
+    profile.setPushPlatform(platform);
+    profileRepository.save(profile);
+    auditLogger.logSuccess("PUSH_TOKEN_UPDATE", "USER", userId.toString(), Map.of("platform", platform));
   }
 
   @Transactional(readOnly = true)

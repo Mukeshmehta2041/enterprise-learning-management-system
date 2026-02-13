@@ -9,5 +9,10 @@ public record UpdateCourseRequest(
     String category,
     String level,
     BigDecimal price,
+    String currency,
+    Boolean isFree,
+    BigDecimal completionThreshold,
+    Boolean requireAllAssignments,
+    String thumbnailUrl,
     CourseStatus status) {
 }

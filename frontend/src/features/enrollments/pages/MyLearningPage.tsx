@@ -1,9 +1,9 @@
 import { useEnrollments } from '../api/useEnrollments'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { EnrollmentCard } from '../components/EnrollmentCard'
 import { Container, Heading1, TextMuted, Heading4, Button, EmptyState } from '@/shared/ui'
-import { useNavigate } from 'react-router-dom'
-import { GraduationCap, AlertCircle } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { GraduationCap, AlertCircle, PlayCircle } from 'lucide-react'
 import { useUI } from '@/shared/context/UIContext'
 import type { AppError } from '@/shared/types/error'
 
@@ -17,6 +17,14 @@ export function MyLearningPage() {
     return () => setBreadcrumbs(null)
   }, [setBreadcrumbs])
 
+  const lastEnrollment = useMemo(() => {
+    if (!enrollments || enrollments.length === 0) return null
+    return [...enrollments].sort((a, b) =>
+      new Date(b.lastAccessedAt || b.enrolledAt).getTime() -
+      new Date(a.lastAccessedAt || a.enrolledAt).getTime()
+    )[0]
+  }, [enrollments])
+
   return (
     <Container className="py-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -25,6 +33,50 @@ export function MyLearningPage() {
           <TextMuted>Track your progress across all enrolled courses</TextMuted>
         </div>
       </div>
+
+      {lastEnrollment && (
+        <div className="mb-12 p-6 rounded-2xl bg-slate-900 text-white overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/20 to-transparent pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+            <div className="h-32 w-48 rounded-lg bg-slate-800 flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-700">
+              {lastEnrollment.courseThumbnailUrl ? (
+                <img src={lastEnrollment.courseThumbnailUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <PlayCircle size={48} className="text-slate-700" />
+              )}
+            </div>
+            <div className="flex-grow text-center md:text-left">
+              <span className="inline-block px-2 py-1 rounded bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-2">
+                Continue Watching
+              </span>
+              <Heading4 className="text-white mb-2">{lastEnrollment.courseTitle}</Heading4>
+              <div className="flex items-center gap-4 mb-4 justify-center md:justify-start">
+                <div className="h-2 w-48 bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary"
+                    style={{ width: `${lastEnrollment.progressPct || 0}%` }}
+                  />
+                </div>
+                <span className="text-sm text-slate-400 font-medium">
+                  {Math.round(lastEnrollment.progressPct || 0)}% Complete
+                </span>
+              </div>
+              <Button
+
+                className="shadow-lg shadow-primary/25"
+              >
+                <Link to={lastEnrollment.lastLessonId
+                  ? `/courses/${lastEnrollment.courseId}/lesson/${lastEnrollment.lastLessonId}`
+                  : `/courses/${lastEnrollment.courseId}`
+                }>
+                  <PlayCircle size={18} className="mr-2" />
+                  Resume Lesson
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isError && (
         <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-slate-200 rounded-xl">

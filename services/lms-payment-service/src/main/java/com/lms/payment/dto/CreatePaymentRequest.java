@@ -15,6 +15,7 @@ import java.util.UUID;
 public class CreatePaymentRequest {
   private UUID userId;
   private Long planId;
+  private UUID courseId;
   private BigDecimal amount;
   private String idempotencyKey;
 }

@@ -53,4 +53,40 @@ public class CourseServiceClient {
       return false;
     }
   }
+
+  public boolean isLessonPreview(UUID courseId, UUID lessonId) {
+    try {
+      return Boolean.TRUE.equals(restClient.get()
+          .uri("/api/v1/courses/{courseId}/lessons/{lessonId}/validate-preview", courseId, lessonId)
+          .retrieve()
+          .body(Boolean.class));
+    } catch (Exception e) {
+      log.error("Error validating preview for course {} and lesson {}: {}", courseId, lessonId, e.getMessage());
+      return false;
+    }
+  }
+
+  public boolean isCourseFree(UUID courseId) {
+    try {
+      return Boolean.TRUE.equals(restClient.get()
+          .uri("/api/v1/courses/{courseId}/is-free", courseId)
+          .retrieve()
+          .body(Boolean.class));
+    } catch (Exception e) {
+      log.error("Error checking if course {} is free: {}", courseId, e.getMessage());
+      return false;
+    }
+  }
+
+  public boolean isCoursePublished(UUID courseId) {
+    try {
+      return Boolean.TRUE.equals(restClient.get()
+          .uri("/api/v1/courses/{courseId}/is-published", courseId)
+          .retrieve()
+          .body(Boolean.class));
+    } catch (Exception e) {
+      log.error("Error checking if course {} is published: {}", courseId, e.getMessage());
+      return false;
+    }
+  }
 }

@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   AlertCircle,
   UploadCloud,
-  MessageSquare
+  MessageSquare,
+  ExternalLink
 } from 'lucide-react'
 
 export function AssignmentDetailPage() {
@@ -93,15 +94,24 @@ export function AssignmentDetailPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 py-4 border-y border-slate-100 mb-6">
+            <div className="flex flex-wrap gap-x-6 gap-y-4 py-4 border-y border-slate-100 mb-6">
               <div className="flex items-center gap-2 text-slate-600">
                 <Calendar size={18} className="text-blue-500" />
                 <span className="text-sm">Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleString() : 'No deadline'}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-600">
                 <Award size={18} className="text-yellow-500" />
-                <span className="text-sm">{assignment.maxPoints} Points Possible</span>
+                <span className="text-sm">{assignment.maxScore} Points Possible</span>
               </div>
+              {assignment.lessonId && (
+                <Link
+                  to={`/courses/${assignment.courseId}/lesson/${assignment.lessonId}`}
+                  className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 text-sm font-medium md:ml-auto"
+                >
+                  <ExternalLink size={18} />
+                  <span>View Related Lesson</span>
+                </Link>
+              )}
             </div>
 
             <Heading3 className="mb-4">Instructions</Heading3>
@@ -150,7 +160,7 @@ export function AssignmentDetailPage() {
               </div>
 
               <div className="p-4 bg-white border border-slate-200 rounded-lg mb-6">
-                <Small className="text-slate-400 block mb-2">Submitted on {submission.submissionDate ? new Date(submission.submissionDate).toLocaleString() : 'Date unknown'}</Small>
+                <Small className="text-slate-400 block mb-2">Submitted on {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : 'Date unknown'}</Small>
                 <div className="text-slate-700 whitespace-pre-wrap">{submission.content}</div>
               </div>
 
@@ -162,7 +172,7 @@ export function AssignmentDetailPage() {
                       Instructor Feedback
                     </div>
                     <div className="text-lg font-bold text-blue-600">
-                      {submission.grade} / {assignment.maxPoints}
+                      {submission.grade} / {assignment.maxScore}
                     </div>
                   </div>
                   <Paragraph className="text-slate-600 italic">

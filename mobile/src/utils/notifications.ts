@@ -56,8 +56,15 @@ export function handleNotificationResponse(response: Notifications.NotificationR
   const data = response.notification.request.content.data
 
   if (data?.url) {
-    // Return the URL for the router to handle
-    return data.url
+    let url = data.url
+    // Normalize web-style links to mobile routes
+    if (url.startsWith('/courses/')) {
+      url = url.replace('/courses/', '/course/')
+    }
+    if (url.startsWith('/assignments/')) {
+      url = url.replace('/assignments/', '/assignment/')
+    }
+    return url
   }
 
   return null

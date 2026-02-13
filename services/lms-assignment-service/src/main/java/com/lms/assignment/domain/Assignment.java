@@ -22,6 +22,12 @@ public class Assignment {
   @Column(name = "course_id", nullable = false)
   private UUID courseId;
 
+  @Column(name = "module_id")
+  private UUID moduleId;
+
+  @Column(name = "lesson_id")
+  private UUID lessonId;
+
   @Column(nullable = false)
   private String title;
 
@@ -33,6 +39,10 @@ public class Assignment {
 
   @Column(name = "max_score", nullable = false)
   private Integer maxScore;
+
+  @Column(name = "is_mandatory", nullable = false)
+  @Builder.Default
+  private boolean isMandatory = true;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

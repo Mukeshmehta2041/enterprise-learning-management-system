@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native'
+import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native'
 import { useRouter } from 'expo-router'
 import { AppText } from '../../src/components/AppText'
 import { Input } from '../../src/components/Input'
@@ -9,6 +9,14 @@ import { FilterModal, FilterState } from '../../src/components/FilterModal'
 import { useInfiniteCourses } from '../../src/hooks/useCourses'
 import { Ionicons } from '@expo/vector-icons'
 
+const CATEGORIES = [
+  { label: 'All', value: '' },
+  { label: 'Programming', value: 'PROGRAMMING' },
+  { label: 'Design', value: 'DESIGN' },
+  { label: 'Business', value: 'BUSINESS' },
+  { label: 'Marketing', value: 'MARKETING' },
+]
+
 export default function CoursesScreen() {
   const router = useRouter()
   const [search, setSearch] = useState('')
@@ -16,7 +24,10 @@ export default function CoursesScreen() {
   const [filters, setFilters] = useState<FilterState>({
     level: '',
     category: '',
+    tags: '',
     sortBy: 'createdAt,desc',
+    isFeatured: false,
+    isTrending: false,
   })
 
   const { data, isLoading, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -24,7 +35,10 @@ export default function CoursesScreen() {
       status: 'PUBLISHED',
       search,
       level: filters.level,
-      // category: filters.category, // assuming backend supports this
+      category: filters.category,
+      tags: filters.tags,
+      isFeatured: filters.isFeatured || undefined,
+      isTrending: filters.isTrending || undefined,
     })
 
   const courses = useMemo(() => {
@@ -32,7 +46,7 @@ export default function CoursesScreen() {
   }, [data])
 
   const activeFiltersCount = Object.values(filters).filter(
-    (v) => v !== '' && v !== 'createdAt,desc',
+    (v) => v !== '' && v !== 'createdAt,desc' && v !== false,
   ).length
 
   const handleCoursePress = useCallback((id: string) => {
@@ -102,6 +116,32 @@ export default function CoursesScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mt-4 mb-2"
+          contentContainerStyle={{ gap: 8 }}
+        >
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.label}
+              onPress={() => setFilters({ ...filters, category: cat.value })}
+              className={`px-4 py-2 rounded-full border ${filters.category === cat.value
+                ? 'bg-primary border-primary'
+                : 'bg-white border-slate-200'
+                }`}
+            >
+              <AppText
+                variant="small"
+                weight="bold"
+                className={filters.category === cat.value ? 'text-white' : 'text-slate-600'}
+              >
+                {cat.label}
+              </AppText>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {isLoading && !data ? (
@@ -130,7 +170,7 @@ export default function CoursesScreen() {
         onClose={() => setIsFilterVisible(false)}
         filters={filters}
         onApply={setFilters}
-        onClear={() => setFilters({ level: '', category: '', sortBy: 'createdAt,desc' })}
+        onClear={() => setFilters({ level: '', category: '', tags: '', sortBy: 'createdAt,desc', isFeatured: false, isTrending: false })}
       />
     </View>
   )

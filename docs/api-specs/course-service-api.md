@@ -8,21 +8,22 @@ Base path: `/api/v1/courses`. All endpoints require authentication unless noted.
 - **Auth:** Optional for public catalog; required for draft/private if implemented.
 - **Query:** `status` (e.g. PUBLISHED); `cursor` (opaque, for next page); `limit` (default 20, max 100).
 - **Response:** `200 OK`; body: `items` (array of course summary), `nextCursor` (absent if last page).
-- **Course summary:** `id`, `title`, `slug`, `description`, `status`, `createdAt`, `instructorIds` (optional).
+- **Course summary:** `id`, `title`, `slug`, `description`, `category`, `level`, `price`, `currency`, `isFree`, `status`, `createdAt`, `instructorIds` (optional).
 
 ## Get course by ID
 
 - **Method:** `GET /api/v1/courses/{courseId}`
 - **Auth:** Required; user must have access (published or instructor/admin).
-- **Response:** `200 OK`; body: `id`, `title`, `slug`, `description`, `status`, `modules` (array of module with lessons), `createdAt`, `updatedAt`.
+- **Response:** `200 OK`; body: `id`, `title`, `slug`, `description`, `category`, `level`, `price`, `currency`, `isFree`, `status`, `modules` (array of module with lessons), `createdAt`, `updatedAt`.
+- **Lesson summary:** `id`, `title`, `type`, `durationMinutes`, `sortOrder`, `isPreview`, `canWatch`.
 - **Errors:** `404` not found; `403` no access.
 
 ## Create course
 
 - **Method:** `POST /api/v1/courses`
 - **Auth:** Instructor or Admin.
-- **Request body:** `title`, `slug` (optional, derived from title if not set), `description`, `status` (optional, default DRAFT).
-- **Response:** `201 Created`; body: full course (with id, timestamps).
+- **Request body:** `title`, `slug` (optional), `description`, `category` (optional), `level` (optional), `price` (optional), `currency` (optional), `isFree` (optional), `status` (optional).
+- **Response:** `201 Created`; body: full course.
 - **Errors:** `400` validation; `409` slug exists.
 
 ## Update course

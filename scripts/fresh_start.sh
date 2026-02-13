@@ -8,6 +8,6 @@ cd "$repo_root"
 
 mvn clean install -DskipTests
 
-docker compose -f "$compose_file" build
+docker compose -f "$compose_file" build --no-cache
 
 docker compose -f "$compose_file" up 

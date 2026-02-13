@@ -8,11 +8,16 @@ export interface Course {
   instructorIds?: string[]
   instructorName?: string
   price: number
+  currency?: string
+  isFree?: boolean
+  hasAccess?: boolean
   level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
   averageRating?: number
   rating?: number
   enrollmentCount?: number
+  isFeatured?: boolean
+  isTrending?: boolean
   tags?: string[]
   createdAt: string
   updatedAt: string
@@ -23,6 +28,8 @@ export interface Module {
   id: string
   title: string
   orderIndex: number
+  sortOrder?: number
+  description?: string
   lessons: Lesson[]
 }
 
@@ -32,6 +39,12 @@ export interface Lesson {
   content?: string
   videoUrl?: string
   duration?: number
+  durationMinutes?: number
   orderIndex: number
-  type: 'VIDEO' | 'ARTICLE' | 'QUIZ'
+  sortOrder?: number
+  type: 'VIDEO' | 'DOCUMENT' | 'QUIZ'
+  isPreview?: boolean
+  canWatch?: boolean
+  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+  availableAt?: string | null
 }

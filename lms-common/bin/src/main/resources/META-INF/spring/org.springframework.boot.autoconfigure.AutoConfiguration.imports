@@ -1,0 +1,2 @@
+com.lms.common.config.SharedAutoConfiguration
+com.lms.common.config.SharedWebMvcConfiguration

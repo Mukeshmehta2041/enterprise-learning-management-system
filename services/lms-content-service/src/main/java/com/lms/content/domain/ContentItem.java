@@ -50,6 +50,7 @@ public class ContentItem {
   private List<ContentVersion> versions = new ArrayList<>();
 
   @OneToMany(mappedBy = "contentItem", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("sortOrder ASC")
   private List<QuizQuestion> questions = new ArrayList<>();
 
   @OneToMany(mappedBy = "contentItem", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -64,6 +65,26 @@ public class ContentItem {
     this.lessonId = lessonId;
     this.type = type;
     this.title = title;
+    this.status = status;
+  }
+
+  public UUID getId() {
+    return id;
+  }
+
+  public ContentType getType() {
+    return type;
+  }
+
+  public ContentMetadata getMetadata() {
+    return metadata;
+  }
+
+  public List<ContentVersion> getVersions() {
+    return versions;
+  }
+
+  public void setStatus(ContentStatus status) {
     this.status = status;
   }
 }

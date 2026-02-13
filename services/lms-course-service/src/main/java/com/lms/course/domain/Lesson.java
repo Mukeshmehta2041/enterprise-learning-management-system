@@ -36,7 +36,11 @@ public class Lesson {
   private boolean isPreview = false;
 
   @Column(name = "status", nullable = false, length = 50)
-  private String status = "PUBLISHED";
+  @Enumerated(EnumType.STRING)
+  private LessonStatus status = LessonStatus.PUBLISHED;
+
+  @Column(name = "available_at")
+  private Instant availableAt;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -111,12 +115,20 @@ public class Lesson {
     isPreview = preview;
   }
 
-  public String getStatus() {
+  public LessonStatus getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(LessonStatus status) {
     this.status = status;
+  }
+
+  public Instant getAvailableAt() {
+    return availableAt;
+  }
+
+  public void setAvailableAt(Instant availableAt) {
+    this.availableAt = availableAt;
   }
 
   public Instant getCreatedAt() {

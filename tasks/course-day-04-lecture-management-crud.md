@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Lecture CRUD, bulk reordering, and visibility flags (`isPreview`, `status`) implemented in `lms-course-service`. |
-| ✅ Done | |
+| 🔄 In progress | |
+| ✅ Done | Instructor lecture management UI and ordering controls completed across web and mobile. |
 
-**Started:**  
-**Completed:**  
+**Started:** 2026-02-11  
+**Completed:** 2026-02-11  
 
 ---
 
@@ -30,15 +30,15 @@
 
 ### Frontend
 
-- [ ] **Lecture list management UI**: Build an instructor-focused lecture list with actions to add, edit, delete/restore, and reorder lectures.
-- [ ] **Drag-and-drop reordering**: Implement drag-and-drop or similar UX for reordering lectures, wired up to the backend bulk-reorder endpoint.
-- [ ] **Confirmation & undo**: Add confirmation prompts for deletions and consider an \"undo\" or easy restore flow for soft-deleted lectures.
+- [x] **Lecture list management UI**: Build an instructor-focused lecture list with actions to add, edit, delete/restore, and reorder lectures.
+- [x] **Drag-and-drop reordering**: Implement drag-and-drop or similar UX for reordering lectures, wired up to the backend bulk-reorder endpoint.
+- [x] **Confirmation & undo**: Add confirmation prompts for deletions and consider an \"undo\" or easy restore flow for soft-deleted lectures.
 
 ### Mobile
 
-- [ ] **Lecture list (read-only)**: Ensure mobile course detail shows the correct lecture order and respects visibility (e.g. hidden lectures not shown to learners).
-- [ ] **Minimal instructor actions**: Decide and implement any minimal instructor lecture actions on mobile (e.g. rename, hide/unhide) if in scope.
-- [ ] **Sync with backend ordering**: Verify that mobile always reflects backend ordering changes and handles concurrent updates gracefully.
+- [x] **Lecture list (read-only)**: Ensure mobile course detail shows the correct lecture order and respects visibility (e.g. hidden lectures not shown to learners).
+- [x] **Minimal instructor actions**: Decide and implement any minimal instructor lecture actions on mobile (e.g. rename, hide/unhide) if in scope.
+- [x] **Sync with backend ordering**: Verify that mobile always reflects backend ordering changes and handles concurrent updates gracefully.
 
 ---
 

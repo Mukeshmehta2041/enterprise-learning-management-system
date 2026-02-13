@@ -11,11 +11,11 @@
 | Status | Description |
 |--------|-------------|
 | ⬜ Not started | |
-| 🔄 In progress | Backend upload initiation, presigned URL generation, and completion endpoints implemented with S3 integration. |
-| ✅ Done | |
+| 🔄 In progress | |
+| ✅ Done | Upload flow implemented across backend, web, and mobile with progress UI and secure presigned URL flow. |
 
 **Started:**  
-**Completed:**  
+**Completed:** 2026-02-11  
 
 ---
 
@@ -31,15 +31,15 @@
 
 ### Frontend
 
-- [ ] **Multi-step upload flow**: Implement the instructor upload UI flow: choose file, see validation errors, show progress based on upload state.
-- [ ] **Progress & errors**: Display friendly progress indicators and error messages for common failures (network, validation, expired URL).
-- [ ] **Retry strategy**: Decide and document how the frontend handles retries (re-initiate upload vs. resume, what the user sees).
+- [x] **Multi-step upload flow**: Implement the instructor upload UI flow: choose file, see validation errors, show progress based on upload state.
+- [x] **Progress & errors**: Display friendly progress indicators and error messages for common failures (network, validation, expired URL).
+- [x] **Retry strategy**: Decide and document how the frontend handles retries (re-initiate upload vs. resume, what the user sees).
 
 ### Mobile
 
-- [ ] **Upload from mobile**: Define whether and how instructors can upload lectures from mobile (if allowed), including constraints around large files and backgrounding.
-- [ ] **Basic progress UI**: Implement a simple upload progress view that works well on mobile networks (edge cases: app minimized, poor connectivity).
-- [ ] **Security checks**: Ensure mobile uses the same secure upload-init and complete endpoints and does not expose raw storage credentials.
+- [x] **Upload from mobile**: Define whether and how instructors can upload lectures from mobile (if allowed), including constraints around large files and backgrounding.
+- [x] **Basic progress UI**: Implement a simple upload progress view that works well on mobile networks (edge cases: app minimized, poor connectivity).
+- [x] **Security checks**: Ensure mobile uses the same secure upload-init and complete endpoints and does not expose raw storage credentials.
 
 ---
 

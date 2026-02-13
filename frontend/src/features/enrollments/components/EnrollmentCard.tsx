@@ -28,7 +28,7 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-200">
           <div
             className="h-full bg-primary transition-all duration-500"
-            style={{ width: `${enrollment.progress}%` }}
+            style={{ width: `${enrollment.progressPct || enrollment.progress || 0}%` }}
           />
         </div>
       </div>
@@ -42,7 +42,7 @@ export function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
             {enrollment.status}
           </span>
           <span className="text-xs font-semibold text-slate-500">
-            {enrollment.progress}% Complete
+            {Math.round(enrollment.progressPct || enrollment.progress || 0)}% Complete
           </span>
         </div>
 

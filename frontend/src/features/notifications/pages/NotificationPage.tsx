@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications, useMarkAsRead } from '../api/notificationHooks';
 import { Card, PageHeader, Container, Button, Heading4, EmptyState, SearchInput, FilterGroup } from '@/shared/ui';
 import { Bell, Check, Info, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
@@ -16,13 +17,19 @@ const getIcon = (type: NotificationType) => {
       return <XCircle className="h-5 w-5 text-rose-500" />;
     case 'INFO':
     case 'ENROLLMENT':
+    case 'ASSIGNMENT_CREATED':
+    case 'ASSIGNMENT_UPDATED':
+    case 'ASSIGNMENT_DUE_SOON':
     case 'ASSIGNMENT_GRADED':
+    case 'LESSON_PUBLISHED':
+    case 'LESSON_UPDATED':
     default:
       return <Info className="h-5 w-5 text-blue-500" />;
   }
 };
 
 export function NotificationPage() {
+  const navigate = useNavigate();
   const { data: notifications, isLoading } = useNotifications();
   const markAsRead = useMarkAsRead();
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,7 +46,7 @@ export function NotificationPage() {
         filter === 'all' ? true :
           filter === 'unread' ? !n.read :
             filter === 'system' ? ['INFO', 'SUCCESS', 'WARNING', 'ERROR'].includes(n.type) :
-              filter === 'course' ? ['ENROLLMENT', 'ASSIGNMENT_GRADED'].includes(n.type) :
+              filter === 'course' ? ['ENROLLMENT', 'ASSIGNMENT_CREATED', 'ASSIGNMENT_GRADED', 'LESSON_PUBLISHED'].includes(n.type) :
                 true;
 
       return matchSearch && matchFilter;
@@ -174,11 +181,15 @@ export function NotificationPage() {
 
                     <div className="mt-3 flex items-center justify-between">
                       <div className="flex gap-2">
-                        {notification.type === 'ASSIGNMENT_GRADED' && (
-                          <Button variant="ghost" size="xs" color="primary">View Grade</Button>
-                        )}
-                        {notification.type === 'ENROLLMENT' && (
-                          <Button variant="ghost" size="xs" color="primary">Go to Course</Button>
+                        {notification.link && (
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            color="primary"
+                            onClick={() => navigate(notification.link!)}
+                          >
+                            View Details
+                          </Button>
                         )}
                       </div>
 

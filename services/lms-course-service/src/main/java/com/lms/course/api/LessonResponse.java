@@ -12,6 +12,7 @@ public record LessonResponse(
     Boolean isPreview,
     Boolean canWatch,
     String status,
+    Instant availableAt,
     Instant createdAt,
     Instant updatedAt) {
 }

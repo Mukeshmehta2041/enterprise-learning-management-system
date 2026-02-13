@@ -22,67 +22,89 @@ import java.time.Instant;
 @EntityListeners(AuditingEntityListener.class)
 public class Profile {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", updatable = false, nullable = false)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", updatable = false, nullable = false)
+  private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false, unique = true)
+  private User user;
 
-    @Column(name = "display_name", length = 255)
-    private String displayName;
+  @Column(name = "display_name", length = 255)
+  private String displayName;
 
-    @Column(name = "avatar_url", length = 500)
-    private String avatarUrl;
+  @Column(name = "avatar_url", length = 500)
+  private String avatarUrl;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+  @Column(name = "push_token", length = 500)
+  private String pushToken;
 
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+  @Column(name = "push_platform", length = 50)
+  private String pushPlatform;
 
-    protected Profile() {
-    }
+  @CreatedDate
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
 
-    public Profile(User user, String displayName, String avatarUrl) {
-        this.user = user;
-        this.displayName = displayName;
-        this.avatarUrl = avatarUrl;
-    }
+  @LastModifiedDate
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
-    public Long getId() {
-        return id;
-    }
+  protected Profile() {
+  }
 
-    public User getUser() {
-        return user;
-    }
+  public Profile(User user, String displayName, String avatarUrl) {
+    this.user = user;
+    this.displayName = displayName;
+    this.avatarUrl = avatarUrl;
+  }
 
-    public String getDisplayName() {
-        return displayName;
-    }
+  public Long getId() {
+    return id;
+  }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
+  public User getUser() {
+    return user;
+  }
 
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
+  public String getDisplayName() {
+    return displayName;
+  }
 
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
+  public void setDisplayName(String displayName) {
+    this.displayName = displayName;
+  }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+  public String getAvatarUrl() {
+    return avatarUrl;
+  }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+  public void setAvatarUrl(String avatarUrl) {
+    this.avatarUrl = avatarUrl;
+  }
+
+  public String getPushToken() {
+    return pushToken;
+  }
+
+  public void setPushToken(String pushToken) {
+    this.pushToken = pushToken;
+  }
+
+  public String getPushPlatform() {
+    return pushPlatform;
+  }
+
+  public void setPushPlatform(String pushPlatform) {
+    this.pushPlatform = pushPlatform;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public Instant getUpdatedAt() {
+    return updatedAt;
+  }
 }

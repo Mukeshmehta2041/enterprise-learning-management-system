@@ -123,6 +123,16 @@ spring:
               - io.netty.channel.ConnectTimeoutException
               - io.netty.channel.AbstractChannel$AnnotatedConnectException
       routes:
+        - id: auth-api-keys
+          uri: ${AUTH_SERVICE_URL:http://lms-auth-service:8082}
+          predicates:
+            - Path=/api/v1/auth/api-keys/**
+          filters:
+            - JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://lms-auth-service:8082}
           predicates:
@@ -158,6 +168,13 @@ spring:
             - Path=/api/v1/courses/**
             - Method=GET
           filters:
+            - name: ApiKeyAuthentication
+              args:
+                required: false
+                requiredScopes:
+                  - courses:read
+                applyMethods:
+                  - GET
             - name: JwtAuthentication
               args:
                 required: false
@@ -181,6 +198,13 @@ spring:
             - Path=/api/v2/courses/**
             - Method=GET
           filters:
+            - name: ApiKeyAuthentication
+              args:
+                required: false
+                requiredScopes:
+                  - courses:read
+                applyMethods:
+                  - GET
             - name: JwtAuthentication
               args:
                 required: false
@@ -195,6 +219,13 @@ spring:
           predicates:
             - Path=/api/v1/enrollments/**
           filters:
+            - name: ApiKeyAuthentication
+              args:
+                required: false
+                requiredScopes:
+                  - enrollments:write
+                applyMethods:
+                  - POST
             - JwtAuthentication
             - name: RequestRateLimiter
               args:
@@ -206,6 +237,26 @@ spring:
             - Path=/api/v2/enrollments/**
           filters:
             - JwtAuthentication
+        - id: content-service-playback
+          uri: ${CONTENT_SERVICE_URL:http://lms-content-service:8085}
+          predicates:
+            - Path=/api/v1/content/*/playback-token
+          filters:
+            - JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+        - id: content-service-upload
+          uri: ${CONTENT_SERVICE_URL:http://lms-content-service:8085}
+          predicates:
+            - Path=/api/v1/content/*/upload-url
+          filters:
+            - JwtAuthentication
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 2
+                redis-rate-limiter.burstCapacity: 5
         - id: content-service
           uri: ${CONTENT_SERVICE_URL:http://lms-content-service:8085}
           predicates:
@@ -269,6 +320,14 @@ spring:
           predicates:
             - Path=/api/v1/analytics/**
           filters:
+            - name: ApiKeyAuthentication
+              args:
+                required: false
+                requiredScopes:
+                  - analytics:read
+                applyMethods:
+                  - GET
+                  - POST
             - JwtAuthentication
             - name: RequestRateLimiter
               args:
@@ -277,7 +336,7 @@ spring:
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://lms-notification-service:8088}
           predicates:
-            - Path=/api/v1/notifications/**
+            - Path=/api/v1/notifications/**,/api/v1/notifications,/api/v1/notification-preferences/**,/api/v1/notification-preferences
           filters:
             - JwtAuthentication
             - name: RequestRateLimiter

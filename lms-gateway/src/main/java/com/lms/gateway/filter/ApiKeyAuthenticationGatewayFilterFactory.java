@@ -1,5 +1,7 @@
 package com.lms.gateway.filter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -11,30 +13,48 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Component
 public class ApiKeyAuthenticationGatewayFilterFactory
     extends AbstractGatewayFilterFactory<ApiKeyAuthenticationGatewayFilterFactory.Config> {
 
-  private final ReactiveStringRedisTemplate redisTemplate;
+  private static final String HASH_PREFIX = "apikey:hash:";
 
-  public ApiKeyAuthenticationGatewayFilterFactory(ReactiveStringRedisTemplate redisTemplate) {
+  private final ReactiveStringRedisTemplate redisTemplate;
+  private final ObjectMapper objectMapper;
+
+  public ApiKeyAuthenticationGatewayFilterFactory(
+      ReactiveStringRedisTemplate redisTemplate,
+      ObjectMapper objectMapper) {
     super(Config.class);
     this.redisTemplate = redisTemplate;
+    this.objectMapper = objectMapper;
   }
 
   @Data
   public static class Config {
     private boolean required = true;
     private List<String> requiredScopes;
+    private List<String> applyMethods;
   }
 
   @Override
   public GatewayFilter apply(Config config) {
     return (exchange, chain) -> {
       ServerHttpRequest request = exchange.getRequest();
+
+      if (!shouldApply(config, request)) {
+        return chain.filter(exchange);
+      }
+
       String apiKey = request.getHeaders().getFirst("X-API-Key");
 
       if (apiKey == null || apiKey.isBlank()) {
@@ -44,30 +64,26 @@ public class ApiKeyAuthenticationGatewayFilterFactory
         return onError(exchange, "Missing API Key", HttpStatus.UNAUTHORIZED);
       }
 
-      // In a real system, we would hash the key and look it up in Redis or DB
-      // Redis key: "apikey:hash:<hash_of_key>"
-      // Value: JSON with { "userId": "...", "scopes": ["...", "..."] }
+      String hash = hashKey(apiKey);
+      String redisKey = HASH_PREFIX + hash;
 
-      String internalKey = "apikey:val:" + apiKey; // Simplified for demo; should be hashed!
+      return redisTemplate.opsForValue().get(redisKey)
+          .flatMap(payload -> {
+            ApiKeyRecord record = parseRecord(payload);
+            if (record == null || !record.enabled) {
+              return onError(exchange, "Invalid API Key", HttpStatus.UNAUTHORIZED);
+            }
+            if (record.expiresAt != null && record.expiresAt.isBefore(Instant.now())) {
+              return onError(exchange, "API Key expired", HttpStatus.UNAUTHORIZED);
+            }
 
-      return redisTemplate.opsForValue().get(internalKey)
-          .flatMap(data -> {
-            // Assume data is a comma-separated string: "userId;scope1,scope2"
-            String[] parts = data.split(";");
-            String userId = parts[0];
-            String scopes = parts.length > 1 ? parts[1] : "";
-
-            // Check scopes if required
-            if (config.getRequiredScopes() != null) {
-              for (String requiredScope : config.getRequiredScopes()) {
-                if (!scopes.contains(requiredScope)) {
-                  return onError(exchange, "Insufficient Scope", HttpStatus.FORBIDDEN);
-                }
-              }
+            if (!hasRequiredScopes(record.scopes, config.getRequiredScopes())) {
+              return onError(exchange, "Insufficient Scope", HttpStatus.FORBIDDEN);
             }
 
             ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
-                .header("X-User-Id", userId)
+                .header("X-User-Id", record.userId)
+                .header("X-API-Key-ID", record.id)
                 .header("X-Roles", "API_CLIENT")
                 .header("X-Authenticated-By", "API_KEY")
                 .build();
@@ -83,8 +99,56 @@ public class ApiKeyAuthenticationGatewayFilterFactory
     };
   }
 
+  private boolean shouldApply(Config config, ServerHttpRequest request) {
+    if (config.getApplyMethods() == null || config.getApplyMethods().isEmpty()) {
+      return true;
+    }
+    String method = request.getMethod() != null ? request.getMethod().name() : "";
+    return config.getApplyMethods().stream().anyMatch(m -> m.equalsIgnoreCase(method));
+  }
+
+  private boolean hasRequiredScopes(Set<String> scopes, List<String> requiredScopes) {
+    if (requiredScopes == null || requiredScopes.isEmpty()) {
+      return true;
+    }
+    if (scopes == null || scopes.isEmpty()) {
+      return false;
+    }
+    return new HashSet<>(scopes).containsAll(requiredScopes);
+  }
+
+  private ApiKeyRecord parseRecord(String payload) {
+    try {
+      return objectMapper.readValue(payload, ApiKeyRecord.class);
+    } catch (Exception ex) {
+      log.warn("Failed to parse API key record", ex);
+      return null;
+    }
+  }
+
+  private String hashKey(String rawKey) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] encodedHash = digest.digest(rawKey.getBytes(StandardCharsets.UTF_8));
+      return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(encodedHash);
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException("Error hashing API key", e);
+    }
+  }
+
   private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
+    log.warn("API key auth error: {} - {}", httpStatus, err);
     exchange.getResponse().setStatusCode(httpStatus);
     return exchange.getResponse().setComplete();
+  }
+
+  @Data
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private static class ApiKeyRecord {
+    private String id;
+    private String userId;
+    private Set<String> scopes;
+    private boolean enabled;
+    private Instant expiresAt;
   }
 }

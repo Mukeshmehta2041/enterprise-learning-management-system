@@ -28,6 +28,29 @@ export const EnrollmentTrendSchema = z.object({
 
 export type EnrollmentTrend = z.infer<typeof EnrollmentTrendSchema>
 
+export const LessonEngagementSchema = z.object({
+  lessonId: z.string(),
+  lessonTitle: z.string(),
+  totalWatches: z.number(),
+  totalCompletes: z.number(),
+  completionRate: z.number(),
+  averageWatchTimeSecs: z.number(),
+})
+
+export type LessonEngagement = z.infer<typeof LessonEngagementSchema>
+
+export const InstructorCourseAnalyticsSchema = z.object({
+  courseId: z.string(),
+  courseTitle: z.string().optional().nullable(),
+  totalEnrollments: z.number().optional().nullable(),
+  activeEnrollments: z.number().optional().nullable(),
+  completedEnrollments: z.number().optional().nullable(),
+  averageCompletionRate: z.number().optional().nullable(),
+  lessonMetrics: z.array(LessonEngagementSchema),
+})
+
+export type InstructorCourseAnalytics = z.infer<typeof InstructorCourseAnalyticsSchema>
+
 export const AnalyticsFilterSchema = z.object({
   courseId: z.string().optional(),
   startDate: z.string().optional(),

@@ -9,6 +9,7 @@ import { NotificationProvider } from '@/features/notifications/context/Notificat
 const LoginPage = lazy(() => import('@/features/auth/LoginPage').then(m => ({ default: m.LoginPage })))
 const RegisterPage = lazy(() => import('@/features/auth/RegisterPage').then(m => ({ default: m.RegisterPage })))
 const CourseListPage = lazy(() => import('@/features/courses/pages/CourseListPage').then(m => ({ default: m.CourseListPage })))
+const LandingPage = lazy(() => import('@/features/courses/pages/LandingPage').then(m => ({ default: m.LandingPage })))
 const CourseDetailPage = lazy(() => import('@/features/courses/pages/CourseDetailPage').then(m => ({ default: m.CourseDetailPage })))
 const LessonPlayerPage = lazy(() => import('@/features/courses/pages/LessonPlayerPage').then(m => ({ default: m.LessonPlayerPage })))
 const MyLearningPage = lazy(() => import('@/features/enrollments/pages/MyLearningPage').then(m => ({ default: m.MyLearningPage })))
@@ -18,10 +19,12 @@ const NotificationPage = lazy(() => import('@/features/notifications/pages/Notif
 const PricingPage = lazy(() => import('@/features/payments/pages/PricingPage').then(m => ({ default: m.PricingPage })))
 const CheckoutPage = lazy(() => import('@/features/payments/pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })))
 const AnalyticsDashboardPage = lazy(() => import('@/features/analytics/pages/AnalyticsDashboardPage').then(m => ({ default: m.AnalyticsDashboardPage })))
+const ReportPage = lazy(() => import('@/features/analytics/pages/ReportPage').then(m => ({ default: m.ReportPage })))
 const CourseCreatePage = lazy(() => import('@/features/courses/pages/instructor/CourseCreatePage').then(m => ({ default: m.CourseCreatePage })))
 const CourseEditPage = lazy(() => import('@/features/courses/pages/instructor/CourseEditPage').then(m => ({ default: m.CourseEditPage })))
 const InstructorCourseListPage = lazy(() => import('@/features/courses/pages/instructor/InstructorCourseListPage').then(m => ({ default: m.InstructorCourseListPage })))
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const InstructorAssignmentReviewPage = lazy(() => import('@/features/assignments/pages/instructor/InstructorAssignmentReviewPage').then(m => ({ default: m.InstructorAssignmentReviewPage })));
 
 function HomePage() {
   const { user } = useAuth()
@@ -34,7 +37,7 @@ function HomePage() {
     return <Navigate to="/analytics" replace />
   }
 
-  return <Navigate to="/dashboard" replace />
+  return <LandingPage />
 }
 
 // PlaceholderPage removed
@@ -77,9 +80,11 @@ export function AppRoutes() {
             {/* Instructor & Admin Only Routes */}
             <Route element={<ProtectedRoute requiredRoles={['INSTRUCTOR', 'ADMIN']} />}>
               <Route path="/analytics" element={<AnalyticsDashboardPage />} />
+              <Route path="/reports" element={<ReportPage />} />
               <Route path="/instructor/courses" element={<InstructorCourseListPage />} />
               <Route path="/instructor/courses/new" element={<CourseCreatePage />} />
               <Route path="/instructor/courses/:courseId/edit" element={<CourseEditPage />} />
+              <Route path="/instructor/assignments/:assignmentId/review" element={<InstructorAssignmentReviewPage />} />
             </Route>
           </Route>
 

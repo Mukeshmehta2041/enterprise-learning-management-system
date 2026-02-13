@@ -1,21 +1,25 @@
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useCourse } from '../api/useCourses'
 import { useEnrollment, useEnrollSub } from '@/features/enrollments/api/useEnrollments'
+import { useCourseAssignments } from '@/features/assignments/api/useAssignments'
 import { useAccess } from '@/shared/hooks/useAccess'
 import { useUI } from '@/shared/context/UIContext'
 import { Container, Card } from '@/shared/ui/Layout'
 import { Heading1, Heading2, Heading3, Muted, Paragraph, Small } from '@/shared/ui/Typography'
 import { Button } from '@/shared/ui/Button'
-import { BookOpen, Clock, Star, Users, PlayCircle, FileText, HelpCircle, Edit } from 'lucide-react'
+import { BookOpen, Clock, Star, Users, PlayCircle, FileText, HelpCircle, Edit, CheckCircle2, ClipboardList, ChevronRight, Lock, BadgeCheck } from 'lucide-react'
 import { CourseSkeleton } from '../components/CourseSkeleton'
+import { cn } from '@/shared/utils/cn'
 import type { Module, Lesson } from '@/shared/types/course'
+import type { Assignment } from '@/shared/types/assignment'
 
 export function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
   const { data: course, isLoading: isCourseLoading, isError } = useCourse(courseId!)
   const { data: enrollment, isLoading: isEnrollmentLoading } = useEnrollment(courseId!)
+  const { data: assignments } = useCourseAssignments(courseId!)
   const enrollMutation = useEnrollSub()
   const { hasRole } = useAccess()
   const { setBreadcrumbs } = useUI()
@@ -40,6 +44,22 @@ export function CourseDetailPage() {
         if (firstLesson) {
           navigate(`/courses/${courseId}/lesson/${firstLesson.id}`)
         }
+        return
+      }
+
+      if (course && !course.isFree) {
+        await enrollMutation.mutateAsync({ courseId: course.id })
+
+        const intentId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${course.id}-${Date.now()}`
+        const query = new URLSearchParams({
+          courseId: course.id,
+          courseName: course.title,
+          price: course.price.toFixed(2),
+          currency: course.currency || 'USD',
+        })
+        navigate(`/payments/checkout/${intentId}?${query.toString()}`)
         return
       }
 
@@ -125,27 +145,140 @@ export function CourseDetailPage() {
               {course.modules.length === 0 ? (
                 <Muted>No modules have been added to this course yet.</Muted>
               ) : (
-                course.modules.sort((a: Module, b: Module) => a.order - b.order).map((module: Module) => (
-                  <div key={module.id} className="border border-slate-200 rounded-lg overflow-hidden">
-                    <div className="bg-slate-50 p-4 border-b border-slate-200">
-                      <Heading3 className="text-lg">{module.title}</Heading3>
-                      {module.description && <Small className="mt-1 block">{module.description}</Small>}
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                      {module.lessons.sort((a: Lesson, b: Lesson) => a.order - b.order).map((lesson: Lesson) => (
-                        <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-3">
-                            {lesson.contentType === 'VIDEO' && <PlayCircle size={18} className="text-blue-500" />}
-                            {lesson.contentType === 'DOCUMENT' && <FileText size={18} className="text-emerald-500" />}
-                            {lesson.contentType === 'QUIZ' && <HelpCircle size={18} className="text-orange-500" />}
-                            <span className="text-slate-700 font-medium">{lesson.title}</span>
-                          </div>
-                          <span className="text-sm text-slate-400">{lesson.duration}</span>
+                course.modules.sort((a: Module, b: Module) => a.order - b.order).map((module: Module) => {
+                  const allLessonsInModule = module.lessons;
+                  const completedLessonsInModule = allLessonsInModule.filter(l => enrollment?.completedLessonIds.includes(l.id));
+                  const isModuleCompleted = allLessonsInModule.length > 0 && completedLessonsInModule.length === allLessonsInModule.length;
+                  const moduleProgress = allLessonsInModule.length > 0
+                    ? Math.round((completedLessonsInModule.length / allLessonsInModule.length) * 100)
+                    : 0
+
+                  return (
+                    <div key={module.id} className="border border-slate-200 rounded-lg overflow-hidden">
+                      <div className="bg-slate-50 p-4 border-b border-slate-200 flex items-center justify-between">
+                        <div>
+                          <Heading3 className="text-lg">{module.title}</Heading3>
+                          {module.description && <Small className="mt-1 block">{module.description}</Small>}
+                          {enrollment && allLessonsInModule.length > 0 && (
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                                <span>Progress {completedLessonsInModule.length}/{allLessonsInModule.length}</span>
+                                <span>{moduleProgress}%</span>
+                              </div>
+                              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-emerald-500"
+                                  style={{ width: `${moduleProgress}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
+                        {isModuleCompleted && (
+                          <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+                            <CheckCircle2 size={14} />
+                            Section Complete
+                          </div>
+                        )}
+                      </div>
+                      <div className="divide-y divide-slate-100">
+                        {module.lessons.sort((a: Lesson, b: Lesson) => a.order - b.order).map((lesson: Lesson) => {
+                          const isLessonCompleted = enrollment?.completedLessonIds.includes(lesson.id)
+                          const lessonAssignments = assignments?.filter((a: Assignment) => a.lessonId === lesson.id) || []
+                          const canWatch = lesson.canWatch ?? Boolean(course?.hasAccess || lesson.isPreview)
+                          const isLocked = !canWatch
+
+                          return (
+                            <div key={lesson.id} className={cn(isLocked && "opacity-75 select-none")}>
+                              <div className={cn(
+                                "p-4 flex items-center justify-between transition-colors",
+                                isLocked ? "cursor-not-allowed bg-slate-50/50" : "hover:bg-slate-50 cursor-pointer"
+                              )} onClick={() => {
+                                if (!isLocked) {
+                                  navigate(`/courses/${courseId}/lessons/${lesson.id}`)
+                                }
+                              }}>
+                                <div className="flex items-center gap-3">
+                                  {isLocked ? (
+                                    <Lock size={18} className="text-slate-400" />
+                                  ) : isLessonCompleted ? (
+                                    <CheckCircle2 size={18} className="text-emerald-500" />
+                                  ) : (
+                                    <>
+                                      {lesson.contentType === 'VIDEO' && <PlayCircle size={18} className="text-blue-500" />}
+                                      {lesson.contentType === 'DOCUMENT' && <FileText size={18} className="text-emerald-500" />}
+                                      {lesson.contentType === 'QUIZ' && <HelpCircle size={18} className="text-orange-500" />}
+                                    </>
+                                  )}
+                                  <div className="flex flex-col">
+                                    <span className={cn(
+                                      "font-medium",
+                                      isLessonCompleted ? "text-slate-500 line-through" : "text-slate-700"
+                                    )}>
+                                      {lesson.title}
+                                    </span>
+                                    {lesson.isPreview && !course?.hasAccess && (
+                                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight flex items-center gap-1">
+                                        <BadgeCheck size={10} />
+                                        Free Preview
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-sm text-slate-400">{lesson.duration}</span>
+                              </div>
+
+                              {/* Lesson-specific assignments */}
+                              {lessonAssignments.map((assignment: Assignment) => (
+                                <Link
+                                  to={`/assignments/${assignment.id}`}
+                                  key={assignment.id}
+                                  className="ml-8 p-3 mr-4 mb-2 flex items-center justify-between bg-indigo-50/50 rounded-lg border border-indigo-100 hover:bg-indigo-50 transition-colors"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <ClipboardList size={16} className="text-indigo-600" />
+                                    <div>
+                                      <div className="text-sm font-semibold text-indigo-900">{assignment.title}</div>
+                                      {assignment.dueDate && (
+                                        <div className="text-xs text-indigo-600">
+                                          Due: {new Date(assignment.dueDate).toLocaleDateString()}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <ChevronRight size={16} className="text-indigo-400" />
+                                </Link>
+                              ))}
+                            </div>
+                          )
+                        })}
+
+                        {/* Module-specific assignments (not linked to any lesson) */}
+                        {assignments?.filter((a: Assignment) => a.moduleId === module.id && !a.lessonId).map((assignment: Assignment) => (
+                          <Link
+                            to={`/assignments/${assignment.id}`}
+                            key={assignment.id}
+                            className="m-4 flex items-center justify-between bg-slate-50 border border-slate-200 p-4 rounded-lg hover:border-indigo-300 hover:bg-indigo-50/30 transition-all"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="bg-indigo-100 p-2 rounded-lg">
+                                <ClipboardList size={20} className="text-indigo-600" />
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-900">{assignment.title}</div>
+                                <div className="text-sm text-slate-500">Module Assignment</div>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm" className="gap-2">
+                              Start Assignment
+                              <ChevronRight size={16} />
+                            </Button>
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </section>
@@ -169,18 +302,37 @@ export function CourseDetailPage() {
             )}
             <div className="p-6 space-y-6">
               <div className="flex items-center justify-between">
-                <span className="text-3xl font-bold">
-                  {enrollment ? 'Enrolled' : `$${course.price.toFixed(2)}`}
-                </span>
+                <div className="flex flex-col">
+                  {course.hasAccess ? (
+                    <span className="text-3xl font-bold text-emerald-600 flex items-center gap-2">
+                      <BadgeCheck size={28} />
+                      Enrolled
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-3xl font-bold">
+                        {course.isFree ? (
+                          <span className="text-emerald-600">FREE</span>
+                        ) : (
+                          `${course.currency === 'USD' ? '$' : course.currency + ' '}${course.price.toFixed(2)}`
+                        )}
+                      </span>
+                      {course.isFree && (
+                        <span className="text-xs text-slate-500 font-medium">Limited time offer</span>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               <Button
                 className="w-full"
                 size="lg"
+                variant={course.hasAccess ? "outline" : "primary"}
                 onClick={handleEnroll}
                 isLoading={enrollMutation.isPending}
               >
-                {enrollment ? 'Continue Learning' : 'Enroll Now'}
+                {course.hasAccess ? 'Continue Learning' : (course.isFree ? 'Enroll for Free' : 'Buy Now')}
               </Button>
 
               <div className="space-y-4">

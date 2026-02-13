@@ -1,10 +1,7 @@
 package com.lms.analytics.controller;
 
 import com.lms.common.security.RBACEnforcer;
-import com.lms.analytics.dto.CourseAnalyticsDTO;
-import com.lms.analytics.dto.EnrollmentTrendDTO;
-import com.lms.analytics.dto.GlobalStatsDTO;
-import com.lms.analytics.dto.PlaybackTelemetryRequest;
+import com.lms.analytics.dto.*;
 import com.lms.analytics.model.EnrollmentAggregate;
 import com.lms.analytics.service.AnalyticsService;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +39,26 @@ public class AnalyticsController {
     log.debug("Received playback telemetry: {} for lesson {}", request.getEventType(), request.getLessonId());
     analyticsService.recordPlaybackEvent(request);
     return ResponseEntity.accepted().build();
+  }
+
+  @GetMapping("/course/{courseId}")
+  public ResponseEntity<InstructorCourseAnalyticsDTO> getInstructorCourseAnalytics(
+      @PathVariable UUID courseId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+    if (rbacEnforcer != null) {
+      rbacEnforcer.checkRole("ADMIN", "INSTRUCTOR");
+    }
+
+    if (startDate == null)
+      startDate = LocalDate.now().minusDays(30);
+    if (endDate == null)
+      endDate = LocalDate.now();
+
+    InstructorCourseAnalyticsDTO analytics = analyticsService.getInstructorCourseAnalytics(courseId, startDate,
+        endDate);
+    return ResponseEntity.ok(analytics);
   }
 
   @GetMapping("/enrollments")

@@ -4,12 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AppText } from './AppText'
 import { Button } from './Button'
 import { Select } from './Select'
+import { Input } from './Input'
 import { Ionicons } from '@expo/vector-icons'
 
 export interface FilterState {
   level: string
   category: string
+  tags: string
   sortBy: string
+  isFeatured: boolean
+  isTrending: boolean
 }
 
 interface FilterModalProps {
@@ -84,6 +88,38 @@ export function FilterModal({
               onValueChange={(val) => setFilters({ ...filters, sortBy: val })}
               options={sortOptions}
             />
+
+            <Input
+              label="Tags (comma separated)"
+              placeholder="e.g. react, nodejs, java"
+              value={filters.tags}
+              onChangeText={(val) => setFilters({ ...filters, tags: val })}
+              containerClassName="mt-4"
+            />
+
+            <View className="mt-6">
+              <AppText variant="small" weight="bold" className="mb-2">
+                Highlights
+              </AppText>
+              <View className="flex-row flex-wrap gap-2">
+                <TouchableOpacity
+                  onPress={() => setFilters({ ...filters, isFeatured: !filters.isFeatured })}
+                  className={`px-3 py-2 rounded-full border ${filters.isFeatured ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}
+                >
+                  <AppText className={filters.isFeatured ? 'text-amber-700 font-bold' : 'text-slate-600'}>
+                    Featured
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setFilters({ ...filters, isTrending: !filters.isTrending })}
+                  className={`px-3 py-2 rounded-full border ${filters.isTrending ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200'}`}
+                >
+                  <AppText className={filters.isTrending ? 'text-indigo-700 font-bold' : 'text-slate-600'}>
+                    Trending
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+            </View>
           </ScrollView>
 
           <View className="p-6 border-t border-slate-100 flex-row gap-4">
