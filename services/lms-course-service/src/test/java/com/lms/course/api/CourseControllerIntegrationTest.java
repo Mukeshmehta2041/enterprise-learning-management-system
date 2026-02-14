@@ -22,6 +22,7 @@ public class CourseControllerIntegrationTest extends BaseIntegrationTest {
   void shouldCreateCourse() {
     String instructorId = UUID.randomUUID().toString();
     CreateCourseRequest request = new CreateCourseRequest(
+        UUID.randomUUID(),
         "Test Course",
         "test-course",
         "Description",
@@ -30,6 +31,7 @@ public class CourseControllerIntegrationTest extends BaseIntegrationTest {
         BigDecimal.valueOf(49.99),
         "USD",
         false,
+        "https://example.com/thumbnail.png",
         new BigDecimal("100.00"),
         false,
         CourseStatus.DRAFT,

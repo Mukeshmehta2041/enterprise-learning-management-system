@@ -27,7 +27,7 @@ Base path: `/api/v1/content`. All endpoints require authentication. Gateway forw
 
 - **Method:** `POST /api/v1/content`
 - **Auth:** Instructor (course owner) or Admin.
-- **Request body:** `lessonId`, `type` (VIDEO, PDF, QUIZ), `title`.
+- **Request body:** `courseId`, `lessonId` (optional for course-level media), `type` (VIDEO, PDF, QUIZ, IMAGE), `title`.
 - **Response:** `201 Created`; body: content item with `id` and `status: DRAFT`.
 
 ## Request Upload Presigned URL

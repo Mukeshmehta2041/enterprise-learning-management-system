@@ -1,6 +1,7 @@
 package com.lms.content.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -13,7 +14,12 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 
 import java.net.URL;
 import java.time.Duration;
+import jakarta.annotation.PostConstruct;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class S3StorageService implements StorageService {
@@ -23,6 +29,25 @@ public class S3StorageService implements StorageService {
 
   @Value("${lms.storage.bucket}")
   private String bucket;
+
+  @Value("${lms.storage.endpoint}")
+  private String endpoint;
+
+  @Value("${lms.storage.public-endpoint}")
+  private String publicEndpoint;
+
+  @PostConstruct
+  public void init() {
+    try {
+      s3Client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
+    } catch (S3Exception e) {
+      if (e.statusCode() == 404) {
+        s3Client.createBucket(CreateBucketRequest.builder().bucket(bucket).build());
+      } else {
+        throw e;
+      }
+    }
+  }
 
   @Override
   public URL generatePresignedUploadUrl(String path, String contentType, Duration expiration) {
@@ -37,7 +62,9 @@ public class S3StorageService implements StorageService {
         .putObjectRequest(putObjectRequest)
         .build();
 
-    return s3Presigner.presignPutObject(presignRequest).url();
+    URL url = s3Presigner.presignPutObject(presignRequest).url();
+    log.debug("Generated presigned upload URL: {}", url);
+    return url;
   }
 
   @Override
@@ -52,7 +79,9 @@ public class S3StorageService implements StorageService {
         .getObjectRequest(getObjectRequest)
         .build();
 
-    return s3Presigner.presignGetObject(presignRequest).url();
+    URL url = s3Presigner.presignGetObject(presignRequest).url();
+    log.debug("Generated presigned download URL: {}", url);
+    return url;
   }
 
   @Override

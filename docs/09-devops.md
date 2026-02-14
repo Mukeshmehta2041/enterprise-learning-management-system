@@ -49,3 +49,12 @@
 - **HPA:** Horizontal Pod Autoscaler on CPU and/or memory (and custom metrics if needed) for each service.
 - **PDB:** PodDisruptionBudget for critical services (e.g. min 1 available) to avoid eviction storms.
 - **Kafka and Redis:** Prefer managed services (e.g. cloud Kafka, ElastiCache) or run via Helm charts; do not run critical data stores only on ephemeral pods without persistence.
+
+## AWS ECS Fargate
+
+For a serverless container deployment on AWS, refer to the [31-aws-ecs-fargate-deployment.md](31-aws-ecs-fargate-deployment.md) guide. It covers:
+- ECS Cluster and Service setup.
+- Task Definitions for microservices.
+- Load Balancing with ALB.
+- Service Discovery with Cloud Map.
+- GitHub Actions integration.

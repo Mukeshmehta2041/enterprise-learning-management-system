@@ -24,7 +24,7 @@ public class ContentItem {
   @Column(name = "course_id", nullable = false)
   private UUID courseId;
 
-  @Column(name = "lesson_id", nullable = false)
+  @Column(name = "lesson_id", nullable = true)
   private UUID lessonId;
 
   @Enumerated(EnumType.STRING)
@@ -45,6 +45,9 @@ public class ContentItem {
   @UpdateTimestamp
   @Column(name = "updated_at")
   private OffsetDateTime updatedAt;
+
+  @Version
+  private Long version;
 
   @OneToMany(mappedBy = "contentItem", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ContentVersion> versions = new ArrayList<>();

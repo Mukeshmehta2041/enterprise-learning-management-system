@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record CreateCourseRequest(
+    java.util.UUID id,
     @NotBlank(message = "Title is required") @Size(max = 255, message = "Title must not exceed 255 characters") String title,
     @Size(max = 255, message = "Slug must not exceed 255 characters") String slug,
     String description,
@@ -13,6 +14,7 @@ public record CreateCourseRequest(
     java.math.BigDecimal price,
     String currency,
     Boolean isFree,
+    String thumbnailUrl,
     java.math.BigDecimal completionThreshold,
     Boolean requireAllAssignments,
     CourseStatus status,

@@ -92,9 +92,9 @@ export function useCreateAndUploadContent() {
       onProgress,
     }: {
       courseId: string
-      lessonId: string
+      lessonId?: string
       title: string
-      type: 'VIDEO' | 'PDF' | 'QUIZ'
+      type: 'VIDEO' | 'PDF' | 'QUIZ' | 'IMAGE'
       file: File
       onProgress?: (percent: number) => void
     }) => {

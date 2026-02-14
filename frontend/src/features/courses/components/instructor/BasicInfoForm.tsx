@@ -1,7 +1,11 @@
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Card, Button, Input, Select, Textarea } from '@/shared/ui'
+import { useCreateAndUploadContent } from '../../api/useContent'
+import { Loader2, Upload, CheckCircle2, X } from 'lucide-react'
+import { cn } from '@/shared/utils/cn'
 
 const basicInfoSchema = z.object({
   title: z.string().min(10, 'Title must be at least 10 characters').max(100),
@@ -9,7 +13,7 @@ const basicInfoSchema = z.object({
   category: z.string().min(1, 'Please select a category'),
   level: z.string().min(1, 'Please select a level'),
   price: z.number().min(0, 'Price cannot be negative'),
-  thumbnailUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+  thumbnailUrl: z.string().optional().or(z.literal('')),
   completionThreshold: z.number().min(0).max(100),
   requireAllAssignments: z.boolean(),
 })
@@ -17,6 +21,7 @@ const basicInfoSchema = z.object({
 type BasicInfoValues = z.infer<typeof basicInfoSchema>
 
 interface BasicInfoFormProps {
+  courseId: string
   initialData?: Partial<BasicInfoValues>
   defaultValues?: Partial<BasicInfoValues>
   onNext?: (data: BasicInfoValues) => void
@@ -26,18 +31,27 @@ interface BasicInfoFormProps {
 }
 
 export function BasicInfoForm({
+  courseId,
   initialData,
   defaultValues,
   onNext,
   onSubmit,
   onCancel,
-  isSubmitting,
+  isSubmitting: isExternalSubmitting,
 }: BasicInfoFormProps) {
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadThumbnail = useCreateAndUploadContent()
+
   const mergedDefaultValues = defaultValues || initialData || {}
 
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<BasicInfoValues>({
     resolver: zodResolver(basicInfoSchema),
@@ -53,10 +67,66 @@ export function BasicInfoForm({
     },
   })
 
+  const currentThumbnailUrl = watch('thumbnailUrl')
+
+  const uploadFile = async (file: File) => {
+    setSelectedFile(file)
+    try {
+      const content = await uploadThumbnail.mutateAsync({
+        courseId,
+        title: `Thumbnail for ${watch('title') || 'Course'}`,
+        type: 'IMAGE',
+        file,
+        onProgress: (progress) => setUploadProgress(progress),
+      })
+
+      // In a real S3 setup, we might need a separate call to get the public URL or just store the path
+      // For now we simulate the public URL based on path
+      const url = `https://storage.lms.com/media/content/${courseId}/thumbnail/${file.name}`
+      setValue('thumbnailUrl', url)
+      setUploadProgress(null)
+    } catch (error) {
+      console.error('Thumbnail upload failed:', error)
+      setUploadProgress(null)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) uploadFile(file)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      uploadFile(file)
+    }
+  }
+
+  const removeThumbnail = () => {
+    setValue('thumbnailUrl', '')
+    setSelectedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleFormSubmit = (data: BasicInfoValues) => {
     if (onSubmit) onSubmit(data)
     if (onNext) onNext(data)
   }
+
+  const isSubmitting = isExternalSubmitting || uploadThumbnail.isPending
 
   return (
     <Card className="shadow-sm border-slate-200">
@@ -103,13 +173,81 @@ export function BasicInfoForm({
           />
         </div>
 
-        <Input
-          label="Thumbnail URL"
-          placeholder="https://example.com/image.jpg"
-          error={errors.thumbnailUrl?.message}
-          {...register('thumbnailUrl')}
-          helperText="A compelling image that represents your course."
-        />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">Course Thumbnail</label>
+          <div className="flex items-start gap-4">
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={cn(
+                'relative h-32 w-56 bg-slate-50 rounded-xl border-2 border-dashed transition-all flex items-center justify-center overflow-hidden',
+                isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-slate-300 hover:border-slate-400'
+              )}
+            >
+              {currentThumbnailUrl ? (
+                <>
+                  <img src={currentThumbnailUrl} alt="Thumbnail" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={removeThumbnail}
+                    className="absolute top-2 right-2 p-1 bg-white/90 rounded-full text-slate-600 hover:text-red-600 transition-colors shadow-sm"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center text-slate-400">
+                  <Upload className={cn('h-10 w-10 mb-2 transition-transform', isDragging && 'animate-bounce')} />
+                  <p className="text-xs font-medium">Drag and drop here</p>
+                </div>
+              )}
+              {uploadProgress !== null && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="text-xs font-bold text-slate-700">{uploadProgress}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 space-y-2 pt-1">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-fit"
+                >
+                  {currentThumbnailUrl ? 'Change Image' : 'Upload Image'}
+                </Button>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Recommended: 1280x720px (16:9). JPG, PNG or WebP.<br />
+                  Maximum size: 5MB.
+                </p>
+              </div>
+
+              {currentThumbnailUrl && (
+                <div className="flex items-center gap-1.5 text-xs text-green-600 font-semibold bg-green-50 w-fit px-2 py-1 rounded-md">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Image uploaded
+                </div>
+              )}
+            </div>
+          </div>
+          {errors.thumbnailUrl && (
+            <p className="text-xs text-red-500 mt-1">{errors.thumbnailUrl.message}</p>
+          )}
+        </div>
 
         <Textarea
           label="Course Description"

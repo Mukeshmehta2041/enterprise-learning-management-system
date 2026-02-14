@@ -28,6 +28,7 @@ This folder contains the design and specification documentation for the Learning
 | [13-caching-and-cdn.md](13-caching-and-cdn.md) | HTTP caching, CDN design, and invalidation flow |
 | [14-reporting-and-exports.md](14-reporting-and-exports.md) | Async bulk exports, CSV/PDF generation, and security |
 | [15-multi-tenancy.md](15-multi-tenancy.md) | Multi-tenant architecture, tenant isolation, and roles |
+| [31-aws-ecs-fargate-deployment.md](31-aws-ecs-fargate-deployment.md) | Comprehensive guide for deploying to AWS ECS Fargate |
 | [onboarding.md](onboarding.md) | Developer and Ops onboarding guide, prerequisites |
 | [api-v2-migration.md](api-v2-migration.md) | Guide for migrating from V1 to V2 API |
 | [security-audit-report.md](security-audit-report.md) | Security audit findings and remediation |
@@ -49,3 +50,4 @@ This folder contains the design and specification documentation for the Learning
 3. Use **04-database.md**, **05-events-kafka.md**, **06-redis.md** for data and messaging.
 4. Use **03-api-gateway.md** and **api-specs/** for API contracts.
 5. Use **07-security.md** for auth and RBAC; **08-observability.md** and **09-devops.md** when adding observability and deployment.
+6. Use **31-aws-ecs-fargate-deployment.md** for production deployment on AWS.

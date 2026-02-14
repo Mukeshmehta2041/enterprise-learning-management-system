@@ -128,6 +128,27 @@ services:
     depends_on:
       - prometheus
 
+  minio:
+    image: minio/minio:latest
+    container_name: lms-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    mem_limit: 512m
+    cpus: "0.50"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - minio_data:/data
+
   lms-gateway:
     build:
       context: ../../lms-gateway
@@ -301,6 +322,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
       - SPRING_DATA_REDIS_HOST=redis
+      - LMS_STORAGE_ENDPOINT=http://minio:9000
+      - LMS_STORAGE_PUBLIC_ENDPOINT=http://localhost:9000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
       interval: 10s
@@ -313,6 +336,8 @@ services:
       kafka:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   lms-assignment-service:
@@ -457,3 +482,4 @@ volumes:
   redis_data:
   kafka_data:
   elasticsearch_data:
+  minio_data:

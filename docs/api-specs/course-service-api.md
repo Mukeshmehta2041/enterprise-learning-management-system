@@ -22,7 +22,7 @@ Base path: `/api/v1/courses`. All endpoints require authentication unless noted.
 
 - **Method:** `POST /api/v1/courses`
 - **Auth:** Instructor or Admin.
-- **Request body:** `title`, `slug` (optional), `description`, `category` (optional), `level` (optional), `price` (optional), `currency` (optional), `isFree` (optional), `status` (optional).
+- **Request body:** `id` (optional UUID), `title`, `slug` (optional), `description`, `category` (optional), `level` (optional), `price` (optional), `currency` (optional), `isFree` (optional), `thumbnailUrl` (optional), `status` (optional).
 - **Response:** `201 Created`; body: full course.
 - **Errors:** `400` validation; `409` slug exists.
 

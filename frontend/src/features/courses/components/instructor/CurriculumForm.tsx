@@ -5,7 +5,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type D
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ModuleInput, LessonInput } from '@/shared/types/course'
-import { useLessonContent, useUploadContent } from '../../api/useContent'
+import { useLessonContent, useUploadContent, useCreateAndUploadContent } from '../../api/useContent'
 import { getMediaErrorMessage } from '@/shared/api/media-errors'
 import { logClientError } from '@/shared/utils/client-telemetry'
 import { useState } from 'react'
@@ -76,70 +76,80 @@ export function CurriculumForm({
           collisionDetection={closestCenter}
           onDragEnd={handleModuleDragEnd}
         >
-          <SortableContext
-            items={moduleFields.map((module) => module.fieldId)}
-            strategy={verticalListSortingStrategy}
-          >
-            {moduleFields.map((module, moduleIndex) => (
-              <SortableModuleCard key={module.fieldId} id={module.fieldId}>
-                {({ listeners }) => (
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3 flex-1">
-                        <button
-                          type="button"
-                          className="cursor-grab text-slate-300"
-                          aria-label="Drag module"
-                          {...listeners}
-                        >
-                          <GripVertical />
-                        </button>
-                        <Input
-                          placeholder={`Module ${moduleIndex + 1} Title`}
-                          className="max-w-md font-bold"
-                          {...register(`modules.${moduleIndex}.title` as const)}
-                        />
+          <div className="space-y-6 mb-6">
+            <SortableContext
+              items={moduleFields.map((module) => module.fieldId)}
+              strategy={verticalListSortingStrategy}
+            >
+              {moduleFields.map((module, moduleIndex) => (
+                <SortableModuleCard key={module.fieldId} id={module.fieldId}>
+                  {({ listeners }) => (
+                    <Card className="p-6">
+                      <div className="flex items-center justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-4 flex-1">
+                          <button
+                            type="button"
+                            className="cursor-grab text-slate-300 hover:text-slate-500 transition-colors shrink-0 p-1"
+                            aria-label="Drag module"
+                            {...listeners}
+                          >
+                            <GripVertical size={22} />
+                          </button>
+                          <div className="flex-1 max-w-2xl">
+                            <Input
+                              placeholder={`Module ${moduleIndex + 1} Title`}
+                              className="font-bold text-xl h-12 bg-transparent border-transparent hover:border-slate-200 focus:bg-white focus:border-indigo-300 transition-all px-4"
+                              {...register(`modules.${moduleIndex}.title` as const, { required: true })}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-100">
+                          <IconButton
+                            icon={<ArrowUp size={18} />}
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-indigo-600 w-9 h-9"
+                            onClick={() => moduleIndex > 0 && moveModule(moduleIndex, moduleIndex - 1)}
+                            aria-label="Move module up"
+                            disabled={moduleIndex === 0}
+                          />
+                          <IconButton
+                            icon={<ArrowDown size={18} />}
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-indigo-600 w-9 h-9"
+                            onClick={() => moduleIndex < moduleFields.length - 1 && moveModule(moduleIndex, moduleIndex + 1)}
+                            aria-label="Move module down"
+                            disabled={moduleIndex === moduleFields.length - 1}
+                          />
+                          <div className="w-px h-6 bg-slate-200 mx-1" />
+                          <IconButton
+                            icon={<Trash2 size={18} />}
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-rose-600 w-9 h-9"
+                            onClick={() => {
+                              if (window.confirm('Delete this module and its lessons?')) {
+                                removeModule(moduleIndex)
+                              }
+                            }}
+                            aria-label="Delete module"
+                          />
+                        </div>
                       </div>
-                      <IconButton
-                        icon={<ArrowUp size={18} />}
-                        variant="ghost"
-                        className="text-slate-400 hover:text-slate-600"
-                        onClick={() => moduleIndex > 0 && moveModule(moduleIndex, moduleIndex - 1)}
-                        aria-label="Move module up"
-                        disabled={moduleIndex === 0}
-                      />
-                      <IconButton
-                        icon={<ArrowDown size={18} />}
-                        variant="ghost"
-                        className="text-slate-400 hover:text-slate-600"
-                        onClick={() => moduleIndex < moduleFields.length - 1 && moveModule(moduleIndex, moduleIndex + 1)}
-                        aria-label="Move module down"
-                        disabled={moduleIndex === moduleFields.length - 1}
-                      />
-                      <IconButton
-                        icon={<Trash2 size={18} />}
-                        variant="ghost"
-                        className="text-slate-400 hover:text-rose-500"
-                        onClick={() => {
-                          if (window.confirm('Delete this module and its lessons?')) {
-                            removeModule(moduleIndex)
-                          }
-                        }}
-                        aria-label="Delete module"
-                      />
-                    </div>
 
-                    <LessonsList
-                      moduleIndex={moduleIndex}
-                      control={control}
-                      register={register}
-                      courseId={courseId}
-                    />
-                  </Card>
-                )}
-              </SortableModuleCard>
-            ))}
-          </SortableContext>
+                      <LessonsList
+                        moduleIndex={moduleIndex}
+                        control={control}
+                        register={register}
+                        courseId={courseId}
+                      />
+                    </Card>
+                  )}
+                </SortableModuleCard>
+              ))}
+            </SortableContext>
+          </div>
         </DndContext>
 
         <Button
@@ -218,19 +228,19 @@ function LessonsList({
             <SortableLessonRow key={lesson.fieldId} id={lesson.fieldId}>
               {({ listeners }) => (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg group">
+                  <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group border border-transparent hover:border-slate-200 transition-colors">
                     <button
                       type="button"
-                      className="cursor-grab text-slate-300"
+                      className="cursor-grab text-slate-300 hover:text-slate-500 transition-colors shrink-0"
                       aria-label="Drag lesson"
                       {...listeners}
                     >
                       <GripVertical size={18} />
                     </button>
-                    <div className="flex-shrink-0">
+                    <div className="w-24 shrink-0">
                       <Select
                         {...register(`modules.${moduleIndex}.lessons.${lessonIndex}.type` as const)}
-                        className="w-auto border-none bg-transparent"
+                        className="h-8 text-[11px] px-2"
                         options={[
                           { label: 'Video', value: 'VIDEO' },
                           { label: 'Document', value: 'DOCUMENT' },
@@ -241,24 +251,24 @@ function LessonsList({
                     </div>
                     <Input
                       placeholder={`Lesson ${lessonIndex + 1} Title`}
-                      className="bg-transparent border-transparent focus:bg-white flex-1"
-                      {...register(`modules.${moduleIndex}.lessons.${lessonIndex}.title` as const)}
+                      className="bg-transparent border-transparent focus:bg-white flex-1 h-8 text-sm"
+                      {...register(`modules.${moduleIndex}.lessons.${lessonIndex}.title` as const, { required: true })}
                     />
-                    <div className="w-24">
+                    <div className="w-16 shrink-0 text-center">
                       <Input
                         type="number"
                         min={0}
-                        className="h-8 text-xs"
+                        className="h-8 text-[11px] px-1 text-center"
                         placeholder="Mins"
                         {...register(`modules.${moduleIndex}.lessons.${lessonIndex}.durationMinutes` as const, {
                           valueAsNumber: true,
                         })}
                       />
                     </div>
-                    <div className="w-28">
+                    <div className="w-24 shrink-0">
                       <Select
                         {...register(`modules.${moduleIndex}.lessons.${lessonIndex}.status` as const)}
-                        className="h-8 text-xs"
+                        className="h-8 text-[11px] px-2"
                         options={[
                           { label: 'Published', value: 'PUBLISHED' },
                           { label: 'Draft', value: 'DRAFT' },
@@ -271,50 +281,56 @@ function LessonsList({
                       control={control}
                       name={`modules.${moduleIndex}.lessons.${lessonIndex}.isPreview` as const}
                       render={({ field }) => (
-                        <div className="flex items-center gap-2">
-                          <TextMuted className="text-xs">Preview</TextMuted>
-                          <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                        <div className="flex items-center justify-center gap-1 shrink-0 px-2 border-l border-slate-200 min-w-20">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Preview</span>
+                          <Switch className="scale-[0.65]" checked={!!field.value} onCheckedChange={field.onChange} />
                         </div>
                       )}
                     />
 
-                    {lesson.id ? (
-                      <LessonMediaUpload
-                        lesson={lesson}
-                        courseId={courseId}
+                    <div className="shrink-0 min-w-25 border-l border-slate-200 pl-2">
+                      {lesson.id ? (
+                        <LessonMediaUpload
+                          lesson={lesson}
+                          courseId={courseId}
+                        />
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">Save to upload</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-0 border-l border-slate-200 pl-1 shrink-0">
+                      <IconButton
+                        icon={<ArrowUp size={14} />}
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-400 hover:text-indigo-600 h-8 w-8 disabled:opacity-10"
+                        onClick={() => lessonIndex > 0 && moveLesson(lessonIndex, lessonIndex - 1)}
+                        aria-label="Move lesson up"
+                        disabled={lessonIndex === 0}
                       />
-                    ) : (
-                      <span className="text-xs text-slate-400 italic px-2">Save to upload media</span>
-                    )}
-
-                    <IconButton
-                      icon={<ArrowUp size={16} />}
-                      variant="ghost"
-                      className="text-slate-400 hover:text-slate-600"
-                      onClick={() => lessonIndex > 0 && moveLesson(lessonIndex, lessonIndex - 1)}
-                      aria-label="Move lesson up"
-                      disabled={lessonIndex === 0}
-                    />
-                    <IconButton
-                      icon={<ArrowDown size={16} />}
-                      variant="ghost"
-                      className="text-slate-400 hover:text-slate-600"
-                      onClick={() => lessonIndex < lessonFields.length - 1 && moveLesson(lessonIndex, lessonIndex + 1)}
-                      aria-label="Move lesson down"
-                      disabled={lessonIndex === lessonFields.length - 1}
-                    />
-
-                    <IconButton
-                      icon={<Trash2 size={16} />}
-                      variant="ghost"
-                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition-opacity"
-                      onClick={() => {
-                        if (window.confirm('Delete this lesson?')) {
-                          removeLesson(lessonIndex)
-                        }
-                      }}
-                      aria-label="Remove lesson"
-                    />
+                      <IconButton
+                        icon={<ArrowDown size={14} />}
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-400 hover:text-indigo-600 h-8 w-8 disabled:opacity-10"
+                        onClick={() => lessonIndex < lessonFields.length - 1 && moveLesson(lessonIndex, lessonIndex + 1)}
+                        aria-label="Move lesson down"
+                        disabled={lessonIndex === lessonFields.length - 1}
+                      />
+                      <IconButton
+                        icon={<Trash2 size={14} />}
+                        variant="ghost"
+                        size="sm"
+                        className="text-slate-400 hover:text-rose-600 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => {
+                          if (window.confirm('Delete this lesson?')) {
+                            removeLesson(lessonIndex)
+                          }
+                        }}
+                        aria-label="Remove lesson"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -322,14 +338,16 @@ function LessonsList({
           ))}
         </SortableContext>
       </DndContext>
-      <button
+      <Button
         type="button"
-        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex items-center gap-1 ml-3"
+        variant="ghost"
+        size="sm"
+        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 flex items-center gap-1.5 ml-3"
         onClick={() => appendLesson({ title: '', type: 'VIDEO' })}
       >
-        <Plus size={16} />
+        <Plus size={16} strokeWidth={2.5} />
         Add Lesson
-      </button>
+      </Button>
     </div>
   )
 }
@@ -380,7 +398,8 @@ function LessonMediaUpload({ lesson, courseId }: { lesson: LessonInput, courseId
   const [canRetry, setCanRetry] = useState(false)
   const [lastFile, setLastFile] = useState<File | null>(null)
   const upload = useUploadContent()
-  const { data: contentItems, isLoading } = useLessonContent(lesson.id)
+  const createAndUpload = useCreateAndUploadContent()
+  const { data: contentItems, isLoading, refetch } = useLessonContent(lesson.id)
   const content = contentItems?.[0]
   const status = content?.status
   const metadata = content?.metadata
@@ -394,11 +413,24 @@ function LessonMediaUpload({ lesson, courseId }: { lesson: LessonInput, courseId
       setCanRetry(false)
       setLastFile(file)
       setProgress(0)
-      await upload.mutateAsync({
-        contentId: lesson.id, // In our simplified model, lesson ID is used or shared with content ID
-        file,
-        onProgress: (p) => setProgress(p)
-      })
+
+      if (content?.id) {
+        await upload.mutateAsync({
+          contentId: content.id,
+          file,
+          onProgress: (p) => setProgress(p)
+        })
+      } else {
+        await createAndUpload.mutateAsync({
+          courseId,
+          lessonId: lesson.id,
+          title: lesson.title || 'Lesson Content',
+          type: (lesson.type === 'VIDEO' ? 'VIDEO' : 'PDF') as 'VIDEO' | 'PDF',
+          file,
+          onProgress: (p) => setProgress(p)
+        })
+      }
+      refetch()
     } catch (error) {
       const { message, retryable } = getMediaErrorMessage(error)
       setErrorMessage(message)
@@ -415,11 +447,24 @@ function LessonMediaUpload({ lesson, courseId }: { lesson: LessonInput, courseId
       setErrorMessage(null)
       setCanRetry(false)
       setProgress(0)
-      await upload.mutateAsync({
-        contentId: lesson.id,
-        file: lastFile,
-        onProgress: (p) => setProgress(p)
-      })
+
+      if (content?.id) {
+        await upload.mutateAsync({
+          contentId: content.id,
+          file: lastFile,
+          onProgress: (p) => setProgress(p)
+        })
+      } else {
+        await createAndUpload.mutateAsync({
+          courseId,
+          lessonId: lesson.id,
+          title: lesson.title || 'Lesson Content',
+          type: (lesson.type === 'VIDEO' ? 'VIDEO' : 'PDF') as 'VIDEO' | 'PDF',
+          file: lastFile,
+          onProgress: (p) => setProgress(p)
+        })
+      }
+      refetch()
     } catch (error) {
       const { message, retryable } = getMediaErrorMessage(error)
       setErrorMessage(message)

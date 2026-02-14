@@ -35,6 +35,13 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: content-processing-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 
 resilience4j:
   circuitbreaker:
@@ -63,6 +70,7 @@ lms:
   storage:
     bucket: ${LMS_STORAGE_BUCKET:lms-media}
     endpoint: ${LMS_STORAGE_ENDPOINT:http://minio:9000}
+    public-endpoint: ${LMS_STORAGE_PUBLIC_ENDPOINT:http://localhost:9000}
     region: ${LMS_STORAGE_REGION:us-east-1}
     access-key: ${LMS_STORAGE_ACCESS_KEY:minioadmin}
     secret-key: ${LMS_STORAGE_SECRET_KEY:minioadmin}

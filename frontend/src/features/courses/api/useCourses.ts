@@ -125,7 +125,22 @@ export function useSyncCurriculum() {
 
   return useMutation({
     mutationFn: async ({ id, modules }: { id: string; modules: ModuleInput[] }) => {
-      const { data } = await apiClient.post(`/courses/${id}/curriculum/sync`, { modules })
+      // Clean up modules and lessons for sync (mapping names, ensuring no blank titles, etc.)
+      const cleanedModules = modules.map((m, mIdx) => ({
+        id: m.id,
+        title: m.title?.trim() || `Module ${mIdx + 1}`,
+        sortOrder: m.sortOrder ?? m.order ?? mIdx,
+        lessons: (m.lessons || []).map((l, lIdx) => ({
+          id: l.id,
+          title: l.title?.trim() || `Lesson ${lIdx + 1}`,
+          type: l.type || l.contentType || 'VIDEO',
+          durationMinutes: l.durationMinutes || 0,
+          sortOrder: l.sortOrder ?? l.order ?? lIdx,
+          isPreview: !!l.isPreview
+        }))
+      }))
+
+      const { data } = await apiClient.post(`/courses/${id}/curriculum/sync`, { modules: cleanedModules })
       return data
     },
     onSuccess: (_, variables) => {

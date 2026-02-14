@@ -316,12 +316,13 @@ public class CourseApplicationService {
       throw new ConflictException("Course with slug '" + slug + "' already exists");
     }
 
-    UUID courseId = UUID.randomUUID();
+    UUID courseId = request.id() != null ? request.id() : UUID.randomUUID();
     CourseStatus status = request.status() != null ? request.status() : CourseStatus.DRAFT;
 
     Course course = new Course(courseId, request.title(), slug, request.description(), status);
     course.setCategory(request.category());
     course.setLevel(request.level());
+    course.setThumbnailUrl(request.thumbnailUrl());
     course.setPrice(request.price() != null ? request.price() : java.math.BigDecimal.ZERO);
     course.setCurrency(request.currency() != null ? request.currency() : "USD");
     course.setFree(

@@ -31,6 +31,9 @@ public class ContentMetadata {
   @Column(name = "mime_type", length = 100)
   private String mimeType;
 
+  @Version
+  private Long version;
+
   public ContentMetadata(ContentItem contentItem, Integer durationSecs, Long sizeBytes, String mimeType) {
     this.contentItem = contentItem;
     this.contentItemId = contentItem.getId();

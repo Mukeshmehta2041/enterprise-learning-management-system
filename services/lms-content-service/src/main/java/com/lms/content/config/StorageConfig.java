@@ -18,6 +18,9 @@ public class StorageConfig {
   @Value("${lms.storage.endpoint}")
   private String endpoint;
 
+  @Value("${lms.storage.public-endpoint}")
+  private String publicEndpoint;
+
   @Value("${lms.storage.region}")
   private String region;
 
@@ -43,7 +46,7 @@ public class StorageConfig {
   @Bean
   public S3Presigner s3Presigner() {
     return S3Presigner.builder()
-        .endpointOverride(URI.create(endpoint))
+        .endpointOverride(URI.create(publicEndpoint))
         .region(Region.of(region))
         .credentialsProvider(StaticCredentialsProvider.create(
             AwsBasicCredentials.create(accessKey, secretKey)))

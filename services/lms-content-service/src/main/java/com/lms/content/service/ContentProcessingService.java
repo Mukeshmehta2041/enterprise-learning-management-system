@@ -69,17 +69,20 @@ public class ContentProcessingService {
     }
 
     ContentItem item = itemOpt.get();
+    if (item.getStatus() == ContentStatus.READY) {
+      log.info("Content item: {} is already in READY state, skipping processing.", item.getId());
+      return;
+    }
+
     log.info("Processing content item: {} (Type: {})", item.getId(), item.getType());
 
     try {
-      // Simulate processing (transcoding, metadata extraction, etc.)
-      // In a real scenario, this might call an external service or use ffmpeg/etc.
-
       ContentMetadata metadata = item.getMetadata();
       if (metadata == null) {
         metadata = new ContentMetadata();
         metadata.setContentItem(item);
         metadata.setContentItemId(item.getId());
+        item.setMetadata(metadata);
       }
 
       // Mocking metadata extraction
@@ -104,8 +107,6 @@ public class ContentProcessingService {
         log.info("Extracted PDF metadata: {} bytes", metadata.getSizeBytes());
       }
 
-      contentMetadataRepository.save(metadata);
-
       item.setStatus(ContentStatus.READY);
       contentItemRepository.save(item);
 
@@ -119,6 +120,15 @@ public class ContentProcessingService {
   }
 
   private void createRendition(ContentVersion version, String quality, String path, int width, int height, long size) {
+    // Check if rendition already exists to ensure idempotency
+    boolean exists = version.getRenditions().stream()
+        .anyMatch(r -> r.getQuality().equals(quality));
+
+    if (exists) {
+      log.info("Rendition: {} already exists for version: {}, skipping creation.", quality, version.getId());
+      return;
+    }
+
     ContentRendition rendition = new ContentRendition(UUID.randomUUID(), version, quality, path);
     rendition.setWidth(width);
     rendition.setHeight(height);
@@ -128,6 +138,14 @@ public class ContentProcessingService {
   }
 
   private void createThumbnail(ContentVersion version, String path) {
+    boolean exists = version.getRenditions().stream()
+        .anyMatch(r -> "thumbnail".equals(r.getQuality()));
+
+    if (exists) {
+      log.info("Thumbnail already exists for version: {}, skipping creation.", version.getId());
+      return;
+    }
+
     ContentRendition thumbnail = new ContentRendition(UUID.randomUUID(), version, "thumbnail", path);
     thumbnail.setWidth(640);
     thumbnail.setHeight(360);

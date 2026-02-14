@@ -382,7 +382,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           REGISTRY="${ECR_REGISTRY:-${{ steps.ecr.outputs.registry }}}"
-          REPO="${REGISTRY}/lms-${{ matrix.service.name }}"
+          REPO="${REGISTRY}/${{ matrix.service.name }}"
           docker build -t ${REPO}:${IMAGE_TAG} -t ${REPO}:latest \
             -f ${{ matrix.service.dockerfile }} ${{ matrix.service.context }}
           docker push ${REPO}:${IMAGE_TAG}
@@ -421,6 +421,49 @@ jobs:
           services: ${{ needs.detect-changes.outputs.services_json }}
           image_tag: ${{ github.sha }}
           ecr_registry: ${{ secrets.ECR_REGISTRY }}
+
+  # --- Deploy to AWS ECS Fargate (CD only) ---
+  deploy-ecs:
+    needs: [detect-changes, docker-build-push]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      (needs.detect-changes.outputs.common == 'true' || contains(needs.detect-changes.outputs.services_json, 'lms-user-service'))
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Replace Account ID and Region in Task Definition
+        run: |
+          sed -i "s/AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g" infra/ecs/user-service-task-def.json
+          sed -i "s/AWS_REGION/${{ secrets.AWS_REGION || 'us-east-1' }}/g" infra/ecs/user-service-task-def.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: infra/ecs/user-service-task-def.json
+          container-name: user-service
+          image: ${{ secrets.ECR_REGISTRY || format('{0}.dkr.ecr.{1}.amazonaws.com', secrets.AWS_ACCOUNT_ID, secrets.AWS_REGION || 'us-east-1') }}/lms-user-service:${{ github.sha }}
+          environment-variables: |
+            SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS=${{ secrets.SPRING_KAFKA_BOOTSTRAP_SERVERS }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: lms-user-service
+          cluster: lms-production
+          wait-for-service-stability: true
 
   # --- Deploy frontend to S3 + CloudFront (CD only) ---
   deploy-frontend:

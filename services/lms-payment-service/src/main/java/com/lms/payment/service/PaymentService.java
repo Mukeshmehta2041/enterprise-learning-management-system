@@ -42,6 +42,11 @@ public class PaymentService {
 
   @Transactional
   public PaymentDTO createPayment(CreatePaymentRequest request) {
+    // Validation: must have either planId or courseId
+    if (request.getPlanId() == null && request.getCourseId() == null) {
+      throw new IllegalArgumentException("Payment must be associated with either a plan or a course");
+    }
+
     // Check idempotency
     Optional<Payment> existing = paymentRepository.findByIdempotencyKey(request.getIdempotencyKey());
     if (existing.isPresent()) {
@@ -93,9 +98,10 @@ public class PaymentService {
 
   private void publishPaymentEvent(Payment payment) {
     String courseIdStr = payment.getCourseId() != null ? "\"" + payment.getCourseId() + "\"" : "null";
+    String planIdStr = payment.getPlanId() != null ? payment.getPlanId().toString() : "null";
     String event = String.format(
-        "{\"eventType\":\"PaymentCompleted\",\"aggregateId\":\"%d\",\"aggregateType\":\"Payment\",\"payload\":{\"userId\":\"%s\",\"courseId\":%s,\"amount\":%.2f}}",
-        payment.getId(), payment.getUserId().toString(), courseIdStr, payment.getAmount());
+        "{\"eventType\":\"PaymentCompleted\",\"aggregateId\":\"%d\",\"aggregateType\":\"Payment\",\"payload\":{\"userId\":\"%s\",\"courseId\":%s,\"planId\":%s,\"amount\":%.2f}}",
+        payment.getId(), payment.getUserId().toString(), courseIdStr, planIdStr, payment.getAmount());
     kafkaTemplate.send("payment.events", event);
   }
 

@@ -10,11 +10,13 @@ import { useUI } from '@/shared/context/UIContext'
 import type { ModuleInput } from '@/shared/types/course'
 
 type CourseFormData = {
+  id?: string
   title?: string
   description?: string
   category?: string
   level?: string
   price?: number
+  thumbnailUrl?: string
   completionThreshold?: number
   requireAllAssignments?: boolean
   modules?: ModuleInput[]
@@ -29,7 +31,9 @@ const steps = [
 export function CourseCreatePage() {
   const [currentStep, setCurrentStep] = useState(1)
   const { setBreadcrumbs } = useUI()
+  const [courseId] = useState(() => crypto.randomUUID())
   const [courseData, setCourseData] = useState<CourseFormData>({
+    id: courseId,
     title: '',
     description: '',
     category: '',
@@ -81,6 +85,7 @@ export function CourseCreatePage() {
       <div className="space-y-6">
         {currentStep === 1 && (
           <BasicInfoForm
+            courseId={courseId}
             initialData={courseData}
             onNext={handleNext}
             onCancel={handleCancel}
@@ -114,11 +119,13 @@ export function CourseCreatePage() {
                 if (courseData.title && courseData.description && courseData.category &&
                   courseData.level && courseData.price !== undefined && courseData.modules) {
                   const submitData = {
+                    id: courseId,
                     title: courseData.title,
                     description: courseData.description,
                     category: courseData.category,
                     level: courseData.level,
                     price: courseData.price,
+                    thumbnailUrl: courseData.thumbnailUrl,
                     modules: courseData.modules.map(m => ({
                       title: m.title || '',
                       lessons: (m.lessons || []).map(l => ({
