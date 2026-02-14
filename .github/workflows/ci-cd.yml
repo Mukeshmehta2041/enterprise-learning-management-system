@@ -393,16 +393,19 @@ jobs:
 
       - name: Replace Account ID and Region in Task Definition
         if: steps.check.outputs.skip != 'true'
-        env:
-          ACC_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
         run: |
-          if [ -z "$ACC_ID" ]; then
+          # Trim any hidden newlines or spaces from secrets
+          CLEAN_ACC_ID=$(echo "${{ secrets.AWS_ACCOUNT_ID }}" | xargs)
+          CLEAN_REGION=$(echo "${{ secrets.AWS_REGION || 'us-east-1' }}" | xargs)
+          
+          if [ -z "$CLEAN_ACC_ID" ]; then
             echo "Error: AWS_ACCOUNT_ID secret is missing or empty."
             exit 1
           fi
-          sed -i "s|AWS_ACCOUNT_ID|$ACC_ID|g" ${{ matrix.service.task_def }}
-          sed -i "s|AWS_REGION|$REGION|g" ${{ matrix.service.task_def }}
+          
+          echo "Replacing tokens in ${{ matrix.service.task_def }}..."
+          sed -i "s|AWS_ACCOUNT_ID|$CLEAN_ACC_ID|g" ${{ matrix.service.task_def }}
+          sed -i "s|AWS_REGION|$CLEAN_REGION|g" ${{ matrix.service.task_def }}
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         if: steps.check.outputs.skip != 'true'
