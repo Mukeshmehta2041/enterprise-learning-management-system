@@ -84,23 +84,23 @@ jobs:
         id: backend
         run: |
           COMMON="${{ steps.filter.outputs.common }}"
-          # If common changes, build everything
+          # Only build gateway and user service for now
           if [ "$COMMON" == "true" ]; then
-            echo '["lms-gateway","lms-auth-service","lms-user-service","lms-course-service","lms-enrollment-service","lms-content-service","lms-assignment-service","lms-search-service","lms-notification-service","lms-payment-service","lms-analytics-service"]' > services.json
+            echo '["lms-gateway","lms-user-service"]' > services.json
             echo "build_all=true" >> $GITHUB_OUTPUT
           else
             SERVICES='[]'
             [ "${{ steps.filter.outputs.gateway }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-gateway"]')
-            [ "${{ steps.filter.outputs.service_auth }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-auth-service"]')
             [ "${{ steps.filter.outputs.service_user }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-user-service"]')
-            [ "${{ steps.filter.outputs.service_course }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-course-service"]')
-            [ "${{ steps.filter.outputs.service_enrollment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-enrollment-service"]')
-            [ "${{ steps.filter.outputs.service_content }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-content-service"]')
-            [ "${{ steps.filter.outputs.service_assignment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-assignment-service"]')
-            [ "${{ steps.filter.outputs.service_search }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-search-service"]')
-            [ "${{ steps.filter.outputs.service_notification }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-notification-service"]')
-            [ "${{ steps.filter.outputs.service_payment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-payment-service"]')
-            [ "${{ steps.filter.outputs.service_analytics }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-analytics-service"]')
+            # [ "${{ steps.filter.outputs.service_auth }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-auth-service"]')
+            # [ "${{ steps.filter.outputs.service_course }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-course-service"]')
+            # [ "${{ steps.filter.outputs.service_enrollment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-enrollment-service"]')
+            # [ "${{ steps.filter.outputs.service_content }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-content-service"]')
+            # [ "${{ steps.filter.outputs.service_assignment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-assignment-service"]')
+            # [ "${{ steps.filter.outputs.service_search }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-search-service"]')
+            # [ "${{ steps.filter.outputs.service_notification }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-notification-service"]')
+            # [ "${{ steps.filter.outputs.service_payment }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-payment-service"]')
+            # [ "${{ steps.filter.outputs.service_analytics }}" == "true" ] && SERVICES=$(echo "$SERVICES" | jq '. + ["lms-analytics-service"]')
             echo "$SERVICES" > services.json
             LEN=$(echo "$SERVICES" | jq length)
             [ "$LEN" -gt 0 ] && echo "build_all=false" >> $GITHUB_OUTPUT || echo "build_all=false" >> $GITHUB_OUTPUT
@@ -191,121 +191,54 @@ jobs:
           retention-days: 1
 
   # --- Frontend build (conditional) ---
-  frontend-build:
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    if: needs.detect-changes.outputs.frontend == 'true'
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
+  # frontend-build:
+  #   needs: detect-changes
+  #   runs-on: ubuntu-latest
+  #   if: needs.detect-changes.outputs.frontend == 'true'
+  #   defaults:
+  #     run:
+  #       working-directory: frontend
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: npm
+  #         cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+  #     - name: Install dependencies
+  #       run: npm ci
 
-      - name: Lint
-        run: npm run lint
+  #     - name: Lint
+  #       run: npm run lint
 
-      - name: Type check
-        run: npm run typecheck
+  #     - name: Type check
+  #       run: npm run typecheck
 
-      - name: Run tests
-        run: npm test -- --run
+  #     - name: Run tests
+  #       run: npm test -- --run
 
-      - name: Build production
-        env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.lms-example.com' }}
-        run: npm run build
+  #     - name: Build production
+  #       env:
+  #         VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.lms-example.com' }}
+  #       run: npm run build
 
-      - name: Upload frontend build
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/dist
-          retention-days: 1
+  #     - name: Upload frontend build
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: frontend-build
+  #         path: frontend/dist
+  #         retention-days: 1
 
   # --- Mobile build and validation (when mobile changes) ---
-  mobile-build:
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    if: needs.detect-changes.outputs.mobile == 'true'
-    defaults:
-      run:
-        working-directory: mobile
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Run tests
-        run: npm test -- --passWithNoTests
+  # mobile-build:
+  #   needs: detect-changes
 
   # --- EAS Build for mobile (CD only, when mobile changes on main) ---
-  # Requires EXPO_TOKEN secret. Create via: eas login, then eas credentials
-  mobile-eas-build:
-    needs: [detect-changes, mobile-build]
-    runs-on: ubuntu-latest
-    if: needs.detect-changes.outputs.mobile == 'true'
-    defaults:
-      run:
-        working-directory: mobile
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check EAS token
-        id: eas
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          if [ -n "$EXPO_TOKEN" ]; then
-            echo "configured=true" >> $GITHUB_OUTPUT
-          else
-            echo "configured=false" >> $GITHUB_OUTPUT
-            echo "::warning::EXPO_TOKEN secret not set, skipping EAS build"
-          fi
-
-      - name: Setup EAS
-        if: steps.eas.outputs.configured == 'true'
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: EAS Build (staging)
-        if: steps.eas.outputs.configured == 'true'
-        run: eas build --profile staging --platform all --non-interactive
+  # mobile-eas-build:
+  #   needs: [detect-changes, mobile-build]
 
   # --- Docker build and push to ECR (CD only, push to main) ---
   docker-build-push:
@@ -319,16 +252,16 @@ jobs:
       matrix:
         service:
           - { name: lms-gateway, context: lms-gateway, dockerfile: lms-gateway/Dockerfile }
-          - { name: lms-auth-service, context: services/lms-auth-service, dockerfile: services/lms-auth-service/Dockerfile }
           - { name: lms-user-service, context: services/lms-user-service, dockerfile: services/lms-user-service/Dockerfile }
-          - { name: lms-course-service, context: services/lms-course-service, dockerfile: services/lms-course-service/Dockerfile }
-          - { name: lms-enrollment-service, context: services/lms-enrollment-service, dockerfile: services/lms-enrollment-service/Dockerfile }
-          - { name: lms-content-service, context: services/lms-content-service, dockerfile: services/lms-content-service/Dockerfile }
-          - { name: lms-assignment-service, context: services/lms-assignment-service, dockerfile: services/lms-assignment-service/Dockerfile }
-          - { name: lms-search-service, context: services/lms-search-service, dockerfile: services/lms-search-service/Dockerfile }
-          - { name: lms-notification-service, context: services/lms-notification-service, dockerfile: services/lms-notification-service/Dockerfile }
-          - { name: lms-payment-service, context: services/lms-payment-service, dockerfile: services/lms-payment-service/Dockerfile }
-          - { name: lms-analytics-service, context: services/lms-analytics-service, dockerfile: services/lms-analytics-service/Dockerfile }
+          # - { name: lms-auth-service, context: services/lms-auth-service, dockerfile: services/lms-auth-service/Dockerfile }
+          # - { name: lms-course-service, context: services/lms-course-service, dockerfile: services/lms-course-service/Dockerfile }
+          # - { name: lms-enrollment-service, context: services/lms-enrollment-service, dockerfile: services/lms-enrollment-service/Dockerfile }
+          # - { name: lms-content-service, context: services/lms-content-service, dockerfile: services/lms-content-service/Dockerfile }
+          # - { name: lms-assignment-service, context: services/lms-assignment-service, dockerfile: services/lms-assignment-service/Dockerfile }
+          # - { name: lms-search-service, context: services/lms-search-service, dockerfile: services/lms-search-service/Dockerfile }
+          # - { name: lms-notification-service, context: services/lms-notification-service, dockerfile: services/lms-notification-service/Dockerfile }
+          # - { name: lms-payment-service, context: services/lms-payment-service, dockerfile: services/lms-payment-service/Dockerfile }
+          # - { name: lms-analytics-service, context: services/lms-analytics-service, dockerfile: services/lms-analytics-service/Dockerfile }
     steps:
       - uses: actions/checkout@v4
 
@@ -390,37 +323,37 @@ jobs:
         continue-on-error: ${{ secrets.AWS_ACCESS_KEY_ID == '' }}
 
   # --- Deploy to Kubernetes (blue-green, CD only) ---
-  deploy-k8s:
-    needs: [detect-changes, docker-build-push]
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      (needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.services_json != '[]')
-    steps:
-      - uses: actions/checkout@v4
+  # deploy-k8s:
+  #   needs: [detect-changes, docker-build-push]
+  #   runs-on: ubuntu-latest
+  #   if: |
+  #     github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+  #     (needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.services_json != '[]')
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Configure kubectl
-        id: kubeconfig
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG || secrets.KUBECONFIG }}
-        run: |
-          if [ -z "$KUBE_CONFIG" ]; then
-            echo "configured=false" >> $GITHUB_OUTPUT
-            echo "::warning::KUBE_CONFIG secret not set, skipping K8s deploy"
-          else
-            mkdir -p ~/.kube
-            echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
-            chmod 600 ~/.kube/config
-            echo "configured=true" >> $GITHUB_OUTPUT
-          fi
+  #     - name: Configure kubectl
+  #       id: kubeconfig
+  #       env:
+  #         KUBE_CONFIG: ${{ secrets.KUBE_CONFIG || secrets.KUBECONFIG }}
+  #       run: |
+  #         if [ -z "$KUBE_CONFIG" ]; then
+  #           echo "configured=false" >> $GITHUB_OUTPUT
+  #           echo "::warning::KUBE_CONFIG secret not set, skipping K8s deploy"
+  #         else
+  #           mkdir -p ~/.kube
+  #           echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+  #           chmod 600 ~/.kube/config
+  #           echo "configured=true" >> $GITHUB_OUTPUT
+  #         fi
 
-      - name: Deploy to Kubernetes (blue-green)
-        if: steps.kubeconfig.outputs.configured == 'true'
-        uses: ./.github/actions/deploy-blue-green
-        with:
-          services: ${{ needs.detect-changes.outputs.services_json }}
-          image_tag: ${{ github.sha }}
-          ecr_registry: ${{ secrets.ECR_REGISTRY }}
+  #     - name: Deploy to Kubernetes (blue-green)
+  #       if: steps.kubeconfig.outputs.configured == 'true'
+  #       uses: ./.github/actions/deploy-blue-green
+  #       with:
+  #         services: ${{ needs.detect-changes.outputs.services_json }}
+  #         image_tag: ${{ github.sha }}
+  #         ecr_registry: ${{ secrets.ECR_REGISTRY }}
 
   # --- Deploy to AWS ECS Fargate (CD only) ---
   deploy-ecs:
@@ -428,11 +361,30 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      (needs.detect-changes.outputs.common == 'true' || contains(needs.detect-changes.outputs.services_json, 'lms-user-service'))
+      (needs.detect-changes.outputs.common == 'true' || contains(needs.detect-changes.outputs.services_json, 'lms-user-service') || contains(needs.detect-changes.outputs.services_json, 'lms-gateway'))
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: lms-gateway, container: gateway, task_def: infra/ecs/gateway-task-def.json }
+          - { name: lms-user-service, container: user-service, task_def: infra/ecs/user-service-task-def.json }
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check if service should deploy
+        id: check
+        run: |
+          SVC="${{ matrix.service.name }}"
+          CHANGED='${{ needs.detect-changes.outputs.services_json }}'
+          COMMON='${{ needs.detect-changes.outputs.common }}'
+          if [ "$COMMON" == "true" ] || echo "$CHANGED" | jq -e --arg s "$SVC" 'index($s) != null' >/dev/null 2>&1; then
+            echo "skip=false" >> $GITHUB_OUTPUT
+          else
+            echo "skip=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Configure AWS credentials
+        if: steps.check.outputs.skip != 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -440,17 +392,19 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Replace Account ID and Region in Task Definition
+        if: steps.check.outputs.skip != 'true'
         run: |
-          sed -i "s/AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g" infra/ecs/user-service-task-def.json
-          sed -i "s/AWS_REGION/${{ secrets.AWS_REGION || 'us-east-1' }}/g" infra/ecs/user-service-task-def.json
+          sed -i "s/AWS_ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g" ${{ matrix.service.task_def }}
+          sed -i "s/AWS_REGION/${{ secrets.AWS_REGION || 'us-east-1' }}/g" ${{ matrix.service.task_def }}
 
       - name: Fill in the new image ID in the Amazon ECS task definition
+        if: steps.check.outputs.skip != 'true'
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: infra/ecs/user-service-task-def.json
-          container-name: user-service
-          image: ${{ secrets.ECR_REGISTRY || format('{0}.dkr.ecr.{1}.amazonaws.com', secrets.AWS_ACCOUNT_ID, secrets.AWS_REGION || 'us-east-1') }}/lms-user-service:${{ github.sha }}
+          task-definition: ${{ matrix.service.task_def }}
+          container-name: ${{ matrix.service.container }}
+          image: ${{ secrets.ECR_REGISTRY || format('{0}.dkr.ecr.{1}.amazonaws.com', secrets.AWS_ACCOUNT_ID, secrets.AWS_REGION || 'us-east-1') }}/${{ matrix.service.name }}:${{ github.sha }}
           environment-variables: |
             SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
             SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
@@ -458,64 +412,65 @@ jobs:
             SPRING_KAFKA_BOOTSTRAP_SERVERS=${{ secrets.SPRING_KAFKA_BOOTSTRAP_SERVERS }}
 
       - name: Deploy Amazon ECS task definition
+        if: steps.check.outputs.skip != 'true'
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: lms-user-service
+          service: ${{ matrix.service.name }}
           cluster: lms-production
           wait-for-service-stability: true
 
   # --- Deploy frontend to S3 + CloudFront (CD only) ---
-  deploy-frontend:
-    needs: [detect-changes, frontend-build]
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.detect-changes.outputs.frontend == 'true'
-    steps:
-      - name: Download frontend build
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend-dist
+  # deploy-frontend:
+  #   needs: [detect-changes, frontend-build]
+  #   runs-on: ubuntu-latest
+  #   if: |
+  #     github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+  #     needs.detect-changes.outputs.frontend == 'true'
+  #   steps:
+  #     - name: Download frontend build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: frontend-build
+  #         path: frontend-dist
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
-      - name: Sync to S3
-        run: |
-          cd frontend-dist
-          aws s3 sync . s3://${{ secrets.S3_BUCKET }}/ \
-            --delete \
-            --cache-control "public, max-age=3600"
+  #     - name: Sync to S3
+  #       run: |
+  #         cd frontend-dist
+  #         aws s3 sync . s3://${{ secrets.S3_BUCKET }}/ \
+  #           --delete \
+  #           --cache-control "public, max-age=3600"
 
-      - name: Invalidate CloudFront
-        env:
-          CF_DIST_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
-        run: |
-          if [ -n "$CF_DIST_ID" ]; then
-            aws cloudfront create-invalidation --distribution-id "$CF_DIST_ID" --paths "/*"
-          fi
+  #     - name: Invalidate CloudFront
+  #       env:
+  #         CF_DIST_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+  #       run: |
+  #         if [ -n "$CF_DIST_ID" ]; then
+  #           aws cloudfront create-invalidation --distribution-id "$CF_DIST_ID" --paths "/*"
+  #         fi
 
   # --- Staging smoke test ---
-  staging-smoke:
-    runs-on: ubuntu-latest
-    needs: [deploy-k8s, deploy-frontend]
-    if: |
-      always() &&
-      (needs.deploy-k8s.result == 'success' || needs.deploy-k8s.result == 'skipped') &&
-      (needs.deploy-frontend.result == 'success' || needs.deploy-frontend.result == 'skipped')
-    steps:
-      - uses: actions/checkout@v4
+  # staging-smoke:
+  #   runs-on: ubuntu-latest
+  #   needs: [deploy-k8s, deploy-frontend]
+  #   if: |
+  #     always() &&
+  #     (needs.deploy-k8s.result == 'success' || needs.deploy-k8s.result == 'skipped') &&
+  #     (needs.deploy-frontend.result == 'success' || needs.deploy-frontend.result == 'skipped')
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Run k6 smoke test
-        uses: grafana/k6-action@v0.3.1
-        with:
-          filename: tests/load/smoke-test.js
-        env:
-          STAGING_URL: ${{ secrets.STAGING_URL }}
-        continue-on-error: true
+  #     - name: Run k6 smoke test
+  #       uses: grafana/k6-action@v0.3.1
+  #       with:
+  #         filename: tests/load/smoke-test.js
+  #       env:
+  #         STAGING_URL: ${{ secrets.STAGING_URL }}
+  #       continue-on-error: true

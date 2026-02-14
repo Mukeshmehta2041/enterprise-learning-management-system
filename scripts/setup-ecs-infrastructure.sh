@@ -78,15 +78,17 @@ else
   aws servicediscovery create-private-dns-namespace --name "$NAMESPACE" --vpc "$VPC_ID" --region "$REGION"
 fi
 
-# 5. Create CloudWatch Log Group with 1-day retention (Cost Saving)
-LOG_GROUP="/ecs/lms-user-service"
-if aws logs describe-log-groups --log-group-name-prefix "$LOG_GROUP" --region "$REGION" | grep -q "$LOG_GROUP"; then
-  echo "  Log group $LOG_GROUP already exists"
-else
-  aws logs create-log-group --log-group-name "$LOG_GROUP" --region "$REGION"
-  aws logs put-retention-policy --log-group-name "$LOG_GROUP" --retention-in-days 1 --region "$REGION"
-  echo "  Created log group $LOG_GROUP with 1-day retention"
-fi
+# 5. Create CloudWatch Log Groups with 1-day retention (Cost Saving)
+for svc in "lms-user-service" "lms-gateway"; do
+  LOG_GROUP="/ecs/$svc"
+  if aws logs describe-log-groups --log-group-name-prefix "$LOG_GROUP" --region "$REGION" | grep -q "$LOG_GROUP"; then
+    echo "  Log group $LOG_GROUP already exists"
+  else
+    aws logs create-log-group --log-group-name "$LOG_GROUP" --region "$REGION"
+    aws logs put-retention-policy --log-group-name "$LOG_GROUP" --retention-in-days 1 --region "$REGION"
+    echo "  Created log group $LOG_GROUP with 1-day retention"
+  fi
+done
 
 # 6. Create Security Group for the Service
 SG_NAME="lms-service-sg"
@@ -96,7 +98,8 @@ if [ "$SG_ID" == "None" ] || [ "$SG_ID" == "" ]; then
   echo "  Creating security group $SG_NAME..."
   SG_ID=$(aws ec2 create-security-group --group-name "$SG_NAME" --description "Security group for LMS microservices" --vpc-id "$VPC_ID" --query "GroupId" --output text --region "$REGION")
   aws ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 8081 --cidr 0.0.0.0/0 --region "$REGION"
-  echo "  Created SG: $SG_ID (Allowed 8081)"
+  aws ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 8080 --cidr 0.0.0.0/0 --region "$REGION"
+  echo "  Created SG: $SG_ID (Allowed 8080, 8081)"
 else
   echo "  Security group $SG_NAME already exists ($SG_ID)"
 fi
@@ -109,12 +112,23 @@ SUBNETS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" --quer
 echo ""
 echo "Next Steps:"
 echo "1. Push the Docker image to ECR (already handled by CI/CD if main branch is pushed)."
-echo "2. Create the ECS Service using this command (once the CI/CD build is finished):"
+echo "2. Create the ECS Services using these commands (once the CI/CD build is finished):"
 echo ""
+echo "--- LMS USER SERVICE ---"
 echo "aws ecs create-service \\"
 echo "  --cluster $CLUSTER_NAME \\"
 echo "  --service-name lms-user-service \\"
 echo "  --task-definition lms-user-service \\"
+echo "  --desired-count 1 \\"
+echo "  --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 \\"
+echo "  --network-configuration \"awsvpcConfiguration={subnets=[$SUBNETS],assignPublicIp=ENABLED,securityGroups=[$SG_ID]}\" \\"
+echo "  --region $REGION"
+echo ""
+echo "--- LMS GATEWAY ---"
+echo "aws ecs create-service \\"
+echo "  --cluster $CLUSTER_NAME \\"
+echo "  --service-name lms-gateway \\"
+echo "  --task-definition lms-gateway \\"
 echo "  --desired-count 1 \\"
 echo "  --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 \\"
 echo "  --network-configuration \"awsvpcConfiguration={subnets=[$SUBNETS],assignPublicIp=ENABLED,securityGroups=[$SG_ID]}\" \\"
