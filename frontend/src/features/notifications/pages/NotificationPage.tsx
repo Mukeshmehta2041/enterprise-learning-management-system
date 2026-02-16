@@ -10,17 +10,20 @@ const getIcon = (type: NotificationType) => {
   switch (type) {
     case 'SUCCESS':
     case 'PAYMENT_SUCCESS':
+    case 'PAYMENT':
+    case 'ENROLLMENT':
+    case 'USER_WELCOME':
       return <CheckCircle2 className="h-5 w-5 text-emerald-500" />;
     case 'WARNING':
+    case 'ASSIGNMENT_DUE_SOON':
       return <AlertTriangle className="h-5 w-5 text-amber-500" />;
     case 'ERROR':
       return <XCircle className="h-5 w-5 text-rose-500" />;
     case 'INFO':
-    case 'ENROLLMENT':
     case 'ASSIGNMENT_CREATED':
     case 'ASSIGNMENT_UPDATED':
-    case 'ASSIGNMENT_DUE_SOON':
     case 'ASSIGNMENT_GRADED':
+    case 'ASSIGNMENT_SUBMISSION':
     case 'LESSON_PUBLISHED':
     case 'LESSON_UPDATED':
     default:
@@ -45,8 +48,8 @@ export function NotificationPage() {
       const matchFilter =
         filter === 'all' ? true :
           filter === 'unread' ? !n.read :
-            filter === 'system' ? ['INFO', 'SUCCESS', 'WARNING', 'ERROR'].includes(n.type) :
-              filter === 'course' ? ['ENROLLMENT', 'ASSIGNMENT_CREATED', 'ASSIGNMENT_GRADED', 'LESSON_PUBLISHED'].includes(n.type) :
+            filter === 'system' ? ['INFO', 'SUCCESS', 'WARNING', 'ERROR', 'USER_WELCOME', 'PAYMENT'].includes(n.type) :
+              filter === 'course' ? ['ENROLLMENT', 'ASSIGNMENT_CREATED', 'ASSIGNMENT_GRADED', 'ASSIGNMENT_SUBMISSION', 'LESSON_PUBLISHED'].includes(n.type) :
                 true;
 
       return matchSearch && matchFilter;

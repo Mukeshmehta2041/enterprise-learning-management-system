@@ -1,5 +1,6 @@
 package com.lms.notification.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lms.notification.event.DomainEvent;
 import com.lms.notification.model.InAppNotification;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,9 @@ public class NotificationService {
 
   @Autowired
   private RedisTemplate<String, Object> redisTemplate;
+
+  @Autowired
+  private ObjectMapper objectMapper;
 
   @Autowired
   private NotificationStreamService streamService;
@@ -294,8 +298,9 @@ public class NotificationService {
 
   public void markAsRead(String userId, String notificationId) {
     String key = "notifications:" + userId + ":" + notificationId;
-    InAppNotification notification = (InAppNotification) redisTemplate.opsForValue().get(key);
-    if (notification != null) {
+    Object raw = redisTemplate.opsForValue().get(key);
+    if (raw != null) {
+      InAppNotification notification = objectMapper.convertValue(raw, InAppNotification.class);
       notification.setRead(true);
       notification.setReadAt(Instant.now());
       redisTemplate.opsForValue().set(key, notification);

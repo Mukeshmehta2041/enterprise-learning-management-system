@@ -38,7 +38,7 @@ export function VideoPlayer({
 
   const currentUrl = useMemo(() => {
     if (selectedQuality && playbackData?.renditions) {
-      return playbackData.renditions.find(r => r.quality === selectedQuality)?.url || playbackData.playbackUrl
+      return playbackData.renditions.find((r: any) => r.resolution === selectedQuality)?.url || playbackData.playbackUrl
     }
     return playbackData?.playbackUrl
   }, [selectedQuality, playbackData])
@@ -214,10 +214,10 @@ export function VideoPlayer({
       >
         {playbackData?.captions?.map((caption) => (
           <track
-            key={caption.language}
-            kind="captions"
+            key={caption.languageCode}
+            kind="subtitles"
             src={caption.url}
-            srcLang={caption.language}
+            srcLang={caption.languageCode}
             label={caption.label}
           />
         ))}
@@ -252,14 +252,14 @@ export function VideoPlayer({
                 </button>
                 {playbackData.renditions.map((rendition) => (
                   <button
-                    key={rendition.quality}
-                    onClick={() => handleQualityChange(rendition.quality)}
+                    key={rendition.resolution}
+                    onClick={() => handleQualityChange(rendition.resolution)}
                     className={cn(
                       "w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors",
-                      selectedQuality === rendition.quality ? "bg-primary/20 text-primary font-bold" : "text-slate-300 hover:bg-white/5"
+                      selectedQuality === rendition.resolution ? "bg-primary/20 text-primary font-bold" : "text-slate-300 hover:bg-white/5"
                     )}
                   >
-                    {rendition.quality}
+                    {rendition.resolution}
                   </button>
                 ))}
               </div>

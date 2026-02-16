@@ -70,8 +70,18 @@ export function useUploadContent() {
       })
 
       // 3. Complete upload
+      // We need to extract the actual object key. 
+      // In path-style URLs (like MinIO), it's everything after the first segment (bucket).
+      const url = new URL(uploadUrl)
+      const segments = url.pathname.split('/').filter(Boolean).map(s => decodeURIComponent(s))
+
+      // If the first segment is the bucket name (common in dev/MinIO), skip it
+      const storagePath = segments.length > 1 && segments[0] === 'lms-media'
+        ? segments.slice(1).join('/')
+        : segments.join('/')
+
       await apiClient.post(`/content/${contentId}/complete-upload`, {
-        storagePath: new URL(uploadUrl).pathname.substring(1), // relative path
+        storagePath
       })
 
       return { contentId }

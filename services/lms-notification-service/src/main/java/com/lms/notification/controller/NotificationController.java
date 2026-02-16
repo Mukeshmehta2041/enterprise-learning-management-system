@@ -1,5 +1,6 @@
 package com.lms.notification.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lms.common.security.RBACEnforcer;
 import com.lms.common.security.UserContext;
 import com.lms.notification.model.InAppNotification;
@@ -23,6 +24,9 @@ public class NotificationController {
 
   @Autowired
   private RedisTemplate<String, Object> redisTemplate;
+
+  @Autowired
+  private ObjectMapper objectMapper;
 
   @Autowired
   private NotificationStreamService streamService;
@@ -68,8 +72,10 @@ public class NotificationController {
     Set<Object> notificationIds = redisTemplate.opsForSet().members(userKey);
 
     List<InAppNotification> notifications = notificationIds.stream()
-        .map(id -> (InAppNotification) redisTemplate.opsForValue()
-            .get("notifications:" + userId + ":" + id))
+        .map(id -> {
+          Object raw = redisTemplate.opsForValue().get("notifications:" + userId + ":" + id);
+          return raw != null ? objectMapper.convertValue(raw, InAppNotification.class) : null;
+        })
         .filter(java.util.Objects::nonNull)
         .toList();
 
@@ -90,9 +96,10 @@ public class NotificationController {
     }
 
     String key = "notifications:" + userId + ":" + notificationId;
-    InAppNotification notification = (InAppNotification) redisTemplate.opsForValue().get(key);
+    Object raw = redisTemplate.opsForValue().get(key);
 
-    if (notification != null) {
+    if (raw != null) {
+      InAppNotification notification = objectMapper.convertValue(raw, InAppNotification.class);
       notification.setRead(true);
       notification.setReadAt(Instant.now());
       redisTemplate.opsForValue().set(key, notification);
@@ -114,9 +121,10 @@ public class NotificationController {
     String userId = userContext.getUserId();
     for (String notificationId : request.notificationIds()) {
       String key = "notifications:" + userId + ":" + notificationId;
-      InAppNotification notification = (InAppNotification) redisTemplate.opsForValue().get(key);
+      Object raw = redisTemplate.opsForValue().get(key);
 
-      if (notification != null) {
+      if (raw != null) {
+        InAppNotification notification = objectMapper.convertValue(raw, InAppNotification.class);
         notification.setRead(true);
         notification.setReadAt(Instant.now());
         redisTemplate.opsForValue().set(key, notification);

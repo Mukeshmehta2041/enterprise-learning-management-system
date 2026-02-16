@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import com.lms.common.events.EventEnvelope;
+import com.lms.common.events.PaymentCompletedEvent;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -32,7 +35,7 @@ public class PaymentService {
   private MockPaymentGateway paymentGateway;
 
   @Autowired
-  private KafkaTemplate<String, String> kafkaTemplate;
+  private KafkaTemplate<String, Object> kafkaTemplate;
 
   public List<PaymentPlanDTO> listPlans() {
     return planRepository.findByActiveTrue().stream()
@@ -97,11 +100,19 @@ public class PaymentService {
   }
 
   private void publishPaymentEvent(Payment payment) {
-    String courseIdStr = payment.getCourseId() != null ? "\"" + payment.getCourseId() + "\"" : "null";
-    String planIdStr = payment.getPlanId() != null ? payment.getPlanId().toString() : "null";
-    String event = String.format(
-        "{\"eventType\":\"PaymentCompleted\",\"aggregateId\":\"%d\",\"aggregateType\":\"Payment\",\"payload\":{\"userId\":\"%s\",\"courseId\":%s,\"planId\":%s,\"amount\":%.2f}}",
-        payment.getId(), payment.getUserId().toString(), courseIdStr, planIdStr, payment.getAmount());
+    PaymentCompletedEvent payload = PaymentCompletedEvent.builder()
+        .userId(payment.getUserId())
+        .courseId(payment.getCourseId())
+        .planId(payment.getPlanId())
+        .amount(payment.getAmount())
+        .build();
+
+    EventEnvelope<PaymentCompletedEvent> event = EventEnvelope.of(
+        "PaymentCompleted",
+        payment.getId().toString(),
+        payload,
+        null);
+
     kafkaTemplate.send("payment.events", event);
   }
 

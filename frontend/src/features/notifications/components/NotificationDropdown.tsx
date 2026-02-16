@@ -12,8 +12,12 @@ const getIcon = (type: NotificationType) => {
   switch (type) {
     case 'SUCCESS':
     case 'PAYMENT_SUCCESS':
+    case 'PAYMENT':
+    case 'ENROLLMENT':
+    case 'USER_WELCOME':
       return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
     case 'WARNING':
+    case 'ASSIGNMENT_DUE_SOON':
       return <AlertTriangle className="h-4 w-4 text-amber-500" />;
     case 'ERROR':
       return <XCircle className="h-4 w-4 text-rose-500" />;

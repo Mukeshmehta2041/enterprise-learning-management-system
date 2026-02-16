@@ -35,10 +35,27 @@ export function CourseDetailPage() {
   }, [course, setBreadcrumbs])
 
   const isLoading = isCourseLoading || isEnrollmentLoading
+  const isPendingPayment = enrollment?.status === 'PENDING_PAYMENT'
+  const isEnrolled = !!enrollment && enrollment.status !== 'PENDING_PAYMENT'
+  const canAccess = course?.hasAccess || isEnrolled
 
   const handleEnroll = async () => {
     try {
-      if (enrollment) {
+      if (isPendingPayment && course) {
+        const intentId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${course.id}-${Date.now()}`
+        const query = new URLSearchParams({
+          courseId: course.id,
+          courseName: course.title,
+          price: course.price.toFixed(2),
+          currency: course.currency || 'USD',
+        })
+        navigate(`/payments/checkout/${intentId}?${query.toString()}`)
+        return
+      }
+
+      if (isEnrolled || course?.hasAccess) {
         // If already enrolled, find first lesson and go to player
         const firstLesson = course?.modules[0]?.lessons[0]
         if (firstLesson) {
@@ -185,7 +202,7 @@ export function CourseDetailPage() {
                         {module.lessons.sort((a: Lesson, b: Lesson) => a.order - b.order).map((lesson: Lesson) => {
                           const isLessonCompleted = enrollment?.completedLessonIds.includes(lesson.id)
                           const lessonAssignments = assignments?.filter((a: Assignment) => a.lessonId === lesson.id) || []
-                          const canWatch = lesson.canWatch ?? Boolean(course?.hasAccess || lesson.isPreview)
+                          const canWatch = lesson.canWatch ?? Boolean(canAccess || lesson.isPreview)
                           const isLocked = !canWatch
 
                           return (
@@ -195,7 +212,7 @@ export function CourseDetailPage() {
                                 isLocked ? "cursor-not-allowed bg-slate-50/50" : "hover:bg-slate-50 cursor-pointer"
                               )} onClick={() => {
                                 if (!isLocked) {
-                                  navigate(`/courses/${courseId}/lessons/${lesson.id}`)
+                                  navigate(`/courses/${courseId}/lesson/${lesson.id}`)
                                 }
                               }}>
                                 <div className="flex items-center gap-3">
@@ -217,7 +234,7 @@ export function CourseDetailPage() {
                                     )}>
                                       {lesson.title}
                                     </span>
-                                    {lesson.isPreview && !course?.hasAccess && (
+                                    {lesson.isPreview && !canAccess && (
                                       <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight flex items-center gap-1">
                                         <BadgeCheck size={10} />
                                         Free Preview
@@ -303,10 +320,15 @@ export function CourseDetailPage() {
             <div className="p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  {course.hasAccess ? (
+                  {canAccess ? (
                     <span className="text-3xl font-bold text-emerald-600 flex items-center gap-2">
                       <BadgeCheck size={28} />
                       Enrolled
+                    </span>
+                  ) : isPendingPayment ? (
+                    <span className="text-3xl font-bold text-orange-600 flex items-center gap-2">
+                      <Clock size={28} />
+                      Payment Pending
                     </span>
                   ) : (
                     <>
@@ -328,11 +350,11 @@ export function CourseDetailPage() {
               <Button
                 className="w-full"
                 size="lg"
-                variant={course.hasAccess ? "outline" : "primary"}
+                variant={canAccess ? "outline" : "primary"}
                 onClick={handleEnroll}
                 isLoading={enrollMutation.isPending}
               >
-                {course.hasAccess ? 'Continue Learning' : (course.isFree ? 'Enroll for Free' : 'Buy Now')}
+                {canAccess ? 'Continue Learning' : (isPendingPayment ? 'Complete Payment' : (course.isFree ? 'Enroll for Free' : 'Buy Now'))}
               </Button>
 
               <div className="space-y-4">

@@ -22,6 +22,7 @@ import { cn } from '@/shared/utils/cn'
 import { useAccess } from '@/shared/hooks/useAccess'
 import { QuizPlayer } from '../components/QuizPlayer'
 import { VideoPlayer } from '../components/VideoPlayer'
+import { DocumentPlayer } from '../components/DocumentPlayer'
 import { Card, Badge, Input } from '@/shared/ui'
 import type { Module, Lesson } from '@/shared/types/course'
 import type { Assignment } from '@/shared/types/assignment'
@@ -105,6 +106,11 @@ export function LessonPlayerPage() {
   const videoContent = useMemo(() => {
     if (currentLesson?.contentType !== 'VIDEO' || !contentData) return null
     return contentData.find(c => c.type === 'VIDEO') ?? null
+  }, [currentLesson?.contentType, contentData])
+
+  const docContent = useMemo(() => {
+    if (currentLesson?.contentType !== 'DOCUMENT' || !contentData) return null
+    return contentData.find(c => c.type === 'PDF' || c.type === 'DOCUMENT') ?? null
   }, [currentLesson?.contentType, contentData])
 
   const initialPositionSecs = useMemo(() => {
@@ -236,6 +242,16 @@ export function LessonPlayerPage() {
                   courseId={courseId!}
                   initialPositionSecs={initialPositionSecs}
                   onComplete={() => !isCompleted && handleToggleComplete()}
+                />
+              </div>
+            )}
+
+            {currentLesson.contentType === 'DOCUMENT' && docContent && (
+              <div className="w-full max-w-5xl">
+                <DocumentPlayer
+                  contentId={docContent.id}
+                  lessonId={lessonId!}
+                  courseId={courseId!}
                 />
               </div>
             )}

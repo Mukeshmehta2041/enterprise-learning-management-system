@@ -10,9 +10,12 @@ export const NotificationTypeSchema = z.enum([
   'ASSIGNMENT_UPDATED',
   'ASSIGNMENT_DUE_SOON',
   'ASSIGNMENT_GRADED',
+  'ASSIGNMENT_SUBMISSION',
   'LESSON_PUBLISHED',
   'LESSON_UPDATED',
+  'PAYMENT',
   'PAYMENT_SUCCESS',
+  'USER_WELCOME',
 ]);
 
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
@@ -25,7 +28,7 @@ export const NotificationSchema = z.object({
   type: NotificationTypeSchema,
   read: z.boolean(),
   createdAt: z.string(),
-  link: z.string().optional(),
+  link: z.string().nullable().optional(),
 })
 
 export type Notification = z.infer<typeof NotificationSchema>;

@@ -115,7 +115,7 @@ export function CourseEditPage() {
   }
 
   return (
-    <Container className="py-8">
+    <Container className="py-8" size="xl">
 
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -214,7 +214,7 @@ export function CourseEditPage() {
         </TabsContent>
 
         <TabsContent value="curriculum">
-          <div className="max-w-4xl">
+          <div className="w-full">
             <CurriculumForm
               courseId={course.id}
               initialModules={course.modules}
@@ -224,13 +224,13 @@ export function CourseEditPage() {
         </TabsContent>
 
         <TabsContent value="assignments">
-          <div className="max-w-4xl">
+          <div className="w-full">
             <AssignmentManagement course={course} />
           </div>
         </TabsContent>
 
         <TabsContent value="pricing">
-          <div className="max-w-2xl">
+          <div className="w-full">
             <PricingSettingsForm
               defaultValues={{
                 price: course.price,

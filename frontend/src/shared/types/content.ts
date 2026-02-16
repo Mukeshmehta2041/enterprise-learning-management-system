@@ -14,13 +14,13 @@ export const ContentResponseSchema = z.object({
   id: z.string(),
   courseId: z.string(),
   lessonId: z.string(),
-  type: z.enum(['VIDEO', 'DOCUMENT', 'QUIZ']),
+  type: z.enum(['VIDEO', 'PDF', 'QUIZ', 'IMAGE', 'DOCUMENT']), // Added PDF, IMAGE, kept DOCUMENT for compatibility
   title: z.string(),
   status: z.string(),
   metadata: z.object({
-    durationSecs: z.number().optional(),
-    sizeBytes: z.number().optional(),
-    mimeType: z.string().optional(),
+    durationSecs: z.number().nullable().optional(),
+    sizeBytes: z.number().nullable().optional(),
+    mimeType: z.string().nullable().optional(),
   }).nullable().optional(),
   questions: z.array(QuizQuestionSchema).nullable().optional(),
 })
@@ -32,14 +32,15 @@ export const PlaybackTokenResponseSchema = z.object({
   token: z.string(),
   expiresAt: z.string(),
   renditions: z.array(z.object({
-    quality: z.string(),
-    url: z.string()
-  })).optional(),
+    resolution: z.string(),
+    url: z.string(),
+    bitrate: z.number().optional()
+  })).nullable().optional(),
   captions: z.array(z.object({
-    language: z.string(),
+    languageCode: z.string(),
     url: z.string(),
     label: z.string()
-  })).optional()
+  })).nullable().optional()
 })
 
 export type PlaybackTokenResponse = z.infer<typeof PlaybackTokenResponseSchema>

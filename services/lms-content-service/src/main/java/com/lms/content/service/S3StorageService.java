@@ -69,9 +69,10 @@ public class S3StorageService implements StorageService {
 
   @Override
   public URL generatePresignedDownloadUrl(String path, Duration expiration) {
+    String key = resolveKey(path);
     GetObjectRequest getObjectRequest = GetObjectRequest.builder()
         .bucket(bucket)
-        .key(path)
+        .key(key)
         .build();
 
     GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
@@ -80,16 +81,34 @@ public class S3StorageService implements StorageService {
         .build();
 
     URL url = s3Presigner.presignGetObject(presignRequest).url();
-    log.debug("Generated presigned download URL: {}", url);
+    log.debug("Generated presigned download URL for key {}: {}", key, url);
     return url;
   }
 
   @Override
   public void deleteObject(String path) {
+    String key = resolveKey(path);
     DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
         .bucket(bucket)
-        .key(path)
+        .key(key)
         .build();
     s3Client.deleteObject(deleteObjectRequest);
+  }
+
+  private String resolveKey(String path) {
+    if (path == null)
+      return null;
+    String key = path;
+    // Iteratively remove leading slashes and bucket names to handle any redundancy
+    while (true) {
+      if (key.startsWith("/")) {
+        key = key.substring(1);
+      } else if (key.startsWith(bucket + "/")) {
+        key = key.substring(bucket.length() + 1);
+      } else {
+        break;
+      }
+    }
+    return key;
   }
 }

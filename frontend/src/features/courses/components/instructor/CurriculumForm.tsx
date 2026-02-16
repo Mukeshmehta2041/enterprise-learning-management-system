@@ -95,7 +95,7 @@ export function CurriculumForm({
                           >
                             <GripVertical size={22} />
                           </button>
-                          <div className="flex-1 max-w-2xl">
+                          <div className="flex-1">
                             <Input
                               placeholder={`Module ${moduleIndex + 1} Title`}
                               className="font-bold text-xl h-12 bg-transparent border-transparent hover:border-slate-200 focus:bg-white focus:border-indigo-300 transition-all px-4"
@@ -399,7 +399,7 @@ function LessonMediaUpload({ lesson, courseId }: { lesson: LessonInput, courseId
   const [lastFile, setLastFile] = useState<File | null>(null)
   const upload = useUploadContent()
   const createAndUpload = useCreateAndUploadContent()
-  const { data: contentItems, isLoading, refetch } = useLessonContent(lesson.id)
+  const { data: contentItems, isLoading, isError, refetch } = useLessonContent(lesson.id)
   const content = contentItems?.[0]
   const status = content?.status
   const metadata = content?.metadata
@@ -481,7 +481,7 @@ function LessonMediaUpload({ lesson, courseId }: { lesson: LessonInput, courseId
 
   return (
     <div className="flex items-center gap-2">
-      <StatusBadge status={status} isLoading={isLoading} />
+      <StatusBadge status={status} isLoading={isLoading} isError={isError} />
       {status === 'FAILED' && (
         <TextMuted className="text-xs text-rose-600">Failed - reupload</TextMuted>
       )}
@@ -533,11 +533,19 @@ function LessonMediaUpload({ lesson, courseId }: { lesson: LessonInput, courseId
   )
 }
 
-function StatusBadge({ status, isLoading }: { status?: string; isLoading?: boolean }) {
+function StatusBadge({ status, isLoading, isError }: { status?: string; isLoading?: boolean; isError?: boolean }) {
   if (isLoading) {
     return (
       <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
         Checking
+      </span>
+    )
+  }
+
+  if (isError) {
+    return (
+      <span className="text-[11px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-500">
+        Error loading
       </span>
     )
   }
