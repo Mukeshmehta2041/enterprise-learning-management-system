@@ -78,12 +78,13 @@ jobs:
           - { id: 'analytics_service', path: 'services/lms-analytics-service' }
           - { id: 'gateway', path: 'lms-gateway' }
     runs-on: ubuntu-latest
-    if: needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true'
     steps:
       - name: Checkout code
+        if: needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true'
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
+        if: needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -91,10 +92,11 @@ jobs:
           cache: 'maven'
 
       - name: Build and Test Service
+        if: needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true'
         run: mvn clean install -pl ${{ matrix.service.path }} -am
 
       - name: Configure AWS Credentials
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/main' && github.event_name == 'push') && (needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true')
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -102,12 +104,12 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
       - name: Login to Amazon ECR
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/main' && github.event_name == 'push') && (needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true')
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/main' && github.event_name == 'push') && (needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true')
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: lms-${{ matrix.service.id }}
