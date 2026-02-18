@@ -19,7 +19,7 @@ const config: StorybookConfig = {
         if (!plugin) return true;
         // The PWA plugin's internal name as defined in its manifest
         // can be 'vite-plugin-pwa', 'vite-plugin-pwa:build', etc.
-        const pluginName = (plugin as { name?: string }).name;
+        const pluginName = (plugin as { name: string }).name;
         return typeof pluginName !== 'string' || !pluginName.startsWith('vite-plugin-pwa');
       });
     }
