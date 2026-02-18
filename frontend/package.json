@@ -71,5 +71,18 @@
     "vite": "^7.2.4",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.18"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "*"
+  },
+  "supportedArchitectures": {
+    "os": [
+      "linux",
+      "darwin"
+    ],
+    "cpu": [
+      "x64",
+      "arm64"
+    ]
   }
 }
