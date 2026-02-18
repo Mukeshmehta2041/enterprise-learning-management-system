@@ -23,9 +23,9 @@ export function useEnrollment(courseId: string) {
     queryKey: ['enrollment', courseId],
     queryFn: async () => {
       try {
-        const { data } = await apiClient.get<any>(`/enrollments/course/${courseId}`)
+        const { data } = await apiClient.get<Record<string, unknown>>(`/enrollments/course/${courseId}`)
         // Handle both single object and paginated response
-        const enrollmentData = data?.content ? data.content[0] : data
+        const enrollmentData = (data?.content ? (data.content as unknown[])[0] : data) as Record<string, unknown>
         if (!enrollmentData) return null
         return EnrollmentSchema.parse(enrollmentData)
       } catch (err) {

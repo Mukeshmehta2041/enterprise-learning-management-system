@@ -17,6 +17,11 @@ interface VideoPlayerProps {
   className?: string
 }
 
+interface Rendition {
+  resolution: string
+  url: string
+}
+
 export function VideoPlayer({
   contentId,
   lessonId,
@@ -38,7 +43,7 @@ export function VideoPlayer({
 
   const currentUrl = useMemo(() => {
     if (selectedQuality && playbackData?.renditions) {
-      return playbackData.renditions.find((r: any) => r.resolution === selectedQuality)?.url || playbackData.playbackUrl
+      return (playbackData.renditions as Rendition[]).find((r) => r.resolution === selectedQuality)?.url || playbackData.playbackUrl
     }
     return playbackData?.playbackUrl
   }, [selectedQuality, playbackData])

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Card, Button, Input, Select, Textarea } from '@/shared/ui'
@@ -40,7 +40,6 @@ export function BasicInfoForm({
   isSubmitting: isExternalSubmitting,
 }: BasicInfoFormProps) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadThumbnail = useCreateAndUploadContent()
@@ -51,7 +50,8 @@ export function BasicInfoForm({
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
+    getValues,
     formState: { errors },
   } = useForm<BasicInfoValues>({
     resolver: zodResolver(basicInfoSchema),
@@ -67,14 +67,17 @@ export function BasicInfoForm({
     },
   })
 
-  const currentThumbnailUrl = watch('thumbnailUrl')
+  // useWatch is more compatible with React Compiler than the watch function from useForm
+  const currentThumbnailUrl = useWatch({
+    control,
+    name: 'thumbnailUrl',
+  })
 
   const uploadFile = async (file: File) => {
-    setSelectedFile(file)
     try {
-      const content = await uploadThumbnail.mutateAsync({
+      await uploadThumbnail.mutateAsync({
         courseId,
-        title: `Thumbnail for ${watch('title') || 'Course'}`,
+        title: `Thumbnail for ${getValues('title') || 'Course'}`,
         type: 'IMAGE',
         file,
         onProgress: (progress) => setUploadProgress(progress),
@@ -117,7 +120,6 @@ export function BasicInfoForm({
 
   const removeThumbnail = () => {
     setValue('thumbnailUrl', '')
-    setSelectedFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 

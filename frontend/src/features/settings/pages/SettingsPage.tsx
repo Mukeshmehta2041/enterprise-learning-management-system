@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Container,
   Heading1,
@@ -51,21 +51,27 @@ export function SettingsPage() {
   const [createdKey, setCreatedKey] = useState<ApiKeyCreateResponse | null>(null)
 
   const [user, setUser] = useState({
-    name: authUser?.name || 'Mukesh Kumar',
+    name: authUser?.displayName || (authUser?.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Mukesh Kumar'),
     email: authUser?.email || 'mukesh@example.com',
     title: '',
   })
 
-  // Sync with auth user when it changes
-  useEffect(() => {
+  // Sync with auth user when it changes - using render phase update to avoid cascading effect warning
+  const [prevAuthUser, setPrevAuthUser] = useState(authUser)
+  if (authUser !== prevAuthUser) {
+    setPrevAuthUser(authUser)
     if (authUser) {
-      setUser((prev) => ({
-        ...prev,
-        name: authUser.name || prev.name,
-        email: authUser.email || prev.email,
-      }))
+      setUser((prev) => {
+        const authUserName = authUser.displayName || (authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : '');
+        if (prev.name === authUserName && prev.email === authUser.email) return prev;
+        return {
+          ...prev,
+          name: authUserName || prev.name,
+          email: authUser.email || prev.email,
+        };
+      });
     }
-  }, [authUser])
+  }
 
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true)
 

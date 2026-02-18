@@ -197,6 +197,7 @@ export function CourseEditPage() {
         <TabsContent value="info">
           <div className="max-w-3xl">
             <BasicInfoForm
+              courseId={course.id}
               defaultValues={{
                 title: course.title,
                 description: course.description,
