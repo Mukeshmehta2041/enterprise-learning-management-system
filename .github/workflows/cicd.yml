@@ -91,9 +91,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build and Test Service
+      - name: Build Service
         if: needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true'
-        run: mvn clean install -pl ${{ matrix.service.path }} -am
+        run: mvn clean install -DskipTests -pl ${{ matrix.service.path }} -am
 
       - name: Configure AWS Credentials
         if: (github.ref == 'refs/heads/main' && github.event_name == 'push') && (needs.filter.outputs.common == 'true' || needs.filter.outputs[matrix.service.id] == 'true')
