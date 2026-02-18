@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   Container,
   Heading1,
@@ -35,10 +35,12 @@ import { useNotificationPreferences, useUpsertNotificationPreference } from '@/f
 import type { NotificationChannel, NotificationEventType } from '@/shared/types/notification'
 import { useAccess } from '@/shared/hooks/useAccess'
 import { useApiKeys, useCreateApiKey, useRevokeApiKey, type ApiKeyCreateResponse } from '@/features/settings/api/apiKeys'
+import { useAuth } from '@/shared/context/AuthContext'
 
 export function SettingsPage() {
   const { success } = useToast()
   const { hasRole } = useAccess()
+  const { user: authUser } = useAuth()
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -49,10 +51,21 @@ export function SettingsPage() {
   const [createdKey, setCreatedKey] = useState<ApiKeyCreateResponse | null>(null)
 
   const [user, setUser] = useState({
-    name: 'Mukesh Kumar',
-    email: 'mukesh@example.com',
-    title: 'Senior Software Engineer',
+    name: authUser?.name || 'Mukesh Kumar',
+    email: authUser?.email || 'mukesh@example.com',
+    title: '',
   })
+
+  // Sync with auth user when it changes
+  useEffect(() => {
+    if (authUser) {
+      setUser((prev) => ({
+        ...prev,
+        name: authUser.name || prev.name,
+        email: authUser.email || prev.email,
+      }))
+    }
+  }, [authUser])
 
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true)
 
@@ -212,23 +225,23 @@ export function SettingsPage() {
         </TextMuted>
       </div>
 
-      <Tabs defaultValue="profile" className="flex flex-col md:flex-row gap-8">
+      <Tabs defaultValue="profile" className="flex flex-col md:flex-row gap-8 items-start">
         {/* Sidebar */}
-        <TabsList className="flex flex-col w-full md:w-64 p-0 bg-transparent">
-          <TabsTrigger value="profile" className="justify-start gap-2">
+        <TabsList className="flex flex-col w-full md:w-64 p-0 bg-transparent h-auto items-stretch justify-start gap-1">
+          <TabsTrigger value="profile" className="justify-start gap-2 py-3 px-4 h-auto data-[state=active]:bg-slate-100 data-[state=active]:shadow-none border-none transition-all hover:bg-slate-50">
             <User size={18} /> Profile
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="justify-start gap-2">
+          <TabsTrigger value="notifications" className="justify-start gap-2 py-3 px-4 h-auto data-[state=active]:bg-slate-100 data-[state=active]:shadow-none border-none transition-all hover:bg-slate-50">
             <Bell size={18} /> Notifications
           </TabsTrigger>
-          <TabsTrigger value="privacy" className="justify-start gap-2">
+          <TabsTrigger value="privacy" className="justify-start gap-2 py-3 px-4 h-auto data-[state=active]:bg-slate-100 data-[state=active]:shadow-none border-none transition-all hover:bg-slate-50">
             <Shield size={18} /> Privacy & Data
           </TabsTrigger>
-          <TabsTrigger value="billing" className="justify-start gap-2">
+          <TabsTrigger value="billing" className="justify-start gap-2 py-3 px-4 h-auto data-[state=active]:bg-slate-100 data-[state=active]:shadow-none border-none transition-all hover:bg-slate-50">
             <CreditCard size={18} /> Billing
           </TabsTrigger>
           {showDeveloperTab && (
-            <TabsTrigger value="developer" className="justify-start gap-2">
+            <TabsTrigger value="developer" className="justify-start gap-2 py-3 px-4 h-auto data-[state=active]:bg-slate-100 data-[state=active]:shadow-none border-none transition-all hover:bg-slate-50">
               <KeyRound size={18} /> Developer
             </TabsTrigger>
           )}

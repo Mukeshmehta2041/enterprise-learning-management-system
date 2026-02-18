@@ -19,6 +19,13 @@ const getStatusBadge = (status: PaymentStatus) => {
           PENDING
         </span>
       );
+    case 'PROCESSING':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+          <Clock size={10} />
+          PROCESSING
+        </span>
+      );
     case 'FAILED':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">

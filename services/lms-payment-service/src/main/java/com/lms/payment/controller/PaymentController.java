@@ -25,6 +25,15 @@ public class PaymentController {
   @Autowired(required = false)
   private RBACEnforcer rbacEnforcer;
 
+  @GetMapping("/history")
+  public ResponseEntity<List<PaymentDTO>> getHistory(
+      @RequestAttribute(required = false) UserContext userContext) {
+    if (userContext == null || userContext.getUserId() == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    return ResponseEntity.ok(paymentService.getHistory(java.util.UUID.fromString(userContext.getUserId())));
+  }
+
   @GetMapping("/plans")
   public ResponseEntity<List<PaymentPlanDTO>> getPlans() {
     return ResponseEntity.ok(paymentService.listPlans());

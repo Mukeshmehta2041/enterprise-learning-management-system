@@ -16,10 +16,10 @@
     "build:test": "tsc -b && vitest build"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.20",
     "axios": "^1.13.4",
     "clsx": "^2.1.1",
@@ -37,7 +37,13 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^5.0.1",
     "@eslint/js": "^9.39.1",
+    "@storybook/addon-a11y": "^10.2.8",
+    "@storybook/addon-docs": "^10.2.8",
+    "@storybook/addon-onboarding": "^10.2.8",
+    "@storybook/addon-vitest": "^10.2.9",
+    "@storybook/react-vite": "^10.2.8",
     "@tailwindcss/vite": "^4.1.18",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

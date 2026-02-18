@@ -35,6 +35,9 @@ public class NotificationService {
   private com.lms.notification.client.EnrollmentServiceClient enrollmentServiceClient;
 
   @Autowired
+  private com.lms.notification.client.CourseServiceClient courseServiceClient;
+
+  @Autowired
   private com.lms.notification.client.UserServiceClient userServiceClient;
 
   @Autowired
@@ -44,36 +47,50 @@ public class NotificationService {
   public void handleDomainEvent(DomainEvent event) {
     log.info("Processing event: {}", event.getEventType());
 
-    switch (event.getEventType()) {
-      case "UserCreated":
+    // Normalize to uppercase for case-insensitive matching
+    String eventTypeNormalized = event.getEventType().toUpperCase();
+
+    switch (eventTypeNormalized) {
+      case "USERCREATED":
+      case "USER_CREATED":
         handleUserCreated(event);
         break;
-      case "EnrollmentCreated":
+      case "ENROLLMENTCREATED":
+      case "ENROLLMENT_CREATED":
         handleEnrollmentCreated(event);
         break;
-      case "AssignmentSubmitted":
-      case "SubmissionReceived":
+      case "ASSIGNMENT_SUBMITTED":
+      case "SUBMISSION_RECEIVED":
+      case "ASSIGNMENTSUBMITTED":
+      case "SUBMISSIONRECEIVED":
         handleAssignmentSubmitted(event);
         break;
-      case "AssignmentGraded":
+      case "ASSIGNMENTGRADED":
+      case "ASSIGNMENT_GRADED":
         handleAssignmentGraded(event);
         break;
-      case "AssignmentCreated":
+      case "ASSIGNMENTCREATED":
+      case "ASSIGNMENT_CREATED":
         handleAssignmentCreated(event);
         break;
-      case "AssignmentDueSoon":
+      case "ASSIGNMENTDUESOON":
+      case "ASSIGNMENT_DUE_SOON":
         handleAssignmentDueSoon(event);
         break;
-      case "AssignmentUpdated":
+      case "ASSIGNMENTUPDATED":
+      case "ASSIGNMENT_UPDATED":
         handleAssignmentUpdated(event);
         break;
-      case "LessonPublished":
+      case "LESSON_PUBLISHED":
+      case "LESSONPUBLISHED":
         handleLessonPublished(event);
         break;
-      case "LessonUpdated":
+      case "LESSON_UPDATED":
+      case "LESSONUPDATED":
         handleLessonUpdated(event);
         break;
-      case "PaymentCompleted":
+      case "PAYMENT_COMPLETED":
+      case "PAYMENTCOMPLETED":
         handlePaymentCompleted(event);
         break;
       case "USER_DELETED":
@@ -219,7 +236,20 @@ public class NotificationService {
     String userId = String.valueOf(event.getPayload().get("userId"));
     String courseName = (String) event.getPayload().get("courseName");
 
-    String message = String.format("You have been enrolled in %s", courseName);
+    // Fetch course name if not present in payload
+    if (courseName == null && event.getPayload().containsKey("courseId")) {
+      try {
+        UUID courseId = UUID.fromString(String.valueOf(event.getPayload().get("courseId")));
+        var course = courseServiceClient.getCourse(courseId);
+        if (course != null) {
+          courseName = course.title();
+        }
+      } catch (Exception e) {
+        log.warn("Failed to fetch course name for enrollment notification", e);
+      }
+    }
+
+    String message = String.format("You have been enrolled in %s", courseName != null ? courseName : "a new course");
     storeInAppNotification(userId, "ENROLLMENT", "Course Enrollment", message, null);
   }
 

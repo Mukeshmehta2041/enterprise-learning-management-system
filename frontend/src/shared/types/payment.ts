@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const PaymentStatusSchema = z.enum(['PENDING', 'SUCCESS', 'FAILED', 'CANCELLED']);
+export const PaymentStatusSchema = z.enum(['PENDING', 'PROCESSING', 'SUCCESS', 'FAILED', 'CANCELLED']);
 
 export type PaymentStatus = z.infer<typeof PaymentStatusSchema>;
 
@@ -34,10 +34,10 @@ export const CreatePaymentRequestSchema = z.object({
 export type CreatePaymentRequest = z.infer<typeof CreatePaymentRequestSchema>;
 
 export const PaymentHistorySchema = z.object({
-  id: z.string(),
-  planId: z.string(),
-  amount: z.number(),
-  currency: z.string(),
+  id: z.coerce.string(),
+  planId: z.coerce.string(),
+  amount: z.coerce.number(),
+  currency: z.string().optional().default('USD'),
   status: PaymentStatusSchema,
   createdAt: z.string(),
 })

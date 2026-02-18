@@ -34,7 +34,7 @@ export const PlaybackTokenResponseSchema = z.object({
   renditions: z.array(z.object({
     resolution: z.string(),
     url: z.string(),
-    bitrate: z.number().optional()
+    bitrate: z.number().nullable().optional()
   })).nullable().optional(),
   captions: z.array(z.object({
     languageCode: z.string(),

@@ -97,8 +97,10 @@ public class ContentProcessingService {
             .max((v1, v2) -> v1.getVersion().compareTo(v2.getVersion()))
             .orElseThrow(() -> new IllegalStateException("No version found just after upload complete"));
 
-        createRendition(latestVersion, "720p", "video/720p.mp4", 1280, 720, 1024L * 1024 * 30);
-        createRendition(latestVersion, "480p", "video/480p.mp4", 854, 480, 1024L * 1024 * 15);
+        String basePath = latestVersion.getStoragePath().substring(0, latestVersion.getStoragePath().lastIndexOf('/'));
+
+        createRendition(latestVersion, "720p", basePath + "/720p.mp4", 1280, 720, 1024L * 1024 * 30);
+        createRendition(latestVersion, "480p", basePath + "/480p.mp4", 854, 480, 1024L * 1024 * 15);
         createRendition(latestVersion, "original", latestVersion.getStoragePath(), 1920, 1080, 1024L * 1024 * 50);
         createThumbnail(latestVersion, "thumbnails/" + item.getId() + "/v" + latestVersion.getVersion() + "/thumb.jpg");
       } else if (item.getType() == ContentType.PDF) {

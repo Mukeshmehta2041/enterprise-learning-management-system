@@ -12,6 +12,18 @@ const config: StorybookConfig = {
     "@storybook/addon-docs",
     "@storybook/addon-onboarding"
   ],
-  "framework": "@storybook/react-vite"
+  "framework": "@storybook/react-vite",
+  async viteFinal(config) {
+    if (config.plugins) {
+      config.plugins = config.plugins.filter((plugin) => {
+        if (!plugin) return true;
+        // The PWA plugin's internal name as defined in its manifest
+        // can be 'vite-plugin-pwa', 'vite-plugin-pwa:build', etc.
+        const name = (plugin as any).name;
+        return typeof name !== 'string' || !name.startsWith('vite-plugin-pwa');
+      });
+    }
+    return config;
+  },
 };
 export default config;

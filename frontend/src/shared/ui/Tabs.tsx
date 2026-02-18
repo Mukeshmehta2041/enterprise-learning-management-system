@@ -37,9 +37,8 @@ export function TabsList({ children, className }: TabsListProps) {
   return (
     <div
       role="tablist"
-      aria-orientation="horizontal"
       className={cn(
-        'inline-flex h-10 items-center justify-center rounded-md bg-slate-100 p-1 text-slate-500',
+        'inline-flex items-center justify-center rounded-md bg-slate-100 p-1 text-slate-500',
         className
       )}
     >
@@ -70,6 +69,7 @@ export function TabsTrigger({ value, children, className, disabled }: TabsTrigge
       id={triggerId}
       aria-selected={isActive}
       aria-controls={contentId}
+      data-state={isActive ? 'active' : 'inactive'}
       disabled={disabled}
       onClick={() => context.onValueChange(value)}
       className={cn(

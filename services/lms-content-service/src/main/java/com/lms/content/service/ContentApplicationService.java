@@ -124,12 +124,12 @@ public class ContentApplicationService {
     }
 
     contentItem.setStatus(ContentStatus.PROCESSING);
-    contentItemRepository.save(contentItem);
 
     // Create the version record
     int versionNum = contentItem.getVersions().size() + 1;
     ContentVersion version = new ContentVersion(UUID.randomUUID(), contentItem, versionNum, storagePath, null);
-    contentVersionRepository.save(version);
+    contentItem.getVersions().add(version); // Maintain bidirectional relationship
+    contentItemRepository.save(contentItem); // This will cascade to version if needed, or we keep both saves
 
     contentEventPublisher.publishContentUploadCompleted(contentItem, storagePath);
     meterRegistry.counter("media.upload.completed").increment();

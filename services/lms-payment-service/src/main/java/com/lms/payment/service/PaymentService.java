@@ -89,7 +89,7 @@ public class PaymentService {
     }
 
     Payment payment = paymentOpt.get();
-    payment.setStatus(Payment.PaymentStatus.COMPLETED);
+    payment.setStatus(Payment.PaymentStatus.SUCCESS);
     payment = paymentRepository.save(payment);
 
     // Publish event
@@ -97,6 +97,12 @@ public class PaymentService {
 
     log.info("Payment completed: {}", payment.getId());
     return PaymentDTO.fromEntity(payment);
+  }
+
+  public List<PaymentDTO> getHistory(UUID userId) {
+    return paymentRepository.findByUserId(userId).stream()
+        .map(PaymentDTO::fromEntity)
+        .toList();
   }
 
   private void publishPaymentEvent(Payment payment) {

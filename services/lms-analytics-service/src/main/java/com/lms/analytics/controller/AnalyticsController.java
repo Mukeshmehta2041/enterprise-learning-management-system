@@ -27,7 +27,7 @@ public class AnalyticsController {
 
   private static final String HEADER_USER_ID = "X-User-Id";
 
-  @PostMapping("/playback")
+  @PostMapping("/playback/events")
   public ResponseEntity<Void> recordPlaybackEvent(
       @RequestBody PlaybackTelemetryRequest request,
       @RequestHeader(value = HEADER_USER_ID, required = false) String userIdHeader) {

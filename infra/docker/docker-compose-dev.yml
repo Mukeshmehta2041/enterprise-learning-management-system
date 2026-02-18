@@ -73,6 +73,18 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
+  kafka-ui:
+    image: docker.redpanda.com/redpandadata/console:latest
+    container_name: lms-kafka-console
+    restart: unless-stopped
+    ports:
+      - "9002:8080"
+    environment:
+      - KAFKA_BROKERS=kafka:9093
+    depends_on:
+      kafka:
+        condition: service_healthy
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     container_name: lms-elasticsearch
@@ -89,6 +101,35 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: lms-kibana
+    restart: unless-stopped
+    mem_limit: 1024m
+    cpus: "0.75"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.0
+    container_name: lms-filebeat
+    user: root # To read /var/lib/docker/containers/
+    volumes:
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
 
   jaeger:
     image: jaegertracing/all-in-one:1.60
@@ -159,6 +200,7 @@ services:
       - "8080:8080"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING=true
       - REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET}
@@ -204,6 +246,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -231,6 +274,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_REDIS_HOST=redis
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
@@ -258,6 +302,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -286,6 +331,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -317,6 +363,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -348,6 +395,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -375,6 +423,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
       - SPRING_DATA_REDIS_HOST=redis
@@ -400,12 +449,16 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
       - SPRING_REDIS_HOST=redis
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
+      - USER_SERVICE_URL=http://lms-user-service:8081
+      - COURSE_SERVICE_URL=http://lms-course-service:8083
+      - ENROLLMENT_SERVICE_URL=http://lms-enrollment-service:8084
       - MAIL_USERNAME=mock
       - MAIL_PASSWORD=mock
       - MANAGEMENT_HEALTH_MAIL_ENABLED=false
@@ -431,6 +484,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms
@@ -458,6 +512,7 @@ services:
     cpus: "0.75"
     environment:
       - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -Xms256m -Xmx512m
+      - SPRING_PROFILES_ACTIVE=json-logs
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/lms
       - SPRING_DATASOURCE_USERNAME=lms
       - SPRING_DATASOURCE_PASSWORD=lms

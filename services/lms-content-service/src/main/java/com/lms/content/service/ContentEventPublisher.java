@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -28,8 +30,7 @@ public class ContentEventPublisher {
         .timestamp(OffsetDateTime.now())
         .build();
 
-    kafkaTemplate.send(TOPIC, contentItem.getId().toString(), event);
-    log.info("Published ContentPublished event for content item: {}", contentItem.getId());
+    sendAfterCommit(contentItem.getId().toString(), event);
   }
 
   public void publishContentUploadCompleted(ContentItem contentItem, String storagePath) {
@@ -44,7 +45,21 @@ public class ContentEventPublisher {
         .timestamp(OffsetDateTime.now())
         .build();
 
-    kafkaTemplate.send(TOPIC, contentItem.getId().toString(), event);
-    log.info("Published ContentUploadCompleted event for content item: {}", contentItem.getId());
+    sendAfterCommit(contentItem.getId().toString(), event);
+  }
+
+  private void sendAfterCommit(String key, ContentEvent event) {
+    if (TransactionSynchronizationManager.isActualTransactionActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCommit() {
+          kafkaTemplate.send(TOPIC, key, event);
+          log.info("Published {} event for content item: {} after commit", event.getEventType(), key);
+        }
+      });
+    } else {
+      kafkaTemplate.send(TOPIC, key, event);
+      log.info("Published {} event for content item: {} (no transaction active)", event.getEventType(), key);
+    }
   }
 }
