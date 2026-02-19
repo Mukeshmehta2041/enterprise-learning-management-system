@@ -42,9 +42,7 @@ services:
 
   # Services
   lms-gateway:
-    build:
-      context: ../../
-      dockerfile: lms-gateway/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-gateway:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -74,9 +72,7 @@ services:
       - lms-network
 
   lms-user-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-user-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-user-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -95,9 +91,7 @@ services:
       - lms-network
 
   lms-auth-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-auth-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-auth-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -118,9 +112,7 @@ services:
       - lms-network
 
   lms-course-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-course-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-course-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -140,9 +132,7 @@ services:
       - lms-network
 
   lms-enrollment-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-enrollment-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-enrollment-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -161,9 +151,7 @@ services:
       - lms-network
 
   lms-content-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-content-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-content-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -172,6 +160,9 @@ services:
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     deploy:
       resources:
         limits:
@@ -182,9 +173,7 @@ services:
       - lms-network
 
   lms-search-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-search-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-search-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -193,6 +182,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - ELASTICSEARCH_URIS=${ELASTICSEARCH_URIS}
     deploy:
       resources:
         limits:
@@ -203,9 +193,7 @@ services:
       - lms-network
 
   lms-assignment-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-assignment-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-assignment-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -224,9 +212,7 @@ services:
       - lms-network
 
   lms-notification-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-notification-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-notification-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -235,6 +221,10 @@ services:
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_MAIL_HOST=${SMTP_HOST}
+      - SPRING_MAIL_PORT=${SMTP_PORT}
+      - SPRING_MAIL_USERNAME=${SMTP_USER}
+      - SPRING_MAIL_PASSWORD=${SMTP_PASS}
     deploy:
       resources:
         limits:
@@ -245,9 +235,7 @@ services:
       - lms-network
 
   lms-payment-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-payment-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-payment-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
@@ -256,6 +244,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
     deploy:
       resources:
         limits:
@@ -266,9 +255,7 @@ services:
       - lms-network
 
   lms-analytics-service:
-    build:
-      context: ../../
-      dockerfile: services/lms-analytics-service/Dockerfile
+    image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-analytics-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
