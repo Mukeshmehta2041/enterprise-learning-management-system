@@ -62,6 +62,8 @@ jobs:
         with:
           context: ${{ matrix.service.path }}
           push: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/${{ matrix.service.name }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/${{ matrix.service.name }}:${{ github.sha }}
