@@ -120,5 +120,5 @@ jobs:
           script: |
             cd ~/app/lms
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            docker-compose -f docker-compose.prod.yml --env-file .env.prod pull
-            docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
+            docker compose -f docker-compose.prod.yml --env-file .env.prod pull
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
