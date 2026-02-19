@@ -12,7 +12,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -38,6 +37,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Lowercase Image Prefix
+        run: echo "IMAGE_PREFIX_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -61,8 +63,8 @@ jobs:
           context: ${{ matrix.service.path }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/${{ matrix.service.name }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX_LOWER }}/${{ matrix.service.name }}:${{ github.sha }}
 
   deploy:
     needs: build-and-push
@@ -70,6 +72,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Lowercase Image Prefix
+        run: echo "IMAGE_PREFIX_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Copy docker-compose and create .env
         uses: appleboy/ssh-action@master
@@ -81,7 +86,7 @@ jobs:
             mkdir -p ~/app/lms
             cat <<EENNVV > ~/app/lms/.env.prod
             DOCKER_REGISTRY=${{ env.REGISTRY }}
-            DOCKER_IMAGE_PREFIX=${{ env.IMAGE_PREFIX }}
+            DOCKER_IMAGE_PREFIX=${{ env.IMAGE_PREFIX_LOWER }}
             PROD_DB_URL=${{ secrets.PROD_DB_URL }}
             PROD_DB_USER=${{ secrets.PROD_DB_USER }}
             PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
