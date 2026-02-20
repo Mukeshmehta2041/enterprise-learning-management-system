@@ -7,9 +7,16 @@ services:
   redis:
     image: redis:8-alpine
     restart: always
-    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly yes
     ports:
       - "6379:6379"
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     deploy:
       resources:
         limits:
@@ -19,18 +26,61 @@ services:
     networks:
       - lms-network
 
+  elasticsearch:
+    image: elasticsearch:8.12.2
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic_prod_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:9200/_cluster/health?local=true || exit 1",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 512M
+    networks:
+      - lms-network
+
   kafka:
     image: apache/kafka-native:latest
     restart: always
     environment:
       - KAFKA_LISTENERS=CONTROLLER://0.0.0.0:9091,HOST://0.0.0.0:9092
       - KAFKA_ADVERTISED_LISTENERS=HOST://kafka:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,HOST:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=HOST
       - KAFKA_NODE_ID=1
       - KAFKA_PROCESS_ROLES=broker,controller
       - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9091
       - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_LOG_RETENTION_HOURS=168
+      - KAFKA_LOG_RETENTION_BYTES=1073741824
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
     ports:
       - "9092:9092"
+    volumes:
+      - kafka_prod_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
     deploy:
       resources:
         limits:
@@ -40,8 +90,51 @@ services:
     networks:
       - lms-network
 
+  minio:
+    image: minio/minio:latest
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_prod_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    networks:
+      - lms-network
+
+  mailserver:
+    image: axllent/mailpit:latest
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    networks:
+      - lms-network
+
   # Services
   lms-gateway:
+    build:
+      context: ../../lms-gateway
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-gateway:latest
     restart: always
     environment:
@@ -58,20 +151,29 @@ services:
       - PAYMENT_SERVICE_URL=http://lms-payment-service:8089
       - ANALYTICS_SERVICE_URL=http://lms-analytics-service:8090
       - SPRING_DATA_REDIS_HOST=redis
+      - JWT_SECRET=${JWT_SECRET}
     ports:
       - "80:8080"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-user-service:
+    build:
+      context: ../../services/lms-user-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-user-service:latest
     restart: always
     environment:
@@ -80,17 +182,33 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-auth-service:
+    build:
+      context: ../../services/lms-auth-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-auth-service:latest
     restart: always
     environment:
@@ -99,19 +217,34 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_DATA_REDIS_HOST=redis
       - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-course-service:
+    build:
+      context: ../../services/lms-course-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-course-service:latest
     restart: always
     environment:
@@ -120,18 +253,33 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-enrollment-service:
+    build:
+      context: ../../services/lms-enrollment-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-enrollment-service:latest
     restart: always
     environment:
@@ -140,17 +288,33 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-content-service:
+    build:
+      context: ../../services/lms-content-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-content-service:latest
     restart: always
     environment:
@@ -159,40 +323,75 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - LMS_STORAGE_ENDPOINT=http://minio:9000
+      - LMS_STORAGE_PUBLIC_ENDPOINT=http://localhost:9000
+      - LMS_STORAGE_REGION=us-east-1
+      - LMS_STORAGE_ACCESS_KEY=minioadmin
+      - LMS_STORAGE_SECRET_KEY=minioadmin
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-lms-content}
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-search-service:
+    build:
+      context: ../../services/lms-search-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-search-service:latest
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - JAVA_OPTS=-Xmx192m -Xms128m
-      - SPRING_DATASOURCE_URL=${PROD_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
-      - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - ELASTICSEARCH_URIS=${ELASTICSEARCH_URIS}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_ELASTICSEARCH_URIS=${ELASTICSEARCH_URIS}
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-assignment-service:
+    build:
+      context: ../../services/lms-assignment-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-assignment-service:latest
     restart: always
     environment:
@@ -201,17 +400,33 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-notification-service:
+    build:
+      context: ../../services/lms-notification-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-notification-service:latest
     restart: always
     environment:
@@ -220,21 +435,39 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - SPRING_MAIL_HOST=${SMTP_HOST}
-      - SPRING_MAIL_PORT=${SMTP_PORT}
-      - SPRING_MAIL_USERNAME=${SMTP_USER}
-      - SPRING_MAIL_PASSWORD=${SMTP_PASS}
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_MAIL_HOST=mailserver
+      - SPRING_MAIL_PORT=1025
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=false
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=false
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailserver:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-payment-service:
+    build:
+      context: ../../services/lms-payment-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-payment-service:latest
     restart: always
     environment:
@@ -243,18 +476,34 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
 
   lms-analytics-service:
+    build:
+      context: ../../services/lms-analytics-service
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_PREFIX}/lms-analytics-service:latest
     restart: always
     environment:
@@ -263,15 +512,35 @@ services:
       - SPRING_DATASOURCE_URL=${PROD_DB_URL}
       - SPRING_DATASOURCE_USERNAME=${PROD_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${PROD_DB_PASSWORD}
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_FLYWAY_CREATE_SCHEMAS=true
+      - SPRING_FLYWAY_CONNECT_RETRIES=20
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=5
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     deploy:
       resources:
         limits:
-          memory: 256M
+          memory: 384M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
       - lms-network
+
+volumes:
+  redis_prod_data:
+  kafka_prod_data:
+  elastic_prod_data:
+  minio_prod_data:
 
 networks:
   lms-network:
