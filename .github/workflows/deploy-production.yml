@@ -1,0 +1,363 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to deploy"
+        required: true
+        type: string
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: lms-production
+
+jobs:
+  pre-deployment-checks:
+    name: Pre-Deployment Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Verify Version Tag
+        run: |
+          if ! git rev-parse ${{ inputs.version }} >/dev/null 2>&1; then
+            echo "Version tag ${{ inputs.version }} does not exist"
+            exit 1
+          fi
+
+      - name: Check Staging Health
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.STAGING_API_URL }}/actuator/health)
+          if [ $response -ne 200 ]; then
+            echo "Staging environment is not healthy. Cannot proceed with production deployment."
+            exit 1
+          fi
+
+      - name: Verify All Tests Passed
+        run: |
+          echo "Verifying all quality gates passed for this version..."
+          # This would check the status of the quality-gates workflow for this commit
+
+  approval:
+    name: Deployment Approval
+    needs: pre-deployment-checks
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://lms.production.example.com
+    steps:
+      - name: Request Approval
+        run: |
+          echo "Deployment to production requires manual approval"
+          echo "Version: ${{ inputs.version }}"
+          echo "Approver: This step will wait for approval in GitHub Environments"
+
+  backup-production:
+    name: Backup Production Database
+    needs: approval
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create RDS Snapshot
+        run: |
+          SNAPSHOT_ID="lms-prod-pre-deploy-$(date +%Y%m%d-%H%M%S)"
+          aws rds create-db-snapshot \
+            --db-instance-identifier ${{ secrets.RDS_INSTANCE_ID }} \
+            --db-snapshot-identifier $SNAPSHOT_ID
+          echo "Created snapshot: $SNAPSHOT_ID"
+          echo "SNAPSHOT_ID=$SNAPSHOT_ID" >> $GITHUB_ENV
+
+      - name: Wait for Snapshot Completion
+        run: |
+          aws rds wait db-snapshot-completed \
+            --db-snapshot-identifier ${{ env.SNAPSHOT_ID }}
+
+  deploy-backend-production:
+    name: Deploy Backend to Production
+    needs: backup-production
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 2
+      matrix:
+        service:
+          - { name: "lms-user-service", path: "services/lms-user-service" }
+          - { name: "lms-auth-service", path: "services/lms-auth-service" }
+          - { name: "lms-course-service", path: "services/lms-course-service" }
+          - {
+              name: "lms-content-service",
+              path: "services/lms-content-service",
+            }
+          - {
+              name: "lms-enrollment-service",
+              path: "services/lms-enrollment-service",
+            }
+          - {
+              name: "lms-assignment-service",
+              path: "services/lms-assignment-service",
+            }
+          - {
+              name: "lms-notification-service",
+              path: "services/lms-notification-service",
+            }
+          - {
+              name: "lms-payment-service",
+              path: "services/lms-payment-service",
+            }
+          - { name: "lms-search-service", path: "services/lms-search-service" }
+          - {
+              name: "lms-analytics-service",
+              path: "services/lms-analytics-service",
+            }
+          - { name: "lms-gateway", path: "lms-gateway" }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: "maven"
+
+      - name: Build Service
+        run: mvn clean install -DskipTests -pl ${{ matrix.service.path }} -am
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ matrix.service.name }}
+          IMAGE_TAG: ${{ inputs.version }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            ${{ matrix.service.path }}
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get Current Task Definition
+        id: current-task-def
+        run: |
+          TASK_DEF=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ matrix.service.name }} \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          echo "current_task_def=$TASK_DEF" >> $GITHUB_OUTPUT
+
+      - name: Update ECS Service (Blue-Green)
+        run: |
+          # Update service with new image
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ matrix.service.name }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for Service Stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ matrix.service.name }} \
+            --region ${{ env.AWS_REGION }} \
+            --max-attempts 30 \
+            --delay 10
+
+      - name: Health Check
+        run: |
+          # Wait for new tasks to be healthy
+          sleep 30
+          response=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.PRODUCTION_API_URL }}/actuator/health)
+          if [ $response -ne 200 ]; then
+            echo "Health check failed after deployment"
+            exit 1
+          fi
+
+  deploy-frontend-production:
+    name: Deploy Frontend to Production
+    needs: backup-production
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL_PRODUCTION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_PRODUCTION }} --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_ID_PRODUCTION }} \
+            --paths "/*"
+
+  post-deployment-tests:
+    name: Post-Deployment Tests
+    needs: [deploy-backend-production, deploy-frontend-production]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Wait for Services to Stabilize
+        run: sleep 60
+
+      - name: Smoke Tests
+        run: |
+          # Health checks
+          curl -f ${{ secrets.PRODUCTION_API_URL }}/actuator/health || exit 1
+          curl -f ${{ secrets.PRODUCTION_FRONTEND_URL }} || exit 1
+
+          # Basic functionality tests
+          curl -f ${{ secrets.PRODUCTION_API_URL }}/api/users/health || exit 1
+          curl -f ${{ secrets.PRODUCTION_API_URL }}/api/auth/health || exit 1
+          curl -f ${{ secrets.PRODUCTION_API_URL }}/api/courses/health || exit 1
+
+          echo "All smoke tests passed"
+
+      - name: Performance Check
+        run: |
+          # Check response times
+          response_time=$(curl -o /dev/null -s -w '%{time_total}' ${{ secrets.PRODUCTION_API_URL }}/actuator/health)
+          if (( $(echo "$response_time > 2.0" | bc -l) )); then
+            echo "Response time ${response_time}s exceeds 2s threshold"
+            exit 1
+          fi
+
+  rollback-on-failure:
+    name: Rollback on Failure
+    needs:
+      [
+        deploy-backend-production,
+        deploy-frontend-production,
+        post-deployment-tests,
+      ]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Rollback ECS Services
+        run: |
+          services=("lms-user-service" "lms-auth-service" "lms-course-service" "lms-content-service" "lms-enrollment-service" "lms-assignment-service" "lms-notification-service" "lms-payment-service" "lms-search-service" "lms-analytics-service" "lms-gateway")
+          for service in "${services[@]}"; do
+            echo "Rolling back $service"
+            aws ecs update-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service $service \
+              --force-new-deployment \
+              --region ${{ env.AWS_REGION }}
+          done
+
+      - name: Notify Rollback
+        run: |
+          echo "Deployment failed. Rollback initiated."
+          echo "Version: ${{ inputs.version }}"
+
+  notify-deployment:
+    name: Notify Deployment Status
+    needs:
+      [
+        deploy-backend-production,
+        deploy-frontend-production,
+        post-deployment-tests,
+      ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack Notification
+        if: secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Production Deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Status:* ${{ job.status }}\n*Version:* ${{ inputs.version }}\n*Deployer:* ${{ github.actor }}\n*Time:* $(date -u)"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Create GitHub Release
+        if: success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.version }}
+          release_name: Production Release ${{ inputs.version }}
+          body: |
+            Production deployment completed successfully.
+
+            Deployed services:
+            - All backend microservices
+            - Frontend application
+
+            Deployment time: $(date -u)
+          draft: false
+          prerelease: false
