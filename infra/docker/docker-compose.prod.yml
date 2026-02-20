@@ -43,13 +43,14 @@ services:
           "CMD-SHELL",
           "curl -f http://localhost:9200/_cluster/health?local=true || exit 1",
         ]
-      interval: 10s
+      interval: 20s
       timeout: 10s
-      retries: 5
+      retries: 10
+      start_period: 90s
     deploy:
       resources:
         limits:
-          memory: 768M
+          memory: 1G
         reservations:
           memory: 512M
     networks:
@@ -379,7 +380,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -526,7 +528,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8090/actuator/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
     deploy:
       resources:
         limits:
