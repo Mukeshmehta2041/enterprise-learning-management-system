@@ -99,6 +99,8 @@ jobs:
             SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
             STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            ELASTICSEARCH_URIS=http://elasticsearch:9200
+            S3_BUCKET_NAME=lms-content
             EENNVV
 
       - name: Copy docker-compose file
@@ -117,8 +119,10 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 30m
           script: |
             cd ~/app/lms
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            docker compose -f docker-compose.prod.yml --env-file .env.prod pull
+            docker image prune -f
+            docker compose -f docker-compose.prod.yml --env-file .env.prod pull --parallel 1
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d

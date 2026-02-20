@@ -366,7 +366,7 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - JAVA_OPTS=-Xmx192m -Xms128m
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - SPRING_ELASTICSEARCH_URIS=${ELASTICSEARCH_URIS}
+      - SPRING_ELASTICSEARCH_URIS=${ELASTICSEARCH_URIS:-http://elasticsearch:9200}
       - SPRING_DATA_REDIS_HOST=redis
     depends_on:
       kafka:
