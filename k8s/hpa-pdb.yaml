@@ -8,7 +8,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-gateway
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 10
   metrics:
   - type: Resource
@@ -39,7 +39,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-course-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -70,7 +70,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-user-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -101,7 +101,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-auth-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -132,7 +132,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-enrollment-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -163,7 +163,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-content-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -194,7 +194,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-assignment-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -225,7 +225,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-search-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -256,7 +256,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-notification-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -287,7 +287,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-payment-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource
@@ -318,7 +318,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: lms-analytics-service
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 5
   metrics:
   - type: Resource

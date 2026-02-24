@@ -4,7 +4,7 @@ metadata:
   name: lms-analytics-service
   namespace: lms
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: lms-analytics-service
@@ -16,6 +16,7 @@ spec:
       containers:
       - name: lms-analytics-service
         image: lms-analytics-service:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8090
         env:
@@ -36,21 +37,21 @@ spec:
             name: lms-shared-config
         resources:
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "1000m"
+            memory: "256Mi"
           requests:
-            cpu: "250m"
-            memory: "384Mi"
+            cpu: "100m"
+            memory: "256Mi"
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
             port: 8090
-          initialDelaySeconds: 40
+          initialDelaySeconds: 180
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8090
-          initialDelaySeconds: 40
+          initialDelaySeconds: 180
 ---
 apiVersion: v1
 kind: Service

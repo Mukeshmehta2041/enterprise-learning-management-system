@@ -71,75 +71,37 @@ docker build -t lms-analytics-service:latest ./services/lms-analytics-service
 
 ## 3. Configure secrets for local use
 
-The base manifest `k8s/00-base.yaml` creates:
+The base manifest `k8s/00-base.yaml` creates the namespace and ConfigMap. We use `k8s/00-secrets-local.yaml` to provide default development credentials.
 
-- Namespace `lms`
-- ConfigMap `lms-shared-config`
-- Secret `lms-secrets` (currently placeholder values like `__REPLACE__`)
-
-For local development you can either:
-
-- **Option A (simple):** Edit the secret values in `k8s/00-base.yaml` directly before applying (do NOT commit real secrets), or
-- **Option B (recommended):** Apply the base ConfigMap and namespace, then create the secret via `kubectl`.
-
-### Option A – edit file locally
-
-Edit the `stringData` section in `k8s/00-base.yaml`:
-
-- `POSTGRES_USER` / `POSTGRES_PASSWORD` – credentials your Postgres instance will accept.
-- `JWT_SECRET` – any strong random string for local JWT signing.
-- `MAIL_USERNAME` / `MAIL_PASSWORD` – dummy values if you are not sending real email.
-
-Then apply:
+Apply them both:
 
 ```bash
 kubectl apply -f k8s/00-base.yaml
+kubectl apply -f k8s/00-secrets-local.yaml
 ```
 
-### Option B – create secret via kubectl
-
-First apply only the namespace and ConfigMap from `00-base.yaml` (leaving out the Secret block), or apply as-is, then override the secret with:
-
-```bash
-kubectl create secret generic lms-secrets \
-  -n lms \
-  --from-literal=POSTGRES_USER=lms \
-  --from-literal=POSTGRES_PASSWORD=lms \
-  --from-literal=JWT_SECRET=change-me-local \
-  --from-literal=MAIL_USERNAME=mock \
-  --from-literal=MAIL_PASSWORD=mock \
-  --dry-run=client -o yaml | kubectl apply -f -
-```
-
-Adjust values as needed.
+This creates:
+- Namespace `lms`
+- ConfigMap `lms-shared-config`
+- Secret `lms-secrets` (with `lms/lms` credentials and a dev JWT key)
 
 ---
 
-## 4. Infrastructure dependencies (Postgres, Redis, Kafka, Elasticsearch)
+## 4. Deploy Infrastructure (Postgres, Redis, Kafka, Elasticsearch)
 
-The current `k8s/` manifests focus on the LMS microservices. Infra components are referenced by DNS names in `k8s/00-base.yaml`:
+We now provide an in-cluster infrastructure manifest for testing. This deploys everything inside Kubernetes:
 
-- Postgres: `lms-postgres:5432`
-- Redis: `lms-redis:6379`
-- Kafka: `lms-kafka:9092`
-- Elasticsearch: `lms-elasticsearch:9200`
+```bash
+kubectl apply -f k8s/infra.yaml
+```
 
-You have two options:
+Wait for the infrastructure pods to be ready:
 
-- **Option 1 (simplest right now):** Continue running infra via Docker Compose and point Kubernetes services at that (not fully isolated).
-- **Option 2 (future improvement):** Add dedicated Kubernetes manifests for Postgres, Redis, Kafka, and Elasticsearch (mirroring `infra/docker/docker-compose-dev.yml`).
+```bash
+kubectl get pods -n lms -w
+```
 
-At the moment, **Option 1** is easiest:
-
-1. In a separate terminal, from `infra/docker`, run:
-
-   ```bash
-   docker compose -f docker-compose-dev.yml up postgres redis kafka elasticsearch
-   ```
-
-2. Update `k8s/00-base.yaml` `ConfigMap` to point to the Docker host instead of service names if needed (for Minikube with Docker driver, `host.docker.internal` or `host.minikube.internal` can be used depending on your setup).
-
-If you’d like fully in-cluster Postgres/Redis/Kafka/Elasticsearch, we can add those manifests later.
+Once `lms-postgres`, `lms-redis`, `lms-kafka`, and `lms-elasticsearch` are `Running`, you can proceed to deploy the microservices.
 
 ---
 
