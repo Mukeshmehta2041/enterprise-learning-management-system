@@ -29,12 +29,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          modules=("lms-common" "lms-gateway")
+          poms=("lms-common/pom.xml" "lms-gateway/pom.xml")
           while IFS= read -r service_dir; do
-            modules+=("${service_dir}")
+            poms+=("${service_dir}/pom.xml")
           done < <(find services -mindepth 1 -maxdepth 1 -type d | sort)
-          module_csv=$(IFS=, ; echo "${modules[*]}")
-          mvn -B -ntp -T1C -pl "${module_csv}" -am verify -Pcoverage,security
+
+          mvn -B -ntp -f lms-common/pom.xml install -Pcoverage,security
+
+          for pom_file in "${poms[@]}"; do
+            [ "${pom_file}" = "lms-common/pom.xml" ] && continue
+            echo "Running coverage+security verification for ${pom_file}"
+            mvn -B -ntp -f "${pom_file}" verify -Pcoverage,security
+          done
 
   build_and_publish:
     name: Build and Publish Images
@@ -97,8 +103,12 @@ jobs:
           cache: maven
 
       - name: Build Module Artifact
+        shell: bash
         run: |
-          mvn -B -ntp -pl "${{ matrix.module_path }}" -am package -DskipTests
+          if [ "${{ matrix.module_path }}" != "lms-common" ]; then
+            mvn -B -ntp -f lms-common/pom.xml install -DskipTests
+          fi
+          mvn -B -ntp -f "${{ matrix.module_path }}/pom.xml" package -DskipTests
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

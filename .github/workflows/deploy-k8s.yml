@@ -1,0 +1,116 @@
+name: Deploy Kubernetes via ArgoCD
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Container image tag to deploy"
+        required: true
+        default: "latest"
+
+permissions:
+  contents: read
+
+jobs:
+  helm_validate:
+    name: Helm Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Lint Helm Chart
+        run: |
+          helm lint infra/helm/lms-backend
+
+      - name: Render Staging Manifests
+        run: |
+          helm template lms-backend-staging infra/helm/lms-backend \
+            -f infra/helm/lms-backend/values-staging.yaml \
+            --set global.imageTag="${{ github.event.inputs.image_tag || github.ref_name }}" > /tmp/staging-rendered.yaml
+
+      - name: Render Production Manifests
+        run: |
+          helm template lms-backend-prod infra/helm/lms-backend \
+            -f infra/helm/lms-backend/values-production.yaml \
+            --set global.imageTag="${{ github.event.inputs.image_tag || github.ref_name }}" > /tmp/prod-rendered.yaml
+
+      - name: Upload Rendered Manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-rendered-manifests
+          path: |
+            /tmp/staging-rendered.yaml
+            /tmp/prod-rendered.yaml
+
+  deploy_staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    needs: helm_validate
+    env:
+      ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+      ARGOCD_APP_STAGING: ${{ secrets.ARGOCD_APP_STAGING }}
+      IMAGE_TAG: ${{ github.event.inputs.image_tag || github.ref_name }}
+    steps:
+      - name: Validate ArgoCD Staging Configuration
+        shell: bash
+        run: |
+          if [ -z "${ARGOCD_SERVER}" ] || [ -z "${ARGOCD_AUTH_TOKEN}" ] || [ -z "${ARGOCD_APP_STAGING}" ]; then
+            echo "Missing one or more required secrets: ARGOCD_SERVER, ARGOCD_AUTH_TOKEN, ARGOCD_APP_STAGING"
+            exit 1
+          fi
+
+      - name: Install ArgoCD CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSL -o /tmp/argocd "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64"
+          sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
+
+      - name: Sync Staging Application
+        shell: bash
+        run: |
+          set -euo pipefail
+          argocd app set "${ARGOCD_APP_STAGING}" --helm-set "global.imageTag=${IMAGE_TAG}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}"
+          argocd app sync "${ARGOCD_APP_STAGING}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 600
+          argocd app wait "${ARGOCD_APP_STAGING}" --health --sync --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 600
+
+  deploy_production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    needs: [helm_validate, deploy_staging]
+    env:
+      ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+      ARGOCD_APP_PRODUCTION: ${{ secrets.ARGOCD_APP_PRODUCTION }}
+      IMAGE_TAG: ${{ github.event.inputs.image_tag || github.ref_name }}
+    steps:
+      - name: Validate ArgoCD Production Configuration
+        shell: bash
+        run: |
+          if [ -z "${ARGOCD_SERVER}" ] || [ -z "${ARGOCD_AUTH_TOKEN}" ] || [ -z "${ARGOCD_APP_PRODUCTION}" ]; then
+            echo "Missing one or more required secrets: ARGOCD_SERVER, ARGOCD_AUTH_TOKEN, ARGOCD_APP_PRODUCTION"
+            exit 1
+          fi
+
+      - name: Install ArgoCD CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSL -o /tmp/argocd "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64"
+          sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
+
+      - name: Sync Production Application
+        shell: bash
+        run: |
+          set -euo pipefail
+          argocd app set "${ARGOCD_APP_PRODUCTION}" --helm-set "global.imageTag=${IMAGE_TAG}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}"
+          argocd app sync "${ARGOCD_APP_PRODUCTION}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 900
+          argocd app wait "${ARGOCD_APP_PRODUCTION}" --health --sync --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 900

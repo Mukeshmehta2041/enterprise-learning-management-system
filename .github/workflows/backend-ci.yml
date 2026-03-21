@@ -68,8 +68,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mvn -B -ntp -f lms-common/pom.xml install -Pcoverage
           while IFS= read -r pom_file; do
             [ -z "${pom_file}" ] && continue
+            [ "${pom_file}" = "lms-common/pom.xml" ] && continue
             echo "Verifying ${pom_file} with coverage profile"
             mvn -B -ntp -f "${pom_file}" verify -Pcoverage
           done <<< "${{ needs.prepare.outputs.pom_list }}"
@@ -103,8 +105,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mvn -B -ntp -f lms-common/pom.xml install -Psecurity -DskipTests
           while IFS= read -r pom_file; do
             [ -z "${pom_file}" ] && continue
+            [ "${pom_file}" = "lms-common/pom.xml" ] && continue
             echo "Running OWASP dependency check for ${pom_file}"
             mvn -B -ntp -f "${pom_file}" verify -Psecurity -DskipTests
           done <<< "${{ needs.prepare.outputs.pom_list }}"

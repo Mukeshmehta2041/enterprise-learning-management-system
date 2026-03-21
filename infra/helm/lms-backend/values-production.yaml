@@ -1,0 +1,61 @@
+global:
+  imageTag: latest
+
+components:
+  lms-gateway:
+    replicaCount: 4
+    resources:
+      requests:
+        cpu: 300m
+        memory: 384Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    hpa:
+      minReplicas: 4
+      maxReplicas: 12
+  lms-auth-service:
+    replicaCount: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 10
+  lms-course-service:
+    replicaCount: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 10
+  lms-enrollment-service:
+    replicaCount: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 10
+  lms-content-service:
+    replicaCount: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 10
+  lms-assignment-service:
+    replicaCount: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 10
+  lms-search-service:
+    replicaCount: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 10
+  lms-notification-service:
+    replicaCount: 2
+    hpa:
+      minReplicas: 2
+      maxReplicas: 8
+  lms-payment-service:
+    replicaCount: 3
+    hpa:
+      minReplicas: 3
+      maxReplicas: 10
+  lms-analytics-service:
+    replicaCount: 2
+    hpa:
+      minReplicas: 2
+      maxReplicas: 8
