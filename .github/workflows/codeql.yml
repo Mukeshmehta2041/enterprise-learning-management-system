@@ -42,12 +42,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          modules=("lms-common" "lms-gateway")
+          poms=("lms-common/pom.xml" "lms-gateway/pom.xml")
           while IFS= read -r service_dir; do
-            modules+=("${service_dir}")
+            poms+=("${service_dir}/pom.xml")
           done < <(find services -mindepth 1 -maxdepth 1 -type d | sort)
-          module_csv=$(IFS=, ; echo "${modules[*]}")
-          mvn -B -ntp -T1C -pl "${module_csv}" -am compile -DskipTests
+
+          for pom_file in "${poms[@]}"; do
+            echo "Compiling ${pom_file}"
+            mvn -B -ntp -f "${pom_file}" compile -DskipTests
+          done
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

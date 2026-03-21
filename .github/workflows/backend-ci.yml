@@ -65,8 +65,14 @@ jobs:
           cache: maven
 
       - name: Verify with Coverage Profile
+        shell: bash
         run: |
-          mvn -B -ntp -T1C -pl "${{ needs.prepare.outputs.module_csv }}" -am verify -Pcoverage
+          set -euo pipefail
+          while IFS= read -r pom_file; do
+            [ -z "${pom_file}" ] && continue
+            echo "Verifying ${pom_file} with coverage profile"
+            mvn -B -ntp -f "${pom_file}" verify -Pcoverage
+          done <<< "${{ needs.prepare.outputs.pom_list }}"
 
       - name: Upload Test Reports
         if: always()
@@ -94,8 +100,14 @@ jobs:
           cache: maven
 
       - name: Run OWASP Dependency Check
+        shell: bash
         run: |
-          mvn -B -ntp -pl "${{ needs.prepare.outputs.module_csv }}" -am verify -Psecurity -DskipTests
+          set -euo pipefail
+          while IFS= read -r pom_file; do
+            [ -z "${pom_file}" ] && continue
+            echo "Running OWASP dependency check for ${pom_file}"
+            mvn -B -ntp -f "${pom_file}" verify -Psecurity -DskipTests
+          done <<< "${{ needs.prepare.outputs.pom_list }}"
 
       - name: Upload OWASP Reports
         if: always()
@@ -142,7 +154,7 @@ jobs:
       - name: Run SonarCloud Scan
         if: steps.sonar_gate.outputs.enabled == 'true'
         run: |
-          mvn -B -ntp -pl "${{ needs.prepare.outputs.module_csv }}" -am verify -Pcoverage sonar:sonar \
+          mvn -B -ntp -f lms-common/pom.xml verify -Pcoverage sonar:sonar \
             -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
             -Dsonar.organization="${SONAR_ORGANIZATION}" \
             -Dsonar.host.url="https://sonarcloud.io" \
