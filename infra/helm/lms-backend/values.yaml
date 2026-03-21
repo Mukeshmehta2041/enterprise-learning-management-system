@@ -1,7 +1,9 @@
 global:
-  imageRegistry: ghcr.io/your-org
+  imageRegistry: ghcr.io/mukeshmehta2041
   imageTag: latest
   imagePullPolicy: IfNotPresent
+  imagePullSecrets:
+    - name: ghcr-secret
 
 serviceAccount:
   create: true
