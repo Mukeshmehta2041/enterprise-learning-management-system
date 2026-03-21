@@ -72,3 +72,37 @@ commonEnv:
     value: "your-super-secret-jwt-key-at-least-256-bits-long-to-ensure-security-and-compliance-with-jwt-standards"
   - name: JAVA_OPTS
     value: "-Xmx512m -Xms256m"
+
+# Database and Cache Configuration
+database:
+  host: postgres
+  port: 5432
+  name: lms_db
+  username: lmsuser
+  password: "postgres-secure-password-2026"
+
+redis:
+  host: redis
+  port: 6379
+  password: "redis-secure-password-2026"
+
+# Common environment variables for all services
+commonEnv:
+  - name: SPRING_PROFILE_ACTIVE
+    value: "k8s"
+  - name: SPRING_DATASOURCE_URL
+    value: "jdbc:postgresql://postgres:5432/lms_db"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "lmsuser"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "postgres-secure-password-2026"
+  - name: SPRING_REDIS_HOST
+    value: "redis"
+  - name: SPRING_REDIS_PORT
+    value: "6379"
+  - name: SPRING_REDIS_PASSWORD
+    value: "redis-secure-password-2026"
+  - name: JWT_SECRET_KEY
+    value: "your-super-secret-jwt-key-at-least-256-bits-long-to-ensure-security-and-compliance-with-jwt-standards"
+  - name: JAVA_OPTS
+    value: "-Xmx512m -Xms256m"

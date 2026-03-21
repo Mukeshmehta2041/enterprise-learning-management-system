@@ -101,3 +101,37 @@ commonEnv:
     value: "your-production-super-secret-jwt-key-at-least-256-bits-long-for-security"
   - name: JAVA_OPTS
     value: "-Xmx1g -Xms512m"
+
+# Database and Cache Configuration
+database:
+  host: postgres
+  port: 5432
+  name: lms_db_prod
+  username: lmsuser
+  password: "postgres-secure-password-prod-2026"
+
+redis:
+  host: redis
+  port: 6379
+  password: "redis-secure-password-prod-2026"
+
+# Common environment variables for all services
+commonEnv:
+  - name: SPRING_PROFILE_ACTIVE
+    value: "k8s-prod"
+  - name: SPRING_DATASOURCE_URL
+    value: "jdbc:postgresql://postgres:5432/lms_db_prod"
+  - name: SPRING_DATASOURCE_USERNAME
+    value: "lmsuser"
+  - name: SPRING_DATASOURCE_PASSWORD
+    value: "postgres-secure-password-prod-2026"
+  - name: SPRING_REDIS_HOST
+    value: "redis"
+  - name: SPRING_REDIS_PORT
+    value: "6379"
+  - name: SPRING_REDIS_PASSWORD
+    value: "redis-secure-password-prod-2026"
+  - name: JWT_SECRET_KEY
+    value: "your-production-super-secret-jwt-key-at-least-256-bits-long-for-security"
+  - name: JAVA_OPTS
+    value: "-Xmx1g -Xms512m"
