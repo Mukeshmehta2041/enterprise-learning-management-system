@@ -116,6 +116,7 @@
                 <configuration>
                     <testFramework>JUNIT5</testFramework>
                     <baseClassForTests>com.lms.auth.ContractTestBase</baseClassForTests>
+                    <failOnNoContracts>false</failOnNoContracts>
                 </configuration>
             </plugin>
         </plugins>

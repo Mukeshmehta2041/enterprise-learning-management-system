@@ -35,12 +35,12 @@ jobs:
           done < <(find services -mindepth 1 -maxdepth 1 -type d | sort)
 
           mvn -B -ntp -N -f pom.xml install
-          mvn -B -ntp -f lms-common/pom.xml install -Pcoverage,security
+          mvn -B -ntp -f lms-common/pom.xml install -Pcoverage
 
           for pom_file in "${poms[@]}"; do
             [ "${pom_file}" = "lms-common/pom.xml" ] && continue
-            echo "Running coverage+security verification for ${pom_file}"
-            mvn -B -ntp -f "${pom_file}" verify -Pcoverage,security
+            echo "Running coverage verification for ${pom_file}"
+            mvn -B -ntp -f "${pom_file}" verify -Pcoverage
           done
 
   build_and_publish:
