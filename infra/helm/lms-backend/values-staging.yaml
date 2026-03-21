@@ -1,5 +1,21 @@
 global:
   imageTag: latest
+  # Image pull credentials for DigitalOcean Kubernetes
+  imagePullSecrets:
+    - name: ghcr-secret
+  # Resource requests appropriate for 3x $6/month DO nodes (12GB total RAM)
+  resources:
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+  # Storage configuration for DigitalOcean Block Storage
+  persistence:
+    enabled: true
+    storageClassName: do-block-storage
+    size: 20Gi
 
 components:
   lms-gateway:

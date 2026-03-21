@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/learning-managment-system.git
+    repoURL: https://github.com/Mukeshmehta2041/enterprise-learning-management-system.git
     targetRevision: main
     path: infra/helm/lms-backend
     helm:
@@ -16,8 +16,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: lms-production
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - PruneLast=true

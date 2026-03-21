@@ -1,5 +1,13 @@
 global:
   imageTag: latest
+  # Image pull credentials for DigitalOcean Kubernetes
+  imagePullSecrets:
+    - name: ghcr-secret
+  # Storage configuration for DigitalOcean Block Storage
+  persistence:
+    enabled: true
+    storageClassName: do-block-storage
+    size: 50Gi
 
 components:
   lms-gateway:
