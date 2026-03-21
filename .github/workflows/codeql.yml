@@ -47,6 +47,7 @@ jobs:
             poms+=("${service_dir}/pom.xml")
           done < <(find services -mindepth 1 -maxdepth 1 -type d | sort)
 
+          mvn -B -ntp -N -f pom.xml install
           mvn -B -ntp -f lms-common/pom.xml install -DskipTests
 
           for pom_file in "${poms[@]}"; do

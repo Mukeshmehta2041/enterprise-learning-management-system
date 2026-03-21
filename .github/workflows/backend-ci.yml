@@ -68,6 +68,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mvn -B -ntp -N -f pom.xml install
           mvn -B -ntp -f lms-common/pom.xml install -Pcoverage
           while IFS= read -r pom_file; do
             [ -z "${pom_file}" ] && continue
@@ -105,6 +106,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mvn -B -ntp -N -f pom.xml install
           mvn -B -ntp -f lms-common/pom.xml install -Psecurity -DskipTests
           while IFS= read -r pom_file; do
             [ -z "${pom_file}" ] && continue
@@ -158,6 +160,7 @@ jobs:
       - name: Run SonarCloud Scan
         if: steps.sonar_gate.outputs.enabled == 'true'
         run: |
+          mvn -B -ntp -N -f pom.xml install
           mvn -B -ntp -f lms-common/pom.xml verify -Pcoverage sonar:sonar \
             -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
             -Dsonar.organization="${SONAR_ORGANIZATION}" \
