@@ -17,6 +17,6 @@ spec:
       port: {{ $component.servicePort }}
       targetPort: {{ $component.containerPort }}
       protocol: TCP
-  type: ClusterIP
+  type: {{ $component.serviceType | default "ClusterIP" }}
 {{- end }}
 {{- end }}

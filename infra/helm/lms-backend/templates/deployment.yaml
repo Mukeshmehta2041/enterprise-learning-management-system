@@ -10,6 +10,11 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
 spec:
   replicas: {{ $component.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ $name }}
@@ -21,12 +26,46 @@ spec:
         app.kubernetes.io/instance: {{ $.Release.Name }}
     spec:
       serviceAccountName: {{ include "lms-backend.serviceAccountName" $ }}
+      {{- if $.Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml $.Values.global.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: {{ $name }}
           image: "{{ $.Values.global.imageRegistry }}/{{ $component.imageName }}:{{ $.Values.global.imageTag }}"
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: {{ $component.containerPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "lms-backend.fullname" $ }}-config
+            - secretRef:
+                name: {{ include "lms-backend.fullname" $ }}-secret
+          {{- if $component.env }}
+          env:
+            {{- range $envName, $envValue := $component.env }}
+            - name: {{ $envName }}
+              value: {{ $envValue | quote }}
+            {{- end }}
+          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ $component.containerPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 18
           readinessProbe:
             httpGet:
               path: /actuator/health

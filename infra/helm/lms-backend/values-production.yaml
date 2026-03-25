@@ -1,13 +1,76 @@
 global:
   imageTag: latest
-  # Image pull credentials for DigitalOcean Kubernetes
   imagePullSecrets:
     - name: ghcr-secret
-  # Storage configuration for DigitalOcean Block Storage
-  persistence:
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.lms.example.com
+  tls:
     enabled: true
+    secretName: lms-production-tls
+
+config:
+  SPRING_PROFILES_ACTIVE: k8s-prod
+  CORS_ALLOWED_ORIGINS: https://app.lms.example.com
+
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: lms-production-secret-store
+    kind: ClusterSecretStore
+  data:
+    - secretKey: SPRING_DATASOURCE_USERNAME
+      remoteKey: /lms/production/common
+      property: SPRING_DATASOURCE_USERNAME
+    - secretKey: SPRING_DATASOURCE_PASSWORD
+      remoteKey: /lms/production/common
+      property: SPRING_DATASOURCE_PASSWORD
+    - secretKey: JWT_SECRET
+      remoteKey: /lms/production/common
+      property: JWT_SECRET
+    - secretKey: LMS_STORAGE_ACCESS_KEY
+      remoteKey: /lms/production/common
+      property: LMS_STORAGE_ACCESS_KEY
+    - secretKey: LMS_STORAGE_SECRET_KEY
+      remoteKey: /lms/production/common
+      property: LMS_STORAGE_SECRET_KEY
+    - secretKey: MAILTRAP_USERNAME
+      remoteKey: /lms/production/common
+      property: MAILTRAP_USERNAME
+    - secretKey: MAILTRAP_PASSWORD
+      remoteKey: /lms/production/common
+      property: MAILTRAP_PASSWORD
+
+secrets:
+  SPRING_DATASOURCE_USERNAME: lmsuser
+  SPRING_DATASOURCE_PASSWORD: postgres-secure-password-prod-2026
+  JWT_SECRET: production-jwt-secret-change-me
+  LMS_STORAGE_ACCESS_KEY: minioadmin
+  LMS_STORAGE_SECRET_KEY: minioadmin
+  MAILTRAP_USERNAME: ""
+  MAILTRAP_PASSWORD: ""
+
+dependencies:
+  postgres:
+    dbName: lms_db_prod
+    username: lmsuser
+    password: postgres-secure-password-prod-2026
+    storageSize: 50Gi
     storageClassName: do-block-storage
-    size: 50Gi
+  redis:
+    storageSize: 10Gi
+    storageClassName: do-block-storage
+  kafka:
+    storageSize: 20Gi
+    storageClassName: do-block-storage
+  elasticsearch:
+    storageSize: 50Gi
+    storageClassName: do-block-storage
+  minio:
+    storageSize: 50Gi
+    storageClassName: do-block-storage
 
 components:
   lms-gateway:
@@ -68,70 +131,12 @@ components:
       minReplicas: 2
       maxReplicas: 8
 
-# Database and Cache Configuration
-database:
-  host: postgres
-  port: 5432
-  name: lms_db_prod
-  username: lmsuser
-  password: "postgres-secure-password-prod-2026"
-
-redis:
-  host: redis
-  port: 6379
-  password: "redis-secure-password-prod-2026"
-
-# Common environment variables for all services
-commonEnv:
-  - name: SPRING_PROFILE_ACTIVE
-    value: "k8s-prod"
-  - name: SPRING_DATASOURCE_URL
-    value: "jdbc:postgresql://postgres:5432/lms_db_prod"
-  - name: SPRING_DATASOURCE_USERNAME
-    value: "lmsuser"
-  - name: SPRING_DATASOURCE_PASSWORD
-    value: "postgres-secure-password-prod-2026"
-  - name: SPRING_REDIS_HOST
-    value: "redis"
-  - name: SPRING_REDIS_PORT
-    value: "6379"
-  - name: SPRING_REDIS_PASSWORD
-    value: "redis-secure-password-prod-2026"
-  - name: JWT_SECRET_KEY
-    value: "your-production-super-secret-jwt-key-at-least-256-bits-long-for-security"
-  - name: JAVA_OPTS
-    value: "-Xmx1g -Xms512m"
-
-# Database and Cache Configuration
-database:
-  host: postgres
-  port: 5432
-  name: lms_db_prod
-  username: lmsuser
-  password: "postgres-secure-password-prod-2026"
-
-redis:
-  host: redis
-  port: 6379
-  password: "redis-secure-password-prod-2026"
-
-# Common environment variables for all services
-commonEnv:
-  - name: SPRING_PROFILE_ACTIVE
-    value: "k8s-prod"
-  - name: SPRING_DATASOURCE_URL
-    value: "jdbc:postgresql://postgres:5432/lms_db_prod"
-  - name: SPRING_DATASOURCE_USERNAME
-    value: "lmsuser"
-  - name: SPRING_DATASOURCE_PASSWORD
-    value: "postgres-secure-password-prod-2026"
-  - name: SPRING_REDIS_HOST
-    value: "redis"
-  - name: SPRING_REDIS_PORT
-    value: "6379"
-  - name: SPRING_REDIS_PASSWORD
-    value: "redis-secure-password-prod-2026"
-  - name: JWT_SECRET_KEY
-    value: "your-production-super-secret-jwt-key-at-least-256-bits-long-for-security"
-  - name: JAVA_OPTS
-    value: "-Xmx1g -Xms512m"
+frontend:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    host: app.lms.example.com
+    tls:
+      enabled: true
+      secretName: lms-frontend-production-tls

@@ -54,43 +54,43 @@ jobs:
         include:
           - service: lms-gateway
             dockerfile: lms-gateway/Dockerfile
-            context: lms-gateway
+            context: .
             module_path: lms-gateway
           - service: lms-auth-service
             dockerfile: services/lms-auth-service/Dockerfile
-            context: services/lms-auth-service
+            context: .
             module_path: services/lms-auth-service
           - service: lms-course-service
             dockerfile: services/lms-course-service/Dockerfile
-            context: services/lms-course-service
+            context: .
             module_path: services/lms-course-service
           - service: lms-enrollment-service
             dockerfile: services/lms-enrollment-service/Dockerfile
-            context: services/lms-enrollment-service
+            context: .
             module_path: services/lms-enrollment-service
           - service: lms-content-service
             dockerfile: services/lms-content-service/Dockerfile
-            context: services/lms-content-service
+            context: .
             module_path: services/lms-content-service
           - service: lms-assignment-service
             dockerfile: services/lms-assignment-service/Dockerfile
-            context: services/lms-assignment-service
+            context: .
             module_path: services/lms-assignment-service
           - service: lms-search-service
             dockerfile: services/lms-search-service/Dockerfile
-            context: services/lms-search-service
+            context: .
             module_path: services/lms-search-service
           - service: lms-notification-service
             dockerfile: services/lms-notification-service/Dockerfile
-            context: services/lms-notification-service
+            context: .
             module_path: services/lms-notification-service
           - service: lms-payment-service
             dockerfile: services/lms-payment-service/Dockerfile
-            context: services/lms-payment-service
+            context: .
             module_path: services/lms-payment-service
           - service: lms-analytics-service
             dockerfile: services/lms-analytics-service/Dockerfile
-            context: services/lms-analytics-service
+            context: .
             module_path: services/lms-analytics-service
 
     steps:

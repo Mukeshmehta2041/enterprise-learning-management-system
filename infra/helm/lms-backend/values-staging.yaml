@@ -1,21 +1,76 @@
 global:
   imageTag: latest
-  # Image pull credentials for DigitalOcean Kubernetes
   imagePullSecrets:
     - name: ghcr-secret
-  # Resource requests appropriate for 3x $6/month DO nodes (12GB total RAM)
-  resources:
-    limits:
-      memory: "1Gi"
-      cpu: "500m"
-    requests:
-      memory: "512Mi"
-      cpu: "250m"
-  # Storage configuration for DigitalOcean Block Storage
-  persistence:
-    enabled: true
+
+ingress:
+  enabled: true
+  className: nginx
+  host: staging.lms.example.com
+  tls:
+    enabled: false
+    secretName: ""
+
+config:
+  SPRING_PROFILES_ACTIVE: k8s-staging
+  CORS_ALLOWED_ORIGINS: https://staging.lms.example.com
+
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: lms-staging-secret-store
+    kind: ClusterSecretStore
+  data:
+    - secretKey: SPRING_DATASOURCE_USERNAME
+      remoteKey: /lms/staging/common
+      property: SPRING_DATASOURCE_USERNAME
+    - secretKey: SPRING_DATASOURCE_PASSWORD
+      remoteKey: /lms/staging/common
+      property: SPRING_DATASOURCE_PASSWORD
+    - secretKey: JWT_SECRET
+      remoteKey: /lms/staging/common
+      property: JWT_SECRET
+    - secretKey: LMS_STORAGE_ACCESS_KEY
+      remoteKey: /lms/staging/common
+      property: LMS_STORAGE_ACCESS_KEY
+    - secretKey: LMS_STORAGE_SECRET_KEY
+      remoteKey: /lms/staging/common
+      property: LMS_STORAGE_SECRET_KEY
+    - secretKey: MAILTRAP_USERNAME
+      remoteKey: /lms/staging/common
+      property: MAILTRAP_USERNAME
+    - secretKey: MAILTRAP_PASSWORD
+      remoteKey: /lms/staging/common
+      property: MAILTRAP_PASSWORD
+
+secrets:
+  SPRING_DATASOURCE_USERNAME: lmsuser
+  SPRING_DATASOURCE_PASSWORD: postgres-secure-password-2026
+  JWT_SECRET: staging-jwt-secret-change-me
+  LMS_STORAGE_ACCESS_KEY: minioadmin
+  LMS_STORAGE_SECRET_KEY: minioadmin
+  MAILTRAP_USERNAME: ""
+  MAILTRAP_PASSWORD: ""
+
+dependencies:
+  postgres:
+    dbName: lms_db
+    username: lmsuser
+    password: postgres-secure-password-2026
+    storageSize: 20Gi
     storageClassName: do-block-storage
-    size: 20Gi
+  redis:
+    storageSize: 5Gi
+    storageClassName: do-block-storage
+  kafka:
+    storageSize: 10Gi
+    storageClassName: do-block-storage
+  elasticsearch:
+    storageSize: 20Gi
+    storageClassName: do-block-storage
+  minio:
+    storageSize: 20Gi
+    storageClassName: do-block-storage
 
 components:
   lms-gateway:
@@ -39,70 +94,12 @@ components:
   lms-analytics-service:
     replicaCount: 2
 
-# Database and Cache Configuration
-database:
-  host: postgres
-  port: 5432
-  name: lms_db
-  username: lmsuser
-  password: "postgres-secure-password-2026"
-
-redis:
-  host: redis
-  port: 6379
-  password: "redis-secure-password-2026"
-
-# Common environment variables for all services
-commonEnv:
-  - name: SPRING_PROFILE_ACTIVE
-    value: "k8s"
-  - name: SPRING_DATASOURCE_URL
-    value: "jdbc:postgresql://postgres:5432/lms_db"
-  - name: SPRING_DATASOURCE_USERNAME
-    value: "lmsuser"
-  - name: SPRING_DATASOURCE_PASSWORD
-    value: "postgres-secure-password-2026"
-  - name: SPRING_REDIS_HOST
-    value: "redis"
-  - name: SPRING_REDIS_PORT
-    value: "6379"
-  - name: SPRING_REDIS_PASSWORD
-    value: "redis-secure-password-2026"
-  - name: JWT_SECRET_KEY
-    value: "your-super-secret-jwt-key-at-least-256-bits-long-to-ensure-security-and-compliance-with-jwt-standards"
-  - name: JAVA_OPTS
-    value: "-Xmx512m -Xms256m"
-
-# Database and Cache Configuration
-database:
-  host: postgres
-  port: 5432
-  name: lms_db
-  username: lmsuser
-  password: "postgres-secure-password-2026"
-
-redis:
-  host: redis
-  port: 6379
-  password: "redis-secure-password-2026"
-
-# Common environment variables for all services
-commonEnv:
-  - name: SPRING_PROFILE_ACTIVE
-    value: "k8s"
-  - name: SPRING_DATASOURCE_URL
-    value: "jdbc:postgresql://postgres:5432/lms_db"
-  - name: SPRING_DATASOURCE_USERNAME
-    value: "lmsuser"
-  - name: SPRING_DATASOURCE_PASSWORD
-    value: "postgres-secure-password-2026"
-  - name: SPRING_REDIS_HOST
-    value: "redis"
-  - name: SPRING_REDIS_PORT
-    value: "6379"
-  - name: SPRING_REDIS_PASSWORD
-    value: "redis-secure-password-2026"
-  - name: JWT_SECRET_KEY
-    value: "your-super-secret-jwt-key-at-least-256-bits-long-to-ensure-security-and-compliance-with-jwt-standards"
-  - name: JAVA_OPTS
-    value: "-Xmx512m -Xms256m"
+frontend:
+  enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    host: staging-app.lms.example.com
+    tls:
+      enabled: false
+      secretName: ""
