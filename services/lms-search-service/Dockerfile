@@ -1,6 +1,7 @@
 FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /workspace
 COPY . .
+RUN mvn -B -ntp -N -f pom.xml install
 RUN mvn -B -ntp -f lms-common/pom.xml install -DskipTests
 RUN mvn -B -ntp -f services/lms-search-service/pom.xml package -DskipTests
 
