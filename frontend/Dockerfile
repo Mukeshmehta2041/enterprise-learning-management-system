@@ -1,10 +1,8 @@
 # Build stage
-FROM node:20-alpine AS build
+FROM node:20-bookworm-slim AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci || npm install
-# Fix for Rollup/Vite/Tailwind native binary issues in CI/alpine
-RUN npm install @rollup/rollup-linux-musl-x64 lightningcss-linux-musl-x64 @tailwindcss/oxide-linux-musl-x64
 COPY . .
 RUN npm run build
 
