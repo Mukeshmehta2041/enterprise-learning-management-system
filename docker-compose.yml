@@ -1,0 +1,417 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lms-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      POSTGRES_DB: ${POSTGRES_DB:-lms}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lms}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - lms-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: lms-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - lms-network
+
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: lms-kafka
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/bitnami/kafka
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    networks:
+      - lms-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.2
+    container_name: lms-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'wget -q -O - http://localhost:9200/_cluster/health | grep -E ''"status":"(yellow|green)"'' >/dev/null',
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+    networks:
+      - lms-network
+
+  minio:
+    image: minio/minio:RELEASE.2026-01-14T05-07-30Z
+    container_name: lms-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "-",
+          "http://localhost:9000/minio/health/live",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - lms-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: lms-jaeger
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+      - "4317:4317"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:16686/"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - lms-network
+
+  lms-gateway:
+    build:
+      context: .
+      dockerfile: lms-gateway/Dockerfile
+    container_name: lms-gateway
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CORS_ALLOWED_ORIGINS: http://localhost:3001
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      AUTH_SERVICE_URL: http://lms-auth-service:8082
+      COURSE_SERVICE_URL: http://lms-course-service:8083
+      ENROLLMENT_SERVICE_URL: http://lms-enrollment-service:8084
+      CONTENT_SERVICE_URL: http://lms-content-service:8085
+      ASSIGNMENT_SERVICE_URL: http://lms-assignment-service:8087
+      SEARCH_SERVICE_URL: http://lms-search-service:8086
+      NOTIFICATION_SERVICE_URL: http://lms-notification-service:8088
+      PAYMENT_SERVICE_URL: http://lms-payment-service:8089
+      ANALYTICS_SERVICE_URL: http://lms-analytics-service:8090
+      USER_SERVICE_URL: http://lms-user-service:8081
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-auth-service:
+    build:
+      context: .
+      dockerfile: services/lms-auth-service/Dockerfile
+    container_name: lms-auth-service
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-prod}
+      SPRING_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      USER_SERVICE_URL: http://lms-user-service:8081
+    ports:
+      - "8082:8082"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-course-service:
+    build:
+      context: .
+      dockerfile: services/lms-course-service/Dockerfile
+    container_name: lms-course-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_REPLICA_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lms}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      SPRING_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-enrollment-service:
+    build:
+      context: .
+      dockerfile: services/lms-enrollment-service/Dockerfile
+    container_name: lms-enrollment-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lms}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-content-service:
+    build:
+      context: .
+      dockerfile: services/lms-content-service/Dockerfile
+    container_name: lms-content-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lms}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      LMS_STORAGE_ENDPOINT: http://minio:9000
+      LMS_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      LMS_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-search-service:
+    build:
+      context: .
+      dockerfile: services/lms-search-service/Dockerfile
+    container_name: lms-search-service
+    environment:
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8086:8086"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-assignment-service:
+    build:
+      context: .
+      dockerfile: services/lms-assignment-service/Dockerfile
+    container_name: lms-assignment-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lms}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-notification-service:
+    build:
+      context: .
+      dockerfile: services/lms-notification-service/Dockerfile
+    container_name: lms-notification-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lms}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      SPRING_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+      MAILTRAP_HOST: ${MAILTRAP_HOST:-sandbox.smtp.mailtrap.io}
+      MAILTRAP_PORT: ${MAILTRAP_PORT:-2525}
+      MAILTRAP_USERNAME: ${MAILTRAP_USERNAME:-}
+      MAILTRAP_PASSWORD: ${MAILTRAP_PASSWORD:-}
+    ports:
+      - "8088:8088"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-payment-service:
+    build:
+      context: .
+      dockerfile: services/lms-payment-service/Dockerfile
+    container_name: lms-payment-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lms}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8089:8089"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  lms-analytics-service:
+    build:
+      context: .
+      dockerfile: services/lms-analytics-service/Dockerfile
+    container_name: lms-analytics-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-lms}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-lms}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-lms}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      jaeger:
+        condition: service_healthy
+    networks:
+      - lms-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: lms-frontend
+    command: npm run dev -- --host 0.0.0.0 --port 3001
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      lms-gateway:
+        condition: service_started
+    networks:
+      - lms-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  elasticsearch_data:
+  minio_data:
+  frontend_node_modules:
+
+networks:
+  lms-network:
+    driver: bridge

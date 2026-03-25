@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+**/target
+**/node_modules
+**/dist
+**/build
+**/.DS_Store
+**/*.log
+infra
+mobile
+frontend/storybook-static
+frontend/dev-dist

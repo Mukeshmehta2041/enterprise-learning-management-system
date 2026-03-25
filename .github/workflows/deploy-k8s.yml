@@ -74,6 +74,13 @@ jobs:
           curl -sSL -o /tmp/argocd "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64"
           sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
 
+      - name: Install jq
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y jq
+
       - name: Sync Staging Application
         shell: bash
         run: |
@@ -81,6 +88,31 @@ jobs:
           argocd app set "${ARGOCD_APP_STAGING}" --helm-set "global.imageTag=${IMAGE_TAG}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}"
           argocd app sync "${ARGOCD_APP_STAGING}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 600
           argocd app wait "${ARGOCD_APP_STAGING}" --health --sync --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 600
+
+      - name: Verify Staging Rollout State
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_json=$(argocd app get "${ARGOCD_APP_STAGING}" --refresh --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" -o json)
+          sync_status=$(echo "${app_json}" | jq -r '.status.sync.status')
+          health_status=$(echo "${app_json}" | jq -r '.status.health.status')
+
+          echo "Staging sync status: ${sync_status}"
+          echo "Staging health status: ${health_status}"
+
+          if [ "${sync_status}" != "Synced" ] || [ "${health_status}" != "Healthy" ]; then
+            echo "::error::Staging rollout verification failed"
+            exit 1
+          fi
+
+      - name: Staging Diagnostics On Failure
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          argocd app get "${ARGOCD_APP_STAGING}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" || true
+          argocd app resources "${ARGOCD_APP_STAGING}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" || true
+          argocd app history "${ARGOCD_APP_STAGING}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" || true
 
   deploy_production:
     name: Deploy Production
@@ -107,6 +139,13 @@ jobs:
           curl -sSL -o /tmp/argocd "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64"
           sudo install -m 555 /tmp/argocd /usr/local/bin/argocd
 
+      - name: Install jq
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y jq
+
       - name: Sync Production Application
         id: prod_sync
         shell: bash
@@ -116,6 +155,31 @@ jobs:
           argocd app sync "${ARGOCD_APP_PRODUCTION}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 900
           argocd app wait "${ARGOCD_APP_PRODUCTION}" --health --sync --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" --timeout 900
           echo "deployment_timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify Production Rollout State
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_json=$(argocd app get "${ARGOCD_APP_PRODUCTION}" --refresh --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" -o json)
+          sync_status=$(echo "${app_json}" | jq -r '.status.sync.status')
+          health_status=$(echo "${app_json}" | jq -r '.status.health.status')
+
+          echo "Production sync status: ${sync_status}"
+          echo "Production health status: ${health_status}"
+
+          if [ "${sync_status}" != "Synced" ] || [ "${health_status}" != "Healthy" ]; then
+            echo "::error::Production rollout verification failed"
+            exit 1
+          fi
+
+      - name: Production Diagnostics On Failure
+        if: failure()
+        shell: bash
+        run: |
+          set -euo pipefail
+          argocd app get "${ARGOCD_APP_PRODUCTION}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" || true
+          argocd app resources "${ARGOCD_APP_PRODUCTION}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" || true
+          argocd app history "${ARGOCD_APP_PRODUCTION}" --grpc-web --auth-token "${ARGOCD_AUTH_TOKEN}" --server "${ARGOCD_SERVER}" || true
 
   health_check:
     name: Post-Deployment Health & SLO Gate
@@ -215,7 +279,7 @@ jobs:
           echo "Verifying readiness/liveness probe responses..."
 
           # Get a gateway pod and check its actuator health endpoint
-          gateway_pod=$(kubectl get pod -n lms-production -l app=lms-gateway -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+          gateway_pod=$(kubectl get pod -n lms-production -l app.kubernetes.io/name=lms-gateway -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
           if [ -z "${gateway_pod}" ]; then
             echo "::warning::No gateway pod found for health probe verification"
           else
@@ -282,7 +346,7 @@ jobs:
           kubectl get events -n lms-production --sort-by='.lastTimestamp' | tail -20 || true
           echo ""
           echo "Pod Logs (lms-gateway):"
-          kubectl logs -n lms-production -l app=lms-gateway --tail=50 --all-containers=true 2>/dev/null | head -50 || true
+          kubectl logs -n lms-production -l app.kubernetes.io/name=lms-gateway --tail=50 --all-containers=true 2>/dev/null | head -50 || true
 
   smoke_tests:
     name: Post-Deployment Smoke Tests
@@ -307,6 +371,13 @@ jobs:
           set -euo pipefail
           curl -sSL -o /tmp/kubectl "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           sudo install -m 555 /tmp/kubectl /usr/local/bin/kubectl
+
+      - name: Install bc
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y bc
 
       - name: Setup Port Forwarding
         shell: bash
@@ -426,6 +497,14 @@ jobs:
             exit 0
           fi
           echo "enabled=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Install bc
+        if: steps.prom_check.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y bc
 
       - name: Query Error Rate SLO
         if: steps.prom_check.outputs.enabled == 'true'

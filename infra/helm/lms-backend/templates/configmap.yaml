@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "lms-backend.fullname" . }}-config
+  labels:
+    app.kubernetes.io/name: {{ include "lms-backend.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+{{- range $name, $value := .Values.config }}
+  {{ $name }}: {{ $value | quote }}
+{{- end }}
