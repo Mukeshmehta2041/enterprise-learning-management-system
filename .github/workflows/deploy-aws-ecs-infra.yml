@@ -1,0 +1,204 @@
+name: Deploy LMS Infrastructure (DB, Redis, Kafka, Elastic)
+
+on:
+  workflow_dispatch: # Manual trigger to spin up / spin down databases
+
+env:
+  AWS_REGION: us-east-1                  
+  ECS_CLUSTER: lms-fargate-cluster    
+  NAMESPACE: lms.internal
+
+jobs:
+  deploy_infra:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Initialize AWS Cloud Map (Service Discovery)
+        run: |
+          NS_ID=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='${{ env.NAMESPACE }}'].Id" --output text 2>/dev/null)
+          if [ -z "$NS_ID" ] || [ "$NS_ID" == "None" ]; then
+            VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --region ${{ env.AWS_REGION }} --query 'Vpcs[0].VpcId' --output text)
+            aws servicediscovery create-private-dns-namespace --name ${{ env.NAMESPACE }} --vpc $VPC_ID
+            echo "Waiting for namespace creation..."
+            sleep 30
+          fi
+
+
+      - name: Deploy POSTGRES 
+        run: |
+          ECS_SERVICE="lms-postgres-service"
+          CONTAINER_NAME="lms-postgres-service"
+          TASK_DEF=".aws/ecs-task-def-postgres.json"
+          
+          # Replace Account ID
+          sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' $TASK_DEF
+          
+          # Log group
+          LOG_GROUP="/ecs/$CONTAINER_NAME"
+          aws logs create-log-group --log-group-name $LOG_GROUP --region ${{ env.AWS_REGION }} >/dev/null 2>&1 || true
+          aws logs put-retention-policy --log-group-name $LOG_GROUP --retention-in-days 7 --region ${{ env.AWS_REGION }} || true
+          
+          SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services $ECS_SERVICE --region ${{ env.AWS_REGION }} --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+          
+          if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
+            VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --region ${{ env.AWS_REGION }} --query 'Vpcs[0].VpcId' --output text)
+            SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --region ${{ env.AWS_REGION }} --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
+            SG=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID Name=group-name,Values=default --region ${{ env.AWS_REGION }} --query 'SecurityGroups[0].GroupId' --output text)
+            
+            NS_ID=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='${{ env.NAMESPACE }}'].Id" --output text)
+            
+            # Create Discovery Service
+            SVC_ID=$(aws servicediscovery create-service --name postgres --namespace-id $NS_ID --dns-config "NamespaceId=$NS_ID,RoutingPolicy=MULTIVALUE,DnsRecords=[{Type=A,TTL=60}]" --query 'Service.Id' --output text)
+            
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            
+            aws ecs create-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service-name $ECS_SERVICE \
+              --task-definition $TASK_DEF_ARN \
+              --desired-count 1 \
+              --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 \
+              --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=ENABLED}" \
+              --service-registries registryArn=$(aws servicediscovery get-service --id $SVC_ID --query 'Service.Arn' --output text) \
+              --region ${{ env.AWS_REGION }} >/dev/null
+          else
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service $ECS_SERVICE --task-definition $TASK_DEF_ARN --region ${{ env.AWS_REGION }} >/dev/null
+          fi
+
+      - name: Deploy REDIS 
+        run: |
+          ECS_SERVICE="lms-redis-service"
+          CONTAINER_NAME="lms-redis-service"
+          TASK_DEF=".aws/ecs-task-def-redis.json"
+          
+          # Replace Account ID
+          sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' $TASK_DEF
+          
+          # Log group
+          LOG_GROUP="/ecs/$CONTAINER_NAME"
+          aws logs create-log-group --log-group-name $LOG_GROUP --region ${{ env.AWS_REGION }} >/dev/null 2>&1 || true
+          aws logs put-retention-policy --log-group-name $LOG_GROUP --retention-in-days 7 --region ${{ env.AWS_REGION }} || true
+          
+          SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services $ECS_SERVICE --region ${{ env.AWS_REGION }} --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+          
+          if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
+            VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --region ${{ env.AWS_REGION }} --query 'Vpcs[0].VpcId' --output text)
+            SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --region ${{ env.AWS_REGION }} --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
+            SG=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID Name=group-name,Values=default --region ${{ env.AWS_REGION }} --query 'SecurityGroups[0].GroupId' --output text)
+            
+            NS_ID=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='${{ env.NAMESPACE }}'].Id" --output text)
+            
+            # Create Discovery Service
+            SVC_ID=$(aws servicediscovery create-service --name redis --namespace-id $NS_ID --dns-config "NamespaceId=$NS_ID,RoutingPolicy=MULTIVALUE,DnsRecords=[{Type=A,TTL=60}]" --query 'Service.Id' --output text)
+            
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            
+            aws ecs create-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service-name $ECS_SERVICE \
+              --task-definition $TASK_DEF_ARN \
+              --desired-count 1 \
+              --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 \
+              --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=ENABLED}" \
+              --service-registries registryArn=$(aws servicediscovery get-service --id $SVC_ID --query 'Service.Arn' --output text) \
+              --region ${{ env.AWS_REGION }} >/dev/null
+          else
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service $ECS_SERVICE --task-definition $TASK_DEF_ARN --region ${{ env.AWS_REGION }} >/dev/null
+          fi
+
+      - name: Deploy KAFKA 
+        run: |
+          ECS_SERVICE="lms-kafka-service"
+          CONTAINER_NAME="lms-kafka-service"
+          TASK_DEF=".aws/ecs-task-def-kafka.json"
+          
+          # Replace Account ID
+          sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' $TASK_DEF
+          
+          # Log group
+          LOG_GROUP="/ecs/$CONTAINER_NAME"
+          aws logs create-log-group --log-group-name $LOG_GROUP --region ${{ env.AWS_REGION }} >/dev/null 2>&1 || true
+          aws logs put-retention-policy --log-group-name $LOG_GROUP --retention-in-days 7 --region ${{ env.AWS_REGION }} || true
+          
+          SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services $ECS_SERVICE --region ${{ env.AWS_REGION }} --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+          
+          if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
+            VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --region ${{ env.AWS_REGION }} --query 'Vpcs[0].VpcId' --output text)
+            SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --region ${{ env.AWS_REGION }} --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
+            SG=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID Name=group-name,Values=default --region ${{ env.AWS_REGION }} --query 'SecurityGroups[0].GroupId' --output text)
+            
+            NS_ID=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='${{ env.NAMESPACE }}'].Id" --output text)
+            
+            # Create Discovery Service
+            SVC_ID=$(aws servicediscovery create-service --name kafka --namespace-id $NS_ID --dns-config "NamespaceId=$NS_ID,RoutingPolicy=MULTIVALUE,DnsRecords=[{Type=A,TTL=60}]" --query 'Service.Id' --output text)
+            
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            
+            aws ecs create-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service-name $ECS_SERVICE \
+              --task-definition $TASK_DEF_ARN \
+              --desired-count 1 \
+              --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 \
+              --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=ENABLED}" \
+              --service-registries registryArn=$(aws servicediscovery get-service --id $SVC_ID --query 'Service.Arn' --output text) \
+              --region ${{ env.AWS_REGION }} >/dev/null
+          else
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service $ECS_SERVICE --task-definition $TASK_DEF_ARN --region ${{ env.AWS_REGION }} >/dev/null
+          fi
+
+      - name: Deploy ELASTIC 
+        run: |
+          ECS_SERVICE="lms-elastic-service"
+          CONTAINER_NAME="lms-elastic-service"
+          TASK_DEF=".aws/ecs-task-def-elastic.json"
+          
+          # Replace Account ID
+          sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' $TASK_DEF
+          
+          # Log group
+          LOG_GROUP="/ecs/$CONTAINER_NAME"
+          aws logs create-log-group --log-group-name $LOG_GROUP --region ${{ env.AWS_REGION }} >/dev/null 2>&1 || true
+          aws logs put-retention-policy --log-group-name $LOG_GROUP --retention-in-days 7 --region ${{ env.AWS_REGION }} || true
+          
+          SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services $ECS_SERVICE --region ${{ env.AWS_REGION }} --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+          
+          if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
+            VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --region ${{ env.AWS_REGION }} --query 'Vpcs[0].VpcId' --output text)
+            SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --region ${{ env.AWS_REGION }} --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
+            SG=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID Name=group-name,Values=default --region ${{ env.AWS_REGION }} --query 'SecurityGroups[0].GroupId' --output text)
+            
+            NS_ID=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='${{ env.NAMESPACE }}'].Id" --output text)
+            
+            # Create Discovery Service
+            SVC_ID=$(aws servicediscovery create-service --name elastic --namespace-id $NS_ID --dns-config "NamespaceId=$NS_ID,RoutingPolicy=MULTIVALUE,DnsRecords=[{Type=A,TTL=60}]" --query 'Service.Id' --output text)
+            
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            
+            aws ecs create-service \
+              --cluster ${{ env.ECS_CLUSTER }} \
+              --service-name $ECS_SERVICE \
+              --task-definition $TASK_DEF_ARN \
+              --desired-count 1 \
+              --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 \
+              --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=ENABLED}" \
+              --service-registries registryArn=$(aws servicediscovery get-service --id $SVC_ID --query 'Service.Arn' --output text) \
+              --region ${{ env.AWS_REGION }} >/dev/null
+          else
+            TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service $ECS_SERVICE --task-definition $TASK_DEF_ARN --region ${{ env.AWS_REGION }} >/dev/null
+          fi
