@@ -1,0 +1,63 @@
+name: Build and Push Docker Images to AWS ECR
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual trigger from GH UI
+
+env:
+  AWS_REGION: ap-south-1 # TODO: Change to your AWS region
+  # Ensure the following secrets are added in your GitHub Repository Settings -> Secrets and variables -> Actions
+  # AWS_ACCESS_KEY_ID
+  # AWS_SECRET_ACCESS_KEY
+
+jobs:
+  build-and-deploy:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    
+    # We use sequential build rather than parallel matrix to maximize layer caching
+    # and to reduce the overall GitHub runner minutes (lower cost).
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build Global Services (JARs)
+        run: |
+          chmod +x ./build-all-services.sh
+          ./build-all-services.sh
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      - name: Build and Push Docker Images
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}/
+          TAG: ${{ github.sha }}      # Generates a unique image tag per commit
+          PUSH_IMAGES: true           # Instructs our bash script to push the images
+          CI: true                    # We rely on this in the build-docker script to set caching
+          DOCKER_BUILDKIT: 1          # Required for modern docker build cache
+        run: |
+          chmod +x ./build-docker-images.sh
+          ./build-docker-images.sh

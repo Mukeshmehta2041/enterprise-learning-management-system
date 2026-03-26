@@ -54,11 +54,25 @@ for service_path in "${services[@]}"; do
     echo ""
     echo "📦 Building Docker image: $image_name"
     
+    CACHE_ARGS=""
+    if [ "$CI" = "true" ]; then
+        CACHE_ARGS="--build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $image_name"
+    fi
+    
     if docker build -f "$service_name/Dockerfile" \
         -t "$image_name" \
         --build-arg JAR_FILE="$service_name/target/*.jar" \
-        . ; then
+        $CACHE_ARGS . ; then
         echo "✅ Built: $image_name"
+        
+        if [ "$PUSH_IMAGES" = "true" ]; then
+            echo "🚀 Pushing to registry: $image_name"
+            if ! docker push "$image_name"; then
+                echo "❌ Failed to push: $image_name"
+                exit 1
+            fi
+            echo "✅ Pushed successfully: $image_name"
+        fi
     else
         echo "❌ Failed to build: $image_name"
         exit 1
