@@ -1,0 +1,83 @@
+name: Deploy LMS Gateway to Amazon ECS Fargate
+
+on:
+  workflow_dispatch: # Manual trigger for testing initial deployment safely
+
+env:
+  AWS_REGION: us-east-1                  
+  ECR_REPOSITORY: lms-gateway          
+  ECS_SERVICE: lms-gateway-service       
+  ECS_CLUSTER: lms-fargate-cluster    
+  ECS_TASK_DEFINITION: .aws/ecs-task-def-gateway.json 
+  CONTAINER_NAME: lms-gateway            
+
+jobs:
+  deploy:
+    name: Deploy Gateway to ECS Fargate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build Gateway Service (Optimized for 1 Service)
+        # Because this is a test dispatch for 1 service, we build ONLY the gateway.
+        # This saves massive runner minutes and executes much faster.
+        run: |
+          mvn clean package -pl lms-common,lms-gateway -am -DskipTests
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Inject AWS Account ID into Task Definition
+        run: |
+          sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' .aws/ecs-task-def-gateway.json
+          # If the secret isn't set, it stays as is, or we could just use the id directly.
+          # Since the user explicitly asked to take it from secrets, we'll assume the secret is set.
+
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        
+      - name: Docker Build and Push (Gateway only)
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}/
+          TAG: ${{ github.sha }}
+        run: |
+          image_name="${REGISTRY}${ECR_REPOSITORY}:${TAG}"
+          echo "Building $image_name"
+          docker build -f lms-gateway/Dockerfile \
+            -t $image_name \
+            --build-arg JAR_FILE="lms-gateway/target/*.jar" \
+            .
+            
+          echo "Pushing $image_name to Amazon ECR"
+          docker push $image_name
+
+      - name: Render new image ID into Amazon ECS Task Definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+
+      - name: Deploy Amazon ECS Task Definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
