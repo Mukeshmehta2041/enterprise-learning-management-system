@@ -1,27 +1,27 @@
-name: Deploy LMS Gateway to Amazon ECS Fargate
+name: Deploy LMS Search Server to ECS Fargate
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'lms-gateway/**'
-      - '.aws/ecs-task-def-gateway.json'
-      - '.github/workflows/deploy-aws-ecs-gateway.yml'
+      - 'services/lms-search-service/**'
+      - '.aws/ecs-task-def-search.json'
+      - '.github/workflows/deploy-aws-ecs-search.yml'
       - 'lms-common/**'
-  workflow_dispatch: # Manual trigger for testing initial deployment safely
+  workflow_dispatch: # Manual trigger
 
 env:
   AWS_REGION: us-east-1                  
-  ECR_REPOSITORY: lms-gateway          
-  ECS_SERVICE: lms-gateway-service       
+  ECR_REPOSITORY: lms-search-service          
+  ECS_SERVICE: lms-search-service       
   ECS_CLUSTER: lms-fargate-cluster    
-  ECS_TASK_DEFINITION: .aws/ecs-task-def-gateway.json 
-  CONTAINER_NAME: lms-gateway            
+  ECS_TASK_DEFINITION: .aws/ecs-task-def-search.json 
+  CONTAINER_NAME: lms-search-service            
 
 jobs:
   deploy:
-    name: Deploy Gateway to ECS Fargate
+    name: Deploy Search Service
     runs-on: ubuntu-latest
     
     steps:
@@ -35,11 +35,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build Gateway Service (Optimized for 1 Service)
-        # Because this is a test dispatch for 1 service, we build ONLY the gateway.
-        # This saves massive runner minutes and executes much faster.
+      - name: Build Search Service
         run: |
-          mvn clean package -pl lms-common,lms-gateway -am -DskipTests
+          mvn clean package -pl lms-common,services/lms-search-service -am -DskipTests
           
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -48,14 +46,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Inject AWS Account ID into Task Definition
-        run: |
-          sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' .aws/ecs-task-def-gateway.json
-          # If the secret isn't set, it stays as is, or we could just use the id directly.
-          # Since the user explicitly asked to take it from secrets, we'll assume the secret is set.
       - name: Ensure ecsTaskExecutionRole exists
         run: |
-          # Fargate tasks must have this specific IAM role to pull from ECR and send logs to CloudWatch
           aws iam get-role --role-name ecsTaskExecutionRole >/dev/null 2>&1 || \
           ( \
             echo "Role missing. Creating ecsTaskExecutionRole..." && \
@@ -71,67 +63,83 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         
-      - name: Create Base Infrastructure (ECR, ECS Cluster, Logs) if missing
+      - name: Create Base Infrastructure
         run: |
           aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} >/dev/null 2>&1 || \
           aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }}
           
           CLUSTER_STATUS=$(aws ecs describe-clusters --clusters ${{ env.ECS_CLUSTER }} --region ${{ env.AWS_REGION }} --query 'clusters[0].status' --output text 2>/dev/null || echo "MISSING")
           if [ "$CLUSTER_STATUS" != "ACTIVE" ]; then
-            echo "Creating missing ECS cluster..."
             aws ecs create-cluster --cluster-name ${{ env.ECS_CLUSTER }} --region ${{ env.AWS_REGION }}
           fi
           
           # Ensure cluster uses FARGATE_SPOT to save 70% cost
           aws ecs put-cluster-capacity-providers --cluster ${{ env.ECS_CLUSTER }} --capacity-providers FARGATE FARGATE_SPOT --default-capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 >/dev/null 2>&1 || true
           
-          # Pre-create the CloudWatch Log Group so Fargate doesn't need CreateLogGroup IAM permissions
           LOG_GROUP="/ecs/${{ env.CONTAINER_NAME }}"
           aws logs create-log-group --log-group-name $LOG_GROUP --region ${{ env.AWS_REGION }} >/dev/null 2>&1 || true
           aws logs put-retention-policy --log-group-name $LOG_GROUP --retention-in-days 7 --region ${{ env.AWS_REGION }} >/dev/null 2>&1 || true
 
-      - name: Docker Build and Push (Gateway only)
+      - name: Docker Build and Push
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}/
           TAG: ${{ github.sha }}
-
         run: |
-          image_name="${REGISTRY}${ECR_REPOSITORY}:${TAG}"
+          image_name="${REGISTRY}${{ env.ECR_REPOSITORY }}:${TAG}"
           echo "Building $image_name"
-          docker build -f lms-gateway/Dockerfile \
+          docker build -f services/lms-search-service/Dockerfile \
             -t $image_name \
-            --build-arg JAR_FILE="lms-gateway/target/*.jar" \
+            --build-arg JAR_FILE="services/lms-search-service/target/*.jar" \
             .
-            
-          echo "Pushing $image_name to Amazon ECR"
           docker push $image_name
 
-      - name: Render new image ID into Amazon ECS Task Definition
+      - name: Add Dynamic AWS Account ID into Task Def
+        run: sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' ${{ env.ECS_TASK_DEFINITION }}
+
+      - name: Render task def
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          # COMPREHENSIVE INJECTION OF ENV VARS (IGNORED BY SERVICES THAT DON'T NEED THEM)
+          environment-variables: |
+            SPRING_PROFILES_ACTIVE=prod
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SPRING_REDIS_HOST=${{ vars.SPRING_REDIS_HOST }}
+            SPRING_KAFKA_BOOTSTRAP_SERVERS=${{ vars.SPRING_KAFKA_BOOTSTRAP_SERVERS }}
+            OTEL_EXPORTER_OTLP_ENDPOINT=${{ vars.OTEL_EXPORTER_OTLP_ENDPOINT }}
+            SPRING_DATASOURCE_URL=${{ vars.SPRING_DATASOURCE_URL }}
+            SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+            SPRING_DATASOURCE_REPLICA_URL=${{ vars.SPRING_DATASOURCE_REPLICA_URL }}
+            ELASTICSEARCH_URIS=${{ vars.ELASTICSEARCH_URIS }}
+            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+            STRIPE_API_KEY=${{ secrets.STRIPE_API_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            LMS_STORAGE_BUCKET=${{ vars.LMS_STORAGE_BUCKET }}
+            LMS_STORAGE_ENDPOINT=${{ vars.LMS_STORAGE_ENDPOINT }}
+            LMS_STORAGE_PUBLIC_ENDPOINT=${{ vars.LMS_STORAGE_PUBLIC_ENDPOINT }}
+            LMS_STORAGE_REGION=${{ vars.LMS_STORAGE_REGION }}
+            LMS_STORAGE_ACCESS_KEY=${{ secrets.LMS_STORAGE_ACCESS_KEY }}
+            LMS_STORAGE_SECRET_KEY=${{ secrets.LMS_STORAGE_SECRET_KEY }}
+            USER_SERVICE_URL=${{ vars.USER_SERVICE_URL }}
+            LMS_COURSE_SERVICE_URL=${{ vars.LMS_COURSE_SERVICE_URL }}
+            LMS_ENROLLMENT_SERVICE_URL=${{ vars.LMS_ENROLLMENT_SERVICE_URL }}
+            LMS_ASSIGNMENT_SERVICE_URL=${{ vars.LMS_ASSIGNMENT_SERVICE_URL }}
 
       - name: Auto-Create ECS Service if missing
         run: |
           SERVICE_STATUS=$(aws ecs describe-services --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }} --region ${{ env.AWS_REGION }} --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
           if [ "$SERVICE_STATUS" != "ACTIVE" ]; then
-            echo "Service missing. Finding Default VPC network details..."
             VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --region ${{ env.AWS_REGION }} --query 'Vpcs[0].VpcId' --output text)
-            if [ "$VPC_ID" == "None" ] || [ -z "$VPC_ID" ]; then
-              echo "Error: No default VPC found. AWS Fargate requires a VPC."
-              exit 1
-            fi
-            
             SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --region ${{ env.AWS_REGION }} --query 'Subnets[*].SubnetId' --output text | tr '\t' ',')
             SG=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID Name=group-name,Values=default --region ${{ env.AWS_REGION }} --query 'SecurityGroups[0].GroupId' --output text)
             
-            echo "Registering initial Task Definition..."
             TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://${{ steps.task-def.outputs.task-definition }} --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
             
-            echo "Creating Fargate Service on VPC $VPC_ID..."
             aws ecs create-service \
               --cluster ${{ env.ECS_CLUSTER }} \
               --service-name ${{ env.ECS_SERVICE }} \
@@ -141,7 +149,6 @@ jobs:
               --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=ENABLED}" \
               --region ${{ env.AWS_REGION }} >/dev/null
               
-            echo "Waiting 20s for service to initialize..."
             sleep 20
           fi
 
