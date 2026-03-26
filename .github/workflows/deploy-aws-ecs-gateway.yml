@@ -45,7 +45,19 @@ jobs:
           sed -i 's/448100672347/${{ secrets.AWS_ACCOUNT_ID }}/g' .aws/ecs-task-def-gateway.json
           # If the secret isn't set, it stays as is, or we could just use the id directly.
           # Since the user explicitly asked to take it from secrets, we'll assume the secret is set.
-
+      - name: Ensure ecsTaskExecutionRole exists
+        run: |
+          # Fargate tasks must have this specific IAM role to pull from ECR and send logs to CloudWatch
+          aws iam get-role --role-name ecsTaskExecutionRole >/dev/null 2>&1 || \
+          ( \
+            echo "Role missing. Creating ecsTaskExecutionRole..." && \
+            aws iam create-role \
+              --role-name ecsTaskExecutionRole \
+              --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ecs-tasks.amazonaws.com"},"Action":"sts:AssumeRole"}]}' && \
+            aws iam attach-role-policy \
+              --role-name ecsTaskExecutionRole \
+              --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy \
+          )
 
       - name: Login to Amazon ECR
         id: login-ecr
