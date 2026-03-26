@@ -2,7 +2,7 @@
 .github
 .idea
 .vscode
-**/target
+# **/target
 **/node_modules
 **/dist
 **/build

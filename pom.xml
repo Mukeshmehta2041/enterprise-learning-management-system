@@ -14,7 +14,6 @@
     <modules>
         <module>lms-common</module>
         <module>lms-gateway</module>
-        <module>services/lms-user-service</module>
         <module>services/lms-auth-service</module>
         <module>services/lms-course-service</module>
         <module>services/lms-enrollment-service</module>

@@ -1,14 +1,7 @@
-FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
-WORKDIR /workspace
-COPY . .
-RUN mvn -B -ntp -N -f pom.xml install
-RUN mvn -B -ntp -f lms-common/pom.xml install -DskipTests
-RUN mvn -B -ntp -f lms-gateway/pom.xml package -DskipTests
-
-FROM eclipse-temurin:17-jre-alpine
-RUN addgroup -S spring && adduser -S spring -G spring
+FROM eclipse-temurin:17-jre
+RUN groupadd -r spring && useradd -r -g spring spring
 WORKDIR /app
-COPY --from=builder /workspace/lms-gateway/target/*.jar app.jar
+COPY lms-gateway/target/*.jar app.jar
 EXPOSE 8080
 USER spring:spring
 ENV JAVA_OPTS=""
