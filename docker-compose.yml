@@ -1,0 +1,560 @@
+name: lms
+
+# =============================================================================
+# LMS – Docker Compose (backend only, frontend excluded)
+# =============================================================================
+# Usage:
+#   docker compose --env-file .env.docker up -d
+#   docker compose --env-file .env.docker down -v   # also removes volumes
+#
+# Build images first (from project root):
+#   ./build-all-services.sh && ./build-docker-images.sh
+# =============================================================================
+
+x-service-common: &service-common
+  restart: unless-stopped
+  networks:
+    - lms-network
+
+x-spring-common-env: &spring-common-env
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+  SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/lms}
+  SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-lms}
+  SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-lms_secret_password}
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:-kafka:9093}
+  # Both keys needed: SPRING_DATA_REDIS_HOST (Spring Boot 3.x) and SPRING_REDIS_HOST (legacy fallback in some ymls)
+  SPRING_DATA_REDIS_HOST: ${REDIS_HOST:-redis}
+  SPRING_REDIS_HOST: ${REDIS_HOST:-redis}
+  REDIS_HOST: ${REDIS_HOST:-redis}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318/v1/traces}
+  # DEV FALLBACK – override JWT_SECRET in production via .env.docker or CI secrets
+  JWT_SECRET: ${JWT_SECRET:-local-dev-secret-key-change-me-in-production-32c}
+  MAIL_USERNAME: ${MAIL_USERNAME:-}
+  MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+  JAVA_OPTS: ${JAVA_OPTS:--XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom}
+
+services:
+
+  # ===========================================================================
+  # ─── INFRASTRUCTURE ─────────────────────────────────────────────────────────
+  # ===========================================================================
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    <<: *service-common
+    image: postgres:16-alpine
+    container_name: lms-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lms}
+      POSTGRES_USER: ${POSTGRES_USER:-lms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lms_secret_password}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docs/db-init:/docker-entrypoint-initdb.d:ro   # optional seed scripts
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lms} -d ${POSTGRES_DB:-lms}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    <<: *service-common
+    image: redis:7-alpine
+    container_name: lms-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Kafka (KRaft mode – no ZooKeeper required) ──────────────────────────────
+  kafka:
+    <<: *service-common
+    image: apache/kafka:3.8.0
+    container_name: lms-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9093,EXTERNAL://:9092,CONTROLLER://:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --list"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Kafka UI ──────────────────────────────────────────────────────────────────
+  kafka-ui:
+    <<: *service-common
+    image: ghcr.io/kafbat/kafka-ui:latest
+    container_name: lms-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: lms-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+    ports:
+      - "9090:8080"
+
+  # ── Elasticsearch ───────────────────────────────────────────────────────────
+  elasticsearch:
+    <<: *service-common
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: lms-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSL http://localhost:9200/_cluster/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ── MinIO (S3-compatible object storage) ────────────────────────────────────
+  minio:
+    <<: *service-common
+    image: minio/minio:latest
+    container_name: lms-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin_secret}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO Console
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # MinIO bucket initialisation (one-shot job)
+  minio-init:
+    image: minio/mc:latest
+    container_name: lms-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - lms-network
+    restart: on-failure
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin_secret};
+        mc mb --ignore-existing local/${LMS_STORAGE_BUCKET:-lms-media};
+        mc anonymous set download local/${LMS_STORAGE_BUCKET:-lms-media};
+        echo 'MinIO bucket ready';
+      "
+
+  # ── Jaeger (distributed tracing) ────────────────────────────────────────────
+  jaeger:
+    <<: *service-common
+    image: jaegertracing/all-in-one:1.57
+    container_name: lms-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC
+      - "4318:4318"    # OTLP HTTP
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:16686/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # ===========================================================================
+  # ─── APPLICATION SERVICES ───────────────────────────────────────────────────
+  # ===========================================================================
+
+  # ── User Service (port 8081) ────────────────────────────────────────────────
+  lms-user-service:
+    <<: *service-common
+    image: lms-user-service:${TAG:-latest}
+    container_name: lms-user-service
+    build:
+      context: .
+      dockerfile: services/lms-user-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Auth Service (port 8082) ────────────────────────────────────────────────
+  lms-auth-service:
+    <<: *service-common
+    image: lms-auth-service:${TAG:-latest}
+    container_name: lms-auth-service
+    build:
+      context: .
+      dockerfile: services/lms-auth-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://lms-user-service:8081}
+    ports:
+      - "8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Course Service (port 8083) ──────────────────────────────────────────────
+  lms-course-service:
+    <<: *service-common
+    image: lms-course-service:${TAG:-latest}
+    container_name: lms-course-service
+    build:
+      context: .
+      dockerfile: services/lms-course-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      LMS_ENROLLMENT_SERVICE_URL: ${LMS_ENROLLMENT_SERVICE_URL:-http://lms-enrollment-service:8084}
+      FEATURE_COURSE_CREATION: ${FEATURE_COURSE_CREATION:-true}
+      FEATURE_NEW_CATALOG: ${FEATURE_NEW_CATALOG:-false}
+      LMS_COURSE_MAX_TOTAL: ${LMS_COURSE_MAX_TOTAL:-100}
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Enrollment Service (port 8084) ──────────────────────────────────────────
+  lms-enrollment-service:
+    <<: *service-common
+    image: lms-enrollment-service:${TAG:-latest}
+    container_name: lms-enrollment-service
+    build:
+      context: .
+      dockerfile: services/lms-enrollment-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      LMS_COURSE_SERVICE_URL: ${LMS_COURSE_SERVICE_URL:-http://lms-course-service:8083}
+      LMS_ASSIGNMENT_SERVICE_URL: ${LMS_ASSIGNMENT_SERVICE_URL:-http://lms-assignment-service:8087}
+      LMS_ENROLLMENT_MAX_PER_USER: ${LMS_ENROLLMENT_MAX_PER_USER:-10}
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Content Service (port 8085) ─────────────────────────────────────────────
+  lms-content-service:
+    <<: *service-common
+    image: lms-content-service:${TAG:-latest}
+    container_name: lms-content-service
+    build:
+      context: .
+      dockerfile: services/lms-content-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      LMS_COURSE_SERVICE_URL: ${LMS_COURSE_SERVICE_URL:-http://lms-course-service:8083}
+      LMS_ENROLLMENT_SERVICE_URL: ${LMS_ENROLLMENT_SERVICE_URL:-http://lms-enrollment-service:8084}
+      LMS_STORAGE_BUCKET: ${LMS_STORAGE_BUCKET:-lms-media}
+      LMS_STORAGE_ENDPOINT: ${LMS_STORAGE_ENDPOINT:-http://minio:9000}
+      LMS_STORAGE_PUBLIC_ENDPOINT: ${LMS_STORAGE_PUBLIC_ENDPOINT:-http://localhost:9000}
+      LMS_STORAGE_REGION: ${LMS_STORAGE_REGION:-us-east-1}
+      LMS_STORAGE_ACCESS_KEY: ${LMS_STORAGE_ACCESS_KEY:-minioadmin}
+      LMS_STORAGE_SECRET_KEY: ${LMS_STORAGE_SECRET_KEY:-minioadmin_secret}
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Search Service (port 8086) ──────────────────────────────────────────────
+  lms-search-service:
+    <<: *service-common
+    image: lms-search-service:${TAG:-latest}
+    container_name: lms-search-service
+    build:
+      context: .
+      dockerfile: services/lms-search-service/Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      SPRING_ELASTICSEARCH_URIS: ${SPRING_ELASTICSEARCH_URIS:-http://elasticsearch:9200}
+    ports:
+      - "8086:8086"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8086/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Assignment Service (port 8087) ──────────────────────────────────────────
+  lms-assignment-service:
+    <<: *service-common
+    image: lms-assignment-service:${TAG:-latest}
+    container_name: lms-assignment-service
+    build:
+      context: .
+      dockerfile: services/lms-assignment-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      LMS_COURSE_SERVICE_URL: ${LMS_COURSE_SERVICE_URL:-http://lms-course-service:8083}
+    ports:
+      - "8087:8087"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8087/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Notification Service (port 8088) ────────────────────────────────────────
+  lms-notification-service:
+    <<: *service-common
+    image: lms-notification-service:${TAG:-latest}
+    container_name: lms-notification-service
+    build:
+      context: .
+      dockerfile: services/lms-notification-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8088/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Payment Service (port 8089) ─────────────────────────────────────────────
+  lms-payment-service:
+    <<: *service-common
+    image: lms-payment-service:${TAG:-latest}
+    container_name: lms-payment-service
+    build:
+      context: .
+      dockerfile: services/lms-payment-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+    ports:
+      - "8089:8089"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8089/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Analytics Service (port 8090) ───────────────────────────────────────────
+  lms-analytics-service:
+    <<: *service-common
+    image: lms-analytics-service:${TAG:-latest}
+    container_name: lms-analytics-service
+    build:
+      context: .
+      dockerfile: services/lms-analytics-service/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8090/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── API Gateway (port 8080) ──────────────────────────────────────────────────
+  lms-gateway:
+    <<: *service-common
+    image: lms-gateway:${TAG:-latest}
+    container_name: lms-gateway
+    build:
+      context: .
+      dockerfile: lms-gateway/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+      lms-user-service:
+        condition: service_healthy
+      lms-auth-service:
+        condition: service_healthy
+      lms-course-service:
+        condition: service_healthy
+      lms-enrollment-service:
+        condition: service_healthy
+      lms-content-service:
+        condition: service_healthy
+      lms-search-service:
+        condition: service_healthy
+      lms-assignment-service:
+        condition: service_healthy
+      lms-notification-service:
+        condition: service_healthy
+      lms-payment-service:
+        condition: service_healthy
+      lms-analytics-service:
+        condition: service_healthy
+    environment:
+      <<: *spring-common-env
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://lms-auth-service:8082}
+      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://lms-user-service:8081}
+      COURSE_SERVICE_URL: ${COURSE_SERVICE_URL:-http://lms-course-service:8083}
+      ENROLLMENT_SERVICE_URL: ${ENROLLMENT_SERVICE_URL:-http://lms-enrollment-service:8084}
+      CONTENT_SERVICE_URL: ${CONTENT_SERVICE_URL:-http://lms-content-service:8085}
+      SEARCH_SERVICE_URL: ${SEARCH_SERVICE_URL:-http://lms-search-service:8086}
+      ASSIGNMENT_SERVICE_URL: ${ASSIGNMENT_SERVICE_URL:-http://lms-assignment-service:8087}
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://lms-notification-service:8088}
+      PAYMENT_SERVICE_URL: ${PAYMENT_SERVICE_URL:-http://lms-payment-service:8089}
+      ANALYTICS_SERVICE_URL: ${ANALYTICS_SERVICE_URL:-http://lms-analytics-service:8090}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001}
+      SPRINGDOC_ENABLED: ${SPRINGDOC_ENABLED:-true}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+# =============================================================================
+# ─── VOLUMES ───────────────────────────────────────────────────────────────────
+# =============================================================================
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  kafka-data:
+    driver: local
+
+  elasticsearch-data:
+    driver: local
+  minio-data:
+    driver: local
+
+# =============================================================================
+# ─── NETWORKS ──────────────────────────────────────────────────────────────────
+# =============================================================================
+networks:
+  lms-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -38,6 +38,7 @@ Thumbs.db
 # Env / secrets
 .env
 .env.local
+.env.docker
 *.pem
 **/bin/
 **/target/
