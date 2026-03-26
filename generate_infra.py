@@ -118,10 +118,8 @@ jobs:
         run: |
           VPC_ID=$(aws ec2 describe-vpcs --filters Name=isDefault,Values=true --region ${{ env.AWS_REGION }} --query 'Vpcs[0].VpcId' --output text)
           SG=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=$VPC_ID Name=group-name,Values=default --region ${{ env.AWS_REGION }} --query 'SecurityGroups[0].GroupId' --output text)
-          # Open NFS Port for EFS
           aws ec2 authorize-security-group-ingress --group-id $SG --protocol tcp --port 2049 --source-group $SG --region ${{ env.AWS_REGION }} 2>/dev/null || true
           
-          # Auto-create EFS components
           for DB in postgres kafka elastic; do
              EFS_ID=$(aws efs describe-file-systems --query "FileSystems[?Name=='lms-efs-${DB}'].FileSystemId" --output text)
              if [ -z "$EFS_ID" ] || [ "$EFS_ID" == "None" ]; then
@@ -129,8 +127,6 @@ jobs:
                echo "Waiting for EFS $DB creation..."
                sleep 10
              fi
-             
-             # Create Mount Targets in every subnet so Fargate can reach it
              SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID --region ${{ env.AWS_REGION }} --query 'Subnets[*].SubnetId' --output text)
              for SUBNET in $SUBNETS; do
                 MOUNT=$(aws efs describe-mount-targets --file-system-id $EFS_ID --query "MountTargets[?SubnetId=='$SUBNET'].MountTargetId" --output text)
@@ -143,6 +139,11 @@ jobs:
 """
 
 def append_service_step(name, port, has_mount):
+    efs_lines = f"""
+          EFS_ID=$(aws efs describe-file-systems --query "FileSystems[?Name=='lms-efs-{name}'].FileSystemId" --output text)
+          sed -i "s/EFS_ID_PLACEHOLDER/$EFS_ID/g" $TASK_DEF
+""" if has_mount else ""
+
     return f"""
       - name: Deploy {name.upper()} 
         run: |
@@ -150,14 +151,9 @@ def append_service_step(name, port, has_mount):
           CONTAINER_NAME="lms-{name}-service"
           TASK_DEF=".aws/ecs-task-def-{name}.json"
           
-          # Replace Account ID
           sed -i 's/448100672347/${{{{ secrets.AWS_ACCOUNT_ID }}}}/g' $TASK_DEF
+          {efs_lines}
           
-          # Identify EFS ID and Inject it dynamically
-          {"EFS_ID=$(aws efs describe-file-systems --query \\"FileSystems[?Name=='lms-efs-" + name + "'].FileSystemId\\" --output text)" if has_mount else ""}
-          {"sed -i \\"s/EFS_ID_PLACEHOLDER/$EFS_ID/g\\" $TASK_DEF" if has_mount else ""}
-          
-          # Log group
           LOG_GROUP="/ecs/$CONTAINER_NAME"
           aws logs create-log-group --log-group-name $LOG_GROUP --region ${{{{ env.AWS_REGION }}}} >/dev/null 2>&1 || true
           aws logs put-retention-policy --log-group-name $LOG_GROUP --retention-in-days 7 --region ${{{{ env.AWS_REGION }}}} || true
@@ -171,9 +167,7 @@ def append_service_step(name, port, has_mount):
             
             NS_ID=$(aws servicediscovery list-namespaces --query "Namespaces[?Name=='${{{{ env.NAMESPACE }}}}'].Id" --output text)
             
-            # Create Discovery Service
             SVC_ID=$(aws servicediscovery create-service --name {name} --namespace-id $NS_ID --dns-config "NamespaceId=$NS_ID,RoutingPolicy=MULTIVALUE,DnsRecords=[{{Type=A,TTL=60}}]" --query 'Service.Id' --output text)
-            
             TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://$TASK_DEF --region ${{{{ env.AWS_REGION }}}} --query 'taskDefinition.taskDefinitionArn' --output text)
             
             aws ecs create-service \\
