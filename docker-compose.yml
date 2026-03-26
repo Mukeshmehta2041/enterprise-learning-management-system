@@ -21,6 +21,7 @@ x-spring-common-env: &spring-common-env
   SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/lms}
   SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-lms}
   SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-lms_secret_password}
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
   SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:-kafka:9093}
   # Both keys needed: SPRING_DATA_REDIS_HOST (Spring Boot 3.x) and SPRING_REDIS_HOST (legacy fallback in some ymls)
   SPRING_DATA_REDIS_HOST: ${REDIS_HOST:-redis}
@@ -227,7 +228,6 @@ services:
         condition: service_healthy
     environment:
       <<: *spring-common-env
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
     ports:
       - "8081:8081"
     healthcheck:
@@ -422,6 +422,7 @@ services:
         condition: service_healthy
     environment:
       <<: *spring-common-env
+      MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
     ports:
       - "8088:8088"
     healthcheck:
