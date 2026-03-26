@@ -1,0 +1,49 @@
+name: Resume AWS Billing (Scale to One)
+
+on:
+  workflow_dispatch: # Manual trigger to start everything back up
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: lms-fargate-cluster
+
+jobs:
+  scale_to_one:
+    name: Start All AWS Compute
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Start All Fargate Services
+        run: |
+          echo "Finding all previously stopped services in cluster ${{ env.ECS_CLUSTER }}..."
+          
+          # Get all services in the cluster
+          SERVICES=$(aws ecs list-services --cluster ${{ env.ECS_CLUSTER }} --region ${{ env.AWS_REGION }} --query 'serviceArns' --output text)
+          
+          if [ -z "$SERVICES" ] || [ "$SERVICES" == "None" ]; then
+            echo "No services found."
+            exit 0
+          fi
+          
+          echo "Scaling up all servers to 1 Task..."
+          for SERVICE in $SERVICES; do
+            SERVICE_NAME=$(basename $SERVICE)
+            echo "Starting $SERVICE_NAME..."
+            
+            # Start the service back up
+            aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service $SERVICE --desired-count 1 --region ${{ env.AWS_REGION }} >/dev/null
+            
+            echo "Successfully started $SERVICE_NAME."
+          done
+          
+          echo "---------------------------------------------------------"
+          echo "✅ All compute has been scaled to 1!"
+          echo "✅ Fargate will now provision your tasks, and reconnect to EFS!"
+          echo "---------------------------------------------------------"

@@ -1,0 +1,50 @@
+name: Pause AWS Billing (Scale to Zero)
+
+on:
+  workflow_dispatch: # Manual trigger to shut down everything and stop charges
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: lms-fargate-cluster
+
+jobs:
+  scale_to_zero:
+    name: Stop All AWS Compute
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Shut Down All Fargate Services
+        run: |
+          echo "Finding all active services in cluster ${{ env.ECS_CLUSTER }}..."
+          
+          # Get all services (handles pagination if lots of services, though we only have ~14)
+          SERVICES=$(aws ecs list-services --cluster ${{ env.ECS_CLUSTER }} --region ${{ env.AWS_REGION }} --query 'serviceArns' --output text)
+          
+          if [ -z "$SERVICES" ] || [ "$SERVICES" == "None" ]; then
+            echo "No services found."
+            exit 0
+          fi
+          
+          echo "Scaling down all servers to 0..."
+          for SERVICE in $SERVICES; do
+            SERVICE_NAME=$(basename $SERVICE)
+            echo "Stopping $SERVICE_NAME..."
+            
+            # This is the magic command that stops billing for the service immediately
+            aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service $SERVICE --desired-count 0 --region ${{ env.AWS_REGION }} >/dev/null
+            
+            echo "Successfully stopped $SERVICE_NAME."
+          done
+          
+          echo "---------------------------------------------------------"
+          echo "✅ All compute has been scaled to 0!"
+          echo "✅ You will no longer be charged for Fargate containers."
+          echo "✅ Your EFS database data is completely safe and waiting."
+          echo "---------------------------------------------------------"
