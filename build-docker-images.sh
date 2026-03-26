@@ -66,6 +66,16 @@ for service_path in "${services[@]}"; do
         echo "✅ Built: $image_name"
         
         if [ "$PUSH_IMAGES" = "true" ]; then
+            # Auto-create AWS ECR repository if it doesn't exist
+            if [[ "$image_name" == *".dkr.ecr."* ]] && command -v aws >/dev/null 2>&1; then
+                ecr_region=$(echo "$image_name" | cut -d'.' -f4)
+                echo "🔍 Checking if ECR repository '$service_short_name' exists in region $ecr_region..."
+                if ! aws ecr describe-repositories --repository-names "$service_short_name" --region "$ecr_region" >/dev/null 2>&1; then
+                    echo "🛠️ Creating missing ECR repository: $service_short_name"
+                    aws ecr create-repository --repository-name "$service_short_name" --region "$ecr_region" >/dev/null || true
+                fi
+            fi
+
             echo "🚀 Pushing to registry: $image_name"
             if ! docker push "$image_name"; then
                 echo "❌ Failed to push: $image_name"
